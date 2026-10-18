@@ -162,6 +162,7 @@ describe("CREAO Follow-up Writer output (followUp in the event file)", () => {
 describe("pre-event texting", () => {
   test("'look up <name>, <company>' runs a lookup and texts the cards; event questions answer from the pack", async () => {
     store.briefs.clear();
+    store.loadSample(); // an active event (earlier tests may have switched it)
     const out = (await handleReply("look up Priya Shah, Anduril, recruiter", null)) as string[];
     assert.ok(Array.isArray(out) && out.length >= 2, JSON.stringify(out));
     assert.match(out[0], /^prep for Priya Shah, recruiter, Anduril/);

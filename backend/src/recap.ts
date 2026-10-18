@@ -3,7 +3,7 @@
 // plus the pure "who did I meet" list. Only ever addressed to the wearer.
 import type { Brief } from "../../shared/types.js";
 import { startCoach } from "./coach.js";
-import { composeAnswer, composeEmail } from "./compose.js";
+import { composeAnswer, composeEmail, composeEventAnswer } from "./compose.js";
 import { suggestFollowUp } from "./photon.js";
 import { bookBubbles, holdMovedBubbles } from "./voice.js";
 import { moveHold, pickSlot } from "./calendar.js";
@@ -80,7 +80,9 @@ export async function handleReply(text: string, lastBriefId: string | null, now 
   // Pre-event prep by text: "look up David Cramer, Sentry" / "prep me for Priya Shah, Anduril" / "who is X at Y".
   const prep = /^\s*(look ?up|prep( me)?( for)?|brief me on|who is|who's)\s+(.+)$/i.exec(text.trim());
   if (prep) {
-    const out = await handleSay(prep[4]);
+    let out;
+    try { out = await handleSay(prep[4]); }
+    catch (err) { return `couldn't look that up (${err instanceof Error ? err.message : String(err)}). load an event on the setup page first`; }
     const b = out.response.brief;
     if (out.response.intent !== "lookup" || !b) return out.response.say ?? "couldn't find a name and company in that. try: look up <name>, <company>";
     const who = [b.query.name, b.query.role, b.query.org].filter(Boolean).join(", ");
@@ -99,7 +101,11 @@ export async function handleReply(text: string, lastBriefId: string | null, now 
     });
     return `Today (${briefs.length}):\n${lines.join("\n")}`;
   }
-  if (/\b(how (did|am|was) i|who should i|coach|patterns|how did today)\b/.test(t)) {
+  // Event questions before anything is on file ("who should I talk to at the event?", "what is Sentry hiring for?").
+  if (/\b(at the event|at the fair|is there|attending|who'?s (there|coming|here)|hiring for|should i talk to|who to talk to|prep me)\b/.test(t)) {
+    return composeEventAnswer(text);
+  }
+  if (/\b(how (did|am|was) i|who should i (follow|email|contact|chase)|coach|patterns|how did today)\b/.test(t)) {
     const id = await startCoach(text, "text");
     return id ? "on it 🧠 looking at your whole day, give me about a minute" : "the coach isn't set up yet";
   }
