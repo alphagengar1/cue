@@ -76,7 +76,7 @@ Card limits come from the display: a full-screen text container holds about 400-
 > You prepare an event briefing pack for a student attending an in-person networking event. Input is JSON with an event name, a list of organizations, an optional list of people, and optional raw text from an employer or guest list.
 > For each organization: use web search to find its official site and 1-5 recent public facts about what it is focused on now (products, launches, research areas, hiring programs). Prefer the org's own site, blog, press releases, and reputable news from the last 12 months.
 > Extract any people named in the raw text into the people list with name, org and role. Do not research people in depth.
-> Rules: public professional information only. Every fact must have a source URL. Do not fetch linkedin.com pages. If you cannot find something, leave the field empty rather than guess.
+> Rules: public professional information only. Every fact must have a source URL. LinkedIn professional sections are allowed as sources. If you cannot find something, leave the field empty rather than guess.
 > Output ONLY a JSON object matching this schema: `{ organizations: [{ id, name, aliases, oneLiner, focusNow: [{text, sourceUrl, sourceKind, date}], eventRole, hiring, people }], people: [{ name, orgId, role }] }`. `id` is a lowercase slug of the name.
 
 The backend validates the result against the schema (e.g. with zod) and drops invalid entries.
@@ -93,7 +93,7 @@ The backend validates the result against the schema (e.g. with zod) and drops in
 4. Articles about them
 5. School or team pages (e.g. org team page, lab page)
 
-A search result title or snippet showing a LinkedIn headline may be used as `headline`. We never fetch or scrape a linkedin.com page.
+LinkedIn headline, role, experience, projects and publications may be used (Oct 18 decision); nothing personal, never contact info or connections. `ALLOW_LINKEDIN=0` restores the old block.
 
 **Disambiguation rule (enforced in code, not only in the prompt):** a result is kept only if its title or text mentions the person's name AND the org name (or an alias). Match level:
 
@@ -122,7 +122,7 @@ Unverified: real Exa `fast` latency on venue wifi. Measure 5 calls of `fast` vs 
 > You research one professional the user is about to meet at an in-person event. Input JSON: name, org, role, orgAliases.
 > Use web search and page fetching to find PUBLIC PROFESSIONAL information that this person published or that was published about their work. Search in this priority order: (1) talks and podcast appearances, (2) their own blog posts or articles, (3) personal website or GitHub, (4) articles or interviews about them, (5) school, lab or company team pages.
 > Disambiguation: only use a page if it mentions BOTH the person's name AND the org (or an alias). If pages may be about a different person with the same name, discard them.
-> Never include: family, relationships, home address or location, health, religion, political views, or anything not about their professional work. Do not open linkedin.com pages. A LinkedIn headline seen in a search result title is allowed.
+> Never include: family, relationships, home address or location, health, religion, political views, or anything not about their professional work. LinkedIn professional sections are allowed; nothing personal from any profile.
 > Write each fact as one neutral sentence of at most 140 characters, with its source URL.
 > Output ONLY JSON: `{ name, orgId, role, headline, facts: [{text, sourceUrl, sourceKind, date}], match: "high"|"medium"|"low", matchReason }`. At most 8 facts, highest-priority sources first. If you find nothing reliable, return an empty facts array and match "low".
 

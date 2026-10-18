@@ -43,8 +43,8 @@ Nothing here reads or stores secrets. The server gets its keys from the `backend
    `cue-backend`. This is required: the hostname encodes the IP, so a changing IP would mean a
    new hostname and a new Even Hub build. Note the IP, call it `IP` below.
 3. **Open HTTPS.** Instance page, *Networking* tab, IPv4 firewall: *Add rule*, application
-   *HTTPS* (TCP 443). Leave SSH (22) and HTTP (80) in place; Caddy needs 80 for the certificate
-   challenge.
+   *HTTPS* (TCP 443). Leave SSH (22) and HTTP (80) in place. Caddy can get its certificate over 443 alone
+   (TLS-ALPN), but 80 gives it a second path and makes `http://` redirect to `https://`.
 4. **Get SSH working from your laptop.** Lightsail, *Account*, *SSH keys*, download the default
    key for the region (`LightsailDefaultKey-us-west-2.pem`), then:
 
@@ -119,9 +119,10 @@ Nothing here reads or stores secrets. The server gets its keys from the `backend
   `sudo systemctl restart cue-backend`.
 - **Status / restart:** `systemctl status cue-backend`, `sudo systemctl restart cue-backend`.
   The unit restarts on crash after 3 s, forever, and starts on boot. Caddy does too.
-- **Load the event:** the store is in memory, so a restart loses loaded events and briefs until
-  the next `POST /api/events` from the setup page or the bundled files under `backend/data/`
-  are loaded again. Reload the event after any restart before the demo.
+- **After a restart:** the store is in memory. The event named by `SAMPLE_EVENT_FILE` (default
+  `data/creao-lahacks-sponsors.json`) reloads on boot, so the orgs and known people survive, but
+  researched facts, briefs, debriefs and coaching from the session do not. Rerun any lookups you
+  want cached before the demo.
 
 ## Cost and cleanup
 

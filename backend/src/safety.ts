@@ -1,5 +1,6 @@
 // Safety filter and card limits (03 section 6, 02 section 2, 04 section 8).
 import { z } from "zod";
+import { config } from "./config.js";
 import type { Card, Fact, SourceKind } from "../../shared/types.js";
 
 // Whole words, or stems ending in "*" (match any suffix). Multi-word terms match across any whitespace.
@@ -32,6 +33,9 @@ export const hostOf = (url: string): string => {
   try { return new URL(url).hostname.replace(/^www\./, "").toLowerCase(); } catch { return ""; }
 };
 
+/** True when linkedin.com sources must be dropped (ALLOW_LINKEDIN=0). */
+export const blockLinkedIn = (): boolean => !config.allowLinkedIn;
+
 export const isLinkedIn = (url: string): boolean => {
   const h = hostOf(url);
   return h === "linkedin.com" || h.endsWith(".linkedin.com");
@@ -39,7 +43,7 @@ export const isLinkedIn = (url: string): boolean => {
 
 /** Drop blocklisted facts and any linkedin.com source. */
 export function filterFacts(facts: Fact[]): Fact[] {
-  return facts.filter((f) => !isLinkedIn(f.sourceUrl) && !isSensitive(f.text));
+  return facts.filter((f) => !(blockLinkedIn() && isLinkedIn(f.sourceUrl)) && !isSensitive(f.text));
 }
 
 // Search-snippet sentences that are page chrome, not content (cookie banners, nav links).
@@ -211,7 +215,7 @@ export function enforceCards(cards: Card[], opts: { allowedHosts?: string[] } = 
       source: cleanSource(c.source),
     };
     if (!card.body) continue;
-    if (card.source && isLinkedIn(`https://${card.source}`)) {
+    if (card.source && blockLinkedIn() && isLinkedIn(`https://${card.source}`)) {
       if (card.kind !== "angle") continue;
       card.source = null;
     }

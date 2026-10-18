@@ -8,8 +8,10 @@ for (const k of [
   "CREAO_MEETING_SCHEDULER_KEY", "CREAO_MEETING_SCHEDULER_ID", "CREAO_NETWORKING_COACH_KEY", "CREAO_NETWORKING_COACH_ID",
   "SENTRY_DSN", "DEVICE_TOKEN", "PUBLIC_BASE_URL", "SAMPLE_EVENT_FILE", "PORT",
   "PHOTON_PROJECT_ID", "PHOTON_PROJECT_SECRET", "SPECTRUM_PROJECT_ID", "SPECTRUM_PROJECT_SECRET", "WEARER_PHONE", "OPENAI_API_KEY",
+  "GOOGLE_CLIENT_ID", "GOOGLE_CLIENT_SECRET", "GOOGLE_REFRESH_TOKEN", "GOOGLE_CALENDAR_ID", "WEARER_HOURS", "WEARER_WEEKENDS",
 ]) process.env[k] = "";
 process.env.LOOKUPS_PER_MINUTE = "10000";
+process.env.ALLOW_LINKEDIN = "0"; // tests cover the strict mode; one test flips it
 process.env.LOCAL_STATE_FILE = `/tmp/cue-test-local-${process.pid}.json`; // never the real profile file
 process.env.SAMPLE_EVENT_FILE = "data/sample-event.json"; // the demo default is the CREAO file
 

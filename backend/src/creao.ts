@@ -13,6 +13,8 @@ import { config } from "./config.js";
 import { writeCards, type BriefInput } from "./llm.js";
 import { cleanFacts, enforceCards, factAboutPerson, hostOf, sanitize, sortFacts } from "./safety.js";
 import { sendText } from "./photon.js";
+import { availabilityWithCalendar, confirmSchedule } from "./calendar.js";
+import { coachBubbles, firstName, followUpBubbles, scheduleBubbles } from "./voice.js";
 import { newId, norm, slug, store, type RunRecord } from "./store.js";
 
 export type AgentKind = RunRecord["agent"];
@@ -564,6 +566,7 @@ const FollowUpOut = z.object({
   email: z.object({ subject: z.string(), body: z.string() }),
   message: z.string(),
   nextSteps: z.array(z.string()).default([]),
+  draftLink: z.string().nullable().optional(), // Gmail draft the agent saved (never sent), when it has the connector
 });
 async function applyFollowUpWriter(rec: RunRecord, out: unknown): Promise<string> {
   const parsed = FollowUpOut.safeParse(out);
@@ -575,14 +578,10 @@ async function applyFollowUpWriter(rec: RunRecord, out: unknown): Promise<string
   const nextSteps = d.nextSteps.map((s) => sanitize(s).trim().slice(0, 160)).filter(Boolean).slice(0, 3);
   const person = rec.personId ? store.people.get(rec.personId) : undefined;
   if (person) {
-    store.putPerson({ ...person, followUp: { ...(person.followUp ?? {}), agent: "creao-follow-up-writer", agentId: agentIdFor("follow_up_writer"), email: { subject, body }, message, nextSteps } });
+    store.putPerson({ ...person, followUp: { ...(person.followUp ?? {}), agent: "creao-follow-up-writer", agentId: agentIdFor("follow_up_writer"), email: { subject, body }, message, nextSteps, draftLink: d.draftLink ?? null } });
   }
-  const r = await sendText([
-    "full follow-up from CREAO is ready ✍️",
-    `Subject: ${subject}`,
-    body,
-    ...(nextSteps.length ? [`next steps:\n${nextSteps.map((s) => `- ${s}`).join("\n")}`] : []),
-  ]);
+  const r = await sendText(followUpBubbles({ email: { subject, body }, message, nextSteps }, firstName(person?.name))
+    .concat(d.draftLink && /^https?:\/\//.test(d.draftLink) ? [`saved as a gmail draft too: ${d.draftLink}`] : []));
   let note = `follow-up stored${person ? ` on ${person.name}` : ""}; text ${r.sent ? "sent" : `not sent (${r.reason})`}`;
   // Orchestration: Follow-up Writer -> Meeting Scheduler (agents/meeting-scheduler.md).
   const brief = rec.briefId ? store.briefs.get(rec.briefId) : undefined;
@@ -593,7 +592,8 @@ async function applyFollowUpWriter(rec: RunRecord, out: unknown): Promise<string
       followUp: { email: { subject, body }, message, nextSteps },
       debrief: brief.debrief ?? "",
       conversation: (brief.conversation ?? "").slice(0, 6000),
-      wearer: { name: p.name, school: p.school ?? "", availability: p.availability ?? "weekday afternoons", timezone: config.wearerTimezone },
+      // The wearer's own words plus the free windows from their Google Calendar when it is connected (calendar.ts).
+      wearer: { name: p.name, school: p.school ?? "", availability: await availabilityWithCalendar(p.availability ?? "weekday afternoons"), timezone: config.wearerTimezone },
       eventName: store.events.get(brief.eventId)?.name ?? "",
     }, { briefId: brief.id, personId: rec.personId });
     note += runId ? `; started meeting_scheduler ${runId}` : "; meeting_scheduler start failed";
@@ -601,8 +601,9 @@ async function applyFollowUpWriter(rec: RunRecord, out: unknown): Promise<string
   return note;
 }
 
-// Meeting Scheduler: three proposed times, a scheduling message, optionally a tentative calendar
-// hold (when the agent has a calendar connector). Stored on the person, texted to the wearer.
+// Meeting Scheduler: three proposed times, a scheduling message, and a tentative calendar hold.
+// The backend checks the times against the wearer's Google Calendar and places the hold itself
+// (calendar.ts); the agent's own hold is kept when it made one. Stored on the person, texted.
 const ScheduleOut = z.object({
   proposedTimes: z.array(z.string()).max(5),
   inviteTitle: z.string(),
@@ -615,25 +616,20 @@ async function applyMeetingScheduler(rec: RunRecord, out: unknown): Promise<stri
   const parsed = ScheduleOut.safeParse(out);
   if (!parsed.success) return "invalid shape";
   const d = parsed.data;
-  const schedule = {
+  const { schedule, note: calNote } = await confirmSchedule({
     proposedTimes: d.proposedTimes.map((s) => sanitize(s).trim().slice(0, 40)).filter(Boolean).slice(0, 3),
     inviteTitle: sanitize(d.inviteTitle).trim().slice(0, 80),
     inviteDescription: sanitize(d.inviteDescription).trim().slice(0, 500),
     schedulingMessage: sanitize(d.schedulingMessage).trim().slice(0, 400),
     calendarEventCreated: d.calendarEventCreated,
     eventLink: d.eventLink && /^https?:\/\//.test(d.eventLink) ? d.eventLink.slice(0, 300) : null,
-  };
+    ...(d.calendarEventCreated ? { holdSource: "agent" as const } : {}),
+  });
   const person = rec.personId ? store.people.get(rec.personId) : undefined;
   if (person) store.putPerson({ ...person, followUp: { ...(person.followUp ?? {}), schedule } });
   const first = person?.name.split(/\s+/)[0] ?? "them";
-  const r = await sendText([
-    `times that fit you for ${first} 📅`,
-    schedule.proposedTimes.join("\n"),
-    schedule.schedulingMessage,
-    ...(schedule.eventLink ? [`tentative hold on your calendar: ${schedule.eventLink}`] : []),
-    "reply book and I'll give you the message to send",
-  ]);
-  return `schedule stored${person ? ` on ${person.name}` : ""}, hold ${schedule.calendarEventCreated ? "created" : "not created"}; text ${r.sent ? "sent" : `not sent (${r.reason})`}`;
+  const r = await sendText(scheduleBubbles(schedule, first));
+  return `schedule stored${person ? ` on ${person.name}` : ""}, hold ${schedule.calendarEventCreated ? `created (${schedule.holdSource ?? "agent"})` : "not created"}, ${calNote}; text ${r.sent ? "sent" : `not sent (${r.reason})`}`;
 }
 
 // Networking Coach: the long-run agent (agents/networking-coach.md). Texted as a few bubbles.
@@ -656,13 +652,7 @@ async function applyNetworkingCoach(rec: RunRecord, out: unknown): Promise<strin
     coaching: d.coaching.map((x) => s(x, 180)).filter(Boolean).slice(0, 3), nextTime: s(d.nextTime, 180), at: new Date().toISOString(),
   };
   const c = lastCoaching;
-  const r = await sendText([
-    `coach 🧠 ${c.summary}`,
-    ...(c.patterns.length ? [`patterns:\n${c.patterns.map((x) => `- ${x}`).join("\n")}`] : []),
-    ...(c.priorities.length ? [`follow up first:\n${c.priorities.map((p, i) => `${i + 1}. ${p.name}: ${p.action}${p.why ? ` (${p.why})` : ""}`).join("\n")}`] : []),
-    ...(c.coaching.length ? [`next conversation:\n${c.coaching.map((x) => `- ${x}`).join("\n")}`] : []),
-    ...(c.nextTime ? [c.nextTime] : []),
-  ]);
+  const r = await sendText(coachBubbles(c));
   return `coaching stored (${c.priorities.length} priorities); text ${r.sent ? "sent" : `not sent (${r.reason})`}`;
 }
 

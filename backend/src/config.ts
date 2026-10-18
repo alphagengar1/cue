@@ -51,6 +51,8 @@ export const config = {
     networkingCoach: env("CREAO_NETWORKING_COACH_KEY"),
   },
   wearerTimezone: env("WEARER_TIMEZONE") ?? "America/Los_Angeles",
+  // LinkedIn as a fact source. On for the hackathon (professional-only still applies); ALLOW_LINKEDIN=0 restores the block.
+  allowLinkedIn: env("ALLOW_LINKEDIN") !== "0",
   publicBaseUrl: env("PUBLIC_BASE_URL"),
   sentryDsn: env("SENTRY_DSN"),
   // Relative to backend/ (systemd and nohup start elsewhere). Demo default: the CREAO sponsors event.

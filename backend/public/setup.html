@@ -3,170 +3,352 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Cue Setup</title>
+<title>Cue</title>
+<meta name="color-scheme" content="dark">
 <style>
   :root {
-    --bg: #f6f6f3; --panel: #ffffff; --ink: #1b1d1f; --muted: #6a6f75; --line: #e2e2dc;
-    --accent: #1f6feb; --accent-ink: #ffffff; --ok: #1a7f37; --warn: #9a6700; --bad: #cf222e;
-    --hud-bg: #050805; --hud-ink: #6dff8a; --hud-dim: #3fa557;
-  }
-  @media (prefers-color-scheme: dark) {
-    :root { --bg: #111315; --panel: #1a1d20; --ink: #e8eaed; --muted: #9aa0a6; --line: #2c3035;
-      --accent: #4c8dff; --accent-ink: #0b0d10; --ok: #3fb950; --warn: #d29922; --bad: #f85149; }
+    --bg: #0e0f0e; --panel: #141514; --panel-2: #1a1c1a; --line: #262826; --line-2: #333633;
+    --ink: #e6e6e3; --muted: #8f928f; --dim: #5e615e;
+    --accent: #3cfa44; --accent-ink: #062408; --hud: #3cfa44;
+    --warn: #e0b84d; --bad: #e5675f;
+    --r: 6px;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
   }
   * { box-sizing: border-box; }
-  body { margin: 0; background: var(--bg); color: var(--ink);
-    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
-  header { padding: 16px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline;
-    border-bottom: 1px solid var(--line); background: var(--panel); }
-  header h1 { margin: 0; font-size: 20px; }
-  header .status { color: var(--muted); font-size: 13px; }
-  main { max-width: 1180px; margin: 0 auto; padding: 16px; display: grid; gap: 16px;
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-  @media (max-width: 860px) { main { grid-template-columns: minmax(0, 1fr); } }
-  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
-  section.wide { grid-column: 1 / -1; }
-  h2 { margin: 0 0 12px; font-size: 16px; }
-  label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
-  input, textarea, select { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px;
-    background: var(--bg); color: var(--ink); font: inherit; }
-  textarea { min-height: 70px; resize: vertical; }
-  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  .row > input { flex: 1 1 200px; width: auto; }
-  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
-  @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } }
-  button { padding: 8px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg);
-    color: var(--ink); font: inherit; cursor: pointer; }
-  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-  button:disabled { opacity: .5; cursor: default; }
-  .goals { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
-  .goals button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
-  .msg { font-size: 13px; margin-top: 8px; min-height: 1.2em; color: var(--muted); word-break: break-word; }
-  .msg.ok { color: var(--ok); } .msg.bad { color: var(--bad); }
-  .tabs { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
-  .tabs button[aria-selected="true"] { border-color: var(--accent); color: var(--accent); }
-  .meta { font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); word-break: break-word; }
-  .pill { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; border: 1px solid var(--line); }
-  .pill.high { color: var(--ok); border-color: var(--ok); }
-  .pill.medium { color: var(--warn); border-color: var(--warn); }
-  .pill.low, .pill.fallback { color: var(--bad); border-color: var(--bad); }
-  .cards { display: grid; gap: 8px; margin-top: 10px; }
-  .card { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
-  .card .k { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
-  .card .t { font-weight: 600; }
-  .card .s { font-size: 12px; color: var(--muted); }
-  table.timing { border-collapse: collapse; font-size: 13px; margin-top: 8px; }
-  table.timing td { padding: 2px 12px 2px 0; }
-  .bar { height: 8px; background: var(--accent); border-radius: 4px; min-width: 2px; }
-  ul.files { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
-  ul.files li { display: flex; gap: 8px; align-items: center; justify-content: space-between;
-    border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
-  /* HUD mirror */
-  .hud { background: var(--hud-bg); color: var(--hud-ink); border-radius: 10px; padding: 16px;
-    font: 16px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; min-height: 180px; }
-  .hud .hcard { border-top: 1px solid var(--hud-dim); padding: 10px 0; white-space: pre-wrap; }
-  .hud .hcard:first-of-type { border-top: 0; }
-  .hud .hhead { color: var(--hud-dim); font-size: 13px; }
-  .hud .hsrc { color: var(--hud-dim); font-size: 13px; }
-  .hud .empty { color: var(--hud-dim); }
-  body.mirror-only header, body.mirror-only main > section:not(#mirror) { display: none; }
-  body.mirror-only main { grid-template-columns: 1fr; max-width: 900px; }
-  body.mirror-only #mirror { background: var(--hud-bg); border-color: var(--hud-bg); }
-  body.mirror-only #mirror h2, body.mirror-only #mirror .meta { color: var(--hud-dim); }
-  body.mirror-only .hud { font-size: 24px; }
+  html { background: var(--bg); }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font); -webkit-font-smoothing: antialiased; min-height: 100vh; }
+  a { color: var(--muted); text-decoration: none; }
+  a:hover { color: var(--ink); }
+  h1, h2 { margin: 0; font-weight: 600; font-size: 14px; }
+  .eyebrow { font-size: 12px; color: var(--muted); }
+  .sub { color: var(--muted); font-size: 13px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
+  button { padding: 6px 12px; border-radius: var(--r); border: 1px solid var(--line-2); background: var(--panel); color: var(--ink);
+    font: inherit; font-size: 13px; cursor: pointer; white-space: nowrap; }
+  button:hover { background: var(--panel-2); }
+  button:focus-visible { outline: 1px solid var(--ink); outline-offset: 1px; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+  button.primary:hover { background: #4dff55; }
+  button.quiet { border-color: transparent; background: transparent; color: var(--muted); }
+  button.quiet:hover { color: var(--ink); background: transparent; }
+  button:disabled { opacity: .45; cursor: default; }
+
+  /* ---------- header ---------- */
+  .top { border-bottom: 1px solid var(--line); }
+  .top .wrap { display: flex; align-items: center; gap: 14px; height: 52px; }
+  .wordmark { font-size: 15px; font-weight: 700; }
+  .tagline { color: var(--muted); font-size: 13px; }
+  .top .right { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+  #status { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); }
+  #status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); }
+  #status.on .dot { background: var(--accent); }
+  #status.off .dot { background: var(--bad); }
+  #status.off { color: var(--bad); }
+  .tokenbox { display: none; align-items: center; gap: 6px; }
+  .tokenbox.show { display: inline-flex; }
+  .tokenbox input { width: 170px; padding: 5px 8px; font-size: 13px; }
+  .iconbtn { padding: 4px 6px; font-size: 13px; }
+
+  /* ---------- layout ---------- */
+  main.wrap { padding-top: 28px; padding-bottom: 56px; display: grid; gap: 28px; }
+  .hero { display: grid; grid-template-columns: 576px minmax(0, 1fr); gap: 28px; align-items: start; }
+  @media (max-width: 1060px) { .hero { grid-template-columns: minmax(0, 1fr); } }
+
+  /* ---------- HUD (576x288, glasses geometry) ---------- */
+  .hud-wrap { display: grid; gap: 8px; }
+  .hud-frame { width: 576px; max-width: 100%; }
+  .hud { position: relative; width: 576px; height: 288px; background: #000; color: var(--hud); border: 1px solid var(--line);
+    font: 19px/27px var(--mono); overflow: hidden; }
+  .hud .c { position: absolute; left: 0; width: 576px; margin: 0; padding: 4px; white-space: pre-wrap; overflow-wrap: anywhere; overflow: hidden; color: var(--hud); }
+  .hud .hdr { top: 0; height: 35px; } .hud .body { top: 44px; height: 143px; } .hud .foot { top: 253px; height: 35px; }
+  .hud-foot { display: flex; align-items: center; gap: 2px; font-size: 12px; }
+  .hud-tabs { display: inline-flex; gap: 2px; }
+  .hud-tabs button { border: 0; background: transparent; padding: 2px 8px; font-size: 12px; color: var(--muted); border-radius: var(--r); }
+  .hud-tabs button:hover { color: var(--ink); background: var(--panel-2); }
+  .hud-tabs button[aria-pressed="true"] { color: var(--ink); background: var(--panel-2); }
+  .hud-tabs:empty { display: none; }
+  #mirrorMeta { margin-left: auto; color: var(--dim); }
+
+  /* ---------- last brief ---------- */
+  .brief .eyebrow { margin-bottom: 10px; display: flex; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .pill { font-size: 12px; color: var(--muted); }
+  .pill.high { color: var(--ink); }
+  .pill.medium { color: var(--warn); }
+  .pill.low, .pill.fallback { color: var(--bad); }
+  .brief-empty { color: var(--dim); font-size: 13px; padding: 12px 0; }
+  .cards { display: grid; gap: 8px; }
+  .bcard { border-radius: var(--r); padding: 10px 14px; background: var(--panel); border: 1px solid var(--line); }
+  .bcard .k { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .bcard .t { font-weight: 600; }
+  .bcard .b { font-size: 13.5px; color: #c9cbc8; }
+  .bcard .s { font: 12px/1.6 var(--mono); color: var(--dim); margin-top: 3px; }
+  .cands { display: flex; gap: 6px; flex-wrap: wrap; align-items: center; margin-bottom: 10px; font-size: 13px; color: var(--muted); }
+
+  /* ---------- lookup bar ---------- */
+  .lookup { display: grid; gap: 6px; }
+  .lookup-row { display: flex; gap: 8px; align-items: stretch; background: var(--panel); border: 1px solid var(--line-2); border-radius: var(--r); padding: 6px; }
+  .lookup-row:focus-within { border-color: var(--muted); }
+  .lookup-row input { flex: 1; border: 0; background: transparent; font-size: 15px; padding: 6px 8px; color: var(--ink); min-width: 0; }
+  .lookup-row input:focus { outline: none; }
+  .lookup-row input::placeholder { color: var(--dim); }
+  .lookup-row > button.primary { padding: 8px 18px; font-size: 14px; }
+  details.menu { position: relative; display: flex; }
+  details.menu > summary { list-style: none; display: inline-flex; align-items: center; gap: 6px; padding: 0 10px; border-radius: var(--r);
+    color: var(--muted); font-size: 13px; cursor: pointer; }
+  details.menu > summary::-webkit-details-marker { display: none; }
+  details.menu > summary:hover, details.menu[open] > summary { background: var(--panel-2); color: var(--ink); }
+  details.menu > summary b { color: var(--ink); font-weight: 600; }
+  .menu-panel { position: absolute; top: calc(100% + 8px); right: 0; z-index: 20; min-width: 230px; background: var(--panel); border: 1px solid var(--line-2);
+    border-radius: var(--r); padding: 4px; display: grid; gap: 1px; }
+  .goals { display: grid; gap: 1px; }
+  .goals button { text-align: left; border: 0; background: transparent; border-radius: 4px; padding: 7px 10px; font-size: 13px; color: var(--ink); display: flex; justify-content: space-between; }
+  .goals button:hover { background: var(--panel-2); }
+  .goals button[aria-pressed="true"] { background: var(--panel-2); }
+  .goals button[aria-pressed="true"]::after { content: "•"; color: var(--accent); }
+  .menu-panel .check { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); padding: 8px 10px 6px; border-top: 1px solid var(--line); margin-top: 3px; cursor: pointer; }
+  .check input { width: 13px; height: 13px; accent-color: var(--accent); margin: 0; }
+  .result-line { display: flex; gap: 14px; align-items: baseline; flex-wrap: wrap; font-size: 13px; color: var(--muted); min-height: 20px; padding: 0 4px; }
+  .result-line .big { color: var(--ink); font-weight: 600; }
+  .result-line .t { font-family: var(--mono); font-size: 12px; color: var(--dim); }
+  .result-line .t b { color: var(--muted); font-weight: 500; }
+  #lookupTiming { display: inline-flex; gap: 12px; align-items: baseline; flex-wrap: wrap; }
+  #lookupTiming:empty { display: none; }
+  .result-line .cap { font-size: 12px; color: var(--dim); }
+  .result-line .cap.on { color: var(--muted); }
+  .result-line .cap.warn { color: var(--warn); }
+  details.notes summary { cursor: pointer; font-size: 12px; color: var(--dim); list-style: none; }
+  details.notes summary::-webkit-details-marker { display: none; }
+  details.notes[open] summary { color: var(--muted); }
+  details.notes .meta { font: 12px/1.6 var(--mono); color: var(--dim); overflow-wrap: anywhere; padding: 6px 0 0; }
+  .msg { font-size: 13px; color: var(--muted); overflow-wrap: anywhere; }
+  .msg.ok { color: var(--ink); } .msg.bad { color: var(--bad); }
+  .msg:empty { display: none; }
+
+  /* ---------- setup: one box per category ---------- */
+  .setup { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .setup { grid-template-columns: 1fr; } }
+  .row-item { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--r); min-width: 0; }
+  .row-item .txt { min-width: 0; }
+  .row-item .txt .h { display: flex; flex-direction: column; gap: 6px; font-weight: 500; font-size: 14px; }
+  .row-item .txt .h .eyebrow { font-weight: 600; font-size: 15px; color: var(--ink); padding-bottom: 8px; border-bottom: 1px solid var(--line); margin-bottom: 2px; }
+  .row-item .txt .d { color: var(--muted); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 2px; }
+  .row-item .txt .d:empty::before { content: "Not set up yet"; color: var(--dim); }
+  .row-item .act { display: flex; gap: 8px; align-items: center; margin-top: auto; }
+  .tags { display: inline; color: var(--dim); }
+  .tags span::before { content: " \u00b7 "; }
+
+  /* ---------- dialogs ---------- */
+  dialog { background: var(--panel); color: var(--ink); border: 1px solid var(--line-2); border-radius: 8px; padding: 0; width: min(700px, calc(100vw - 32px)); max-height: calc(100vh - 48px); }
+  dialog::backdrop { background: rgba(0, 0, 0, .55); }
+  .dlg-h { display: flex; align-items: center; gap: 12px; padding: 14px 20px; border-bottom: 1px solid var(--line); }
+  .dlg-h .sub { margin-right: auto; }
+  .dlg-b { padding: 18px 20px; overflow: auto; max-height: calc(100vh - 180px); }
+  .dlg-f { display: flex; align-items: center; gap: 10px; padding: 12px 20px; border-top: 1px solid var(--line); }
+  .dlg-f .msg { margin-right: auto; }
+  label { display: block; font-size: 12px; color: var(--muted); margin: 0 0 4px; }
+  input, textarea { width: 100%; padding: 7px 9px; border: 1px solid var(--line-2); border-radius: var(--r); background: var(--bg); color: var(--ink); font: inherit; }
+  input::placeholder, textarea::placeholder { color: var(--dim); }
+  input:focus, textarea:focus { outline: none; border-color: var(--muted); }
+  input[aria-invalid="true"] { border-color: var(--bad); }
+  textarea { min-height: 68px; resize: vertical; }
+  .grid { display: grid; gap: 12px 14px; }
+  .g3 { grid-template-columns: 1fr 1fr 1fr; } .g2 { grid-template-columns: 1fr 1fr; }
+  @media (max-width: 640px) { .g3, .g2 { grid-template-columns: 1fr; } }
+  .field { min-width: 0; }
+  .field .err { display: none; font-size: 12px; color: var(--bad); margin-top: 3px; }
+  .field.bad .err { display: block; }
+  .upload { display: flex; gap: 12px; align-items: center; flex-wrap: wrap; padding: 12px 14px; border: 1px solid var(--line-2); border-radius: var(--r); margin-bottom: 18px; }
+  .upload .txt { flex: 1 1 200px; }
+  .upload .txt b { display: block; font-size: 13.5px; }
+  .upload .txt span { font-size: 12.5px; color: var(--muted); }
+  .upload input[type="file"] { position: absolute; width: 1px; height: 1px; opacity: 0; overflow: hidden; }
+  .filename { font-size: 12.5px; color: var(--muted); max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .upload .msg { flex-basis: 100%; }
+  details.more { margin-top: 16px; }
+  details.more > summary { cursor: pointer; font-size: 13px; color: var(--muted); list-style: none; }
+  details.more > summary::-webkit-details-marker { display: none; }
+  details.more > summary:hover { color: var(--ink); }
+  details.more > .grid, details.more > .tabs { margin-top: 12px; }
+  .tabs { display: flex; gap: 2px; margin: 0 0 12px; border-bottom: 1px solid var(--line); }
+  .tabs button { border: 0; border-radius: 0; background: transparent; color: var(--muted); padding: 6px 10px; margin-bottom: -1px; border-bottom: 1px solid transparent; }
+  .tabs button:hover { color: var(--ink); background: transparent; }
+  .tabs button[aria-selected="true"] { color: var(--ink); border-bottom-color: var(--ink); }
+  ul.files { list-style: none; margin: 0; padding: 0; border: 1px solid var(--line); border-radius: var(--r); }
+  ul.files li { display: flex; gap: 12px; align-items: center; justify-content: space-between; padding: 9px 12px; }
+  ul.files li + li { border-top: 1px solid var(--line); }
+  ul.files li .meta { font: 12px/1.5 var(--mono); color: var(--dim); display: block; }
+  #eventMeta { font: 12px/1.5 var(--mono); color: var(--dim); margin-bottom: 12px; }
+
+  /* ---------- toast ---------- */
+  #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); opacity: 0; pointer-events: none; z-index: 50;
+    background: var(--panel-2); color: var(--ink); border: 1px solid var(--line-2); border-radius: var(--r); padding: 7px 14px; font-size: 13px; transition: opacity .15s; }
+  #toast.show { opacity: 1; }
+  #toast.bad { border-color: var(--bad); }
+
+  /* ---------- ?view=mirror: only the HUD, full-bleed ---------- */
+  body.mirror-only { background: #000; overflow: hidden; }
+  body.mirror-only .top, body.mirror-only main > :not(.hero), body.mirror-only .hero > :not(#mirror), body.mirror-only #mirror .hud-foot, body.mirror-only #toast { display: none; }
+  body.mirror-only main.wrap, body.mirror-only .hero { display: block; max-width: none; padding: 0; }
+  body.mirror-only #mirror { position: fixed; inset: 0; display: grid; place-items: center; }
+  body.mirror-only .hud-frame { transform: scale(var(--hud-scale, 2)); transform-origin: center; }
+  body.mirror-only .hud { border-color: #000; }
 </style>
 </head>
 <body>
-<header>
-  <h1>Cue setup</h1>
-  <span class="status" id="status">connecting...</span>
-  <span class="row" style="margin-left:auto">
-    <input id="token" type="password" placeholder="device token (if set)" autocomplete="off" style="width:200px">
-    <button id="saveToken">Save token</button>
-    <a href="?view=mirror" target="_blank">Mirror only</a>
-  </span>
+
+<header class="top">
+  <div class="wrap">
+    <h1 class="wordmark">Cue</h1>
+    <span class="tagline">Networking briefs for Even Realities G2</span>
+    <div class="right">
+      <span id="status"><span class="dot"></span><span class="txt">connecting…</span></span>
+      <span class="tokenbox" id="tokenbox">
+        <input id="token" type="password" placeholder="Device token" autocomplete="off" aria-label="Device token">
+        <button id="saveToken">Save</button>
+      </span>
+      <button class="quiet iconbtn" id="tokenToggle" title="Device token">Token</button>
+      <a href="?view=mirror" target="_blank" class="sub" title="Open only the glasses display, for judges">Judge view</a>
+    </div>
+  </div>
 </header>
 
-<main>
-  <section id="lookup">
-    <h2>Typed lookup</h2>
-    <form id="lookupForm" class="row">
-      <input id="lookupText" placeholder="Maya, Even Realities, devrel" autocomplete="off" maxlength="300">
+<main class="wrap">
+
+  <!-- ===== Hero: HUD mirror + last brief ===== -->
+  <div class="hero">
+    <section id="mirror">
+      <div class="hud-wrap">
+        <div class="hud-frame">
+          <div class="hud" id="hud" aria-live="polite">
+            <pre class="c hdr" id="hudHdr"></pre>
+            <pre class="c body" id="hudBody"></pre>
+            <pre class="c foot" id="hudFoot"></pre>
+          </div>
+        </div>
+        <div class="hud-foot">
+          <div class="hud-tabs" id="hudTabs"></div>
+          <span id="mirrorMeta">waiting for the glasses…</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="brief" id="brief">
+      <div class="eyebrow" id="briefHead">Last brief</div>
+      <div id="lookupOut"><div class="brief-empty">Nothing yet. Look someone up below, or hold the temple on the glasses.</div></div>
+    </section>
+  </div>
+
+  <!-- ===== Lookup bar (the one primary action) ===== -->
+  <section class="lookup" id="lookup">
+    <form id="lookupForm" class="lookup-row">
+      <input id="lookupText" placeholder="Name, company, role — e.g. David Cramer, Sentry, co-founder" autocomplete="off" maxlength="300" aria-label="Lookup text">
+      <details class="menu" id="goalMenu">
+        <summary title="Your goal for this event shapes card 3">Goal <b id="goalLabel">…</b></summary>
+        <div class="menu-panel">
+          <div class="goals" id="goals" role="group" aria-label="Event goal"></div>
+          <label class="check"><input type="checkbox" id="regen" checked> Rewrite card 3 of the last brief too</label>
+        </div>
+      </details>
       <button class="primary" type="submit" id="lookupBtn">Look up</button>
     </form>
-    <div class="msg" id="lookupMsg"></div>
-    <div id="lookupOut"></div>
-  </section>
-
-  <section id="mirror">
-    <h2>Latest brief (mirror)</h2>
-    <div class="meta" id="mirrorMeta">waiting for a brief...</div>
-    <div class="hud" id="hud"><div class="empty">No brief yet. Do a lookup here or on the glasses.</div></div>
-  </section>
-
-  <section id="goal" class="wide">
-    <h2>Goal</h2>
-    <div class="goals" id="goals"></div>
-    <label class="row" style="color:var(--ink)"><input type="checkbox" id="regen" checked style="width:auto">
-      Also rewrite card 3 of the latest brief</label>
-    <div class="msg" id="goalMsg"></div>
-  </section>
-
-  <section id="profile">
-    <h2>Wearer profile</h2>
-    <form id="profileForm">
-      <div class="grid2">
-        <div><label for="p_name">Name</label><input id="p_name" required></div>
-        <div><label for="p_school">School</label><input id="p_school"></div>
-        <div><label for="p_major">Major</label><input id="p_major"></div>
-        <div><label for="p_goalNote">Goal note</label><input id="p_goalNote" placeholder="summer 2027 SWE intern"></div>
-        <div><label for="p_availability">Availability (for meeting proposals)</label><input id="p_availability" placeholder="weekday afternoons, not Tuesdays"></div>
-      </div>
-      <label for="p_summary">Summary (2-3 lines, sent to the brief writer)</label>
-      <textarea id="p_summary"></textarea>
-      <label for="p_projects">Projects (one per line)</label>
-      <textarea id="p_projects"></textarea>
-      <label for="p_interests">Interests (comma separated)</label>
-      <input id="p_interests">
-      <label for="p_resumeFile">Resume (PDF or .txt): fills the fields above for you to check, then Save</label>
-      <div class="row"><input id="p_resumeFile" type="file" accept=".pdf,.txt,application/pdf,text/plain" style="width:auto"><button type="button" id="p_resumeRead">Read resume</button><span class="msg" id="resumeMsg"></span></div>
-      <label for="p_resume">Resume text (stored on the server only, never sent to the fast LLM or Sentry)</label>
-      <textarea id="p_resume" style="min-height:120px"></textarea>
-      <div class="row" style="margin-top:10px"><button class="primary" type="submit">Save profile</button></div>
-      <div class="msg" id="profileMsg"></div>
-    </form>
-  </section>
-
-  <section id="event">
-    <h2>Event</h2>
-    <div class="meta" id="eventMeta">-</div>
-    <div class="tabs" role="tablist">
-      <button type="button" data-tab="bundled" aria-selected="true">Bundled file</button>
-      <button type="button" data-tab="paste" aria-selected="false">Paste list</button>
-      <button type="button" data-tab="json" aria-selected="false">Paste JSON</button>
+    <div class="result-line" id="resultLine">
+      <span class="msg" id="lookupMsg"></span>
+      <span id="lookupTiming"></span>
+      <span class="msg" id="goalMsg"></span>
+      <details class="notes" id="lookupNotesWrap" hidden><summary>pipeline notes</summary><div class="meta" id="lookupNotes"></div></details>
     </div>
-    <div data-panel="bundled">
-      <ul class="files" id="files"><li>loading...</li></ul>
-    </div>
-    <form data-panel="paste" id="pasteForm" hidden>
-      <div class="grid2">
-        <div><label for="e_name">Event name</label><input id="e_name" required></div>
-        <div><label for="e_date">Date</label><input id="e_date" type="date" required></div>
+  </section>
+
+  <!-- ===== Setup: two summary rows, editors open on demand ===== -->
+  <section class="setup">
+    <div class="row-item" id="profileRow">
+      <div class="txt">
+        <div class="h"><span class="eyebrow">Wearer</span><span id="profileName">—</span></div>
+        <div class="d" id="profileLine"></div>
       </div>
-      <label for="e_orgs">Organizations (one per line)</label>
-      <textarea id="e_orgs" placeholder="Anduril&#10;Sentry"></textarea>
-      <label for="e_people">People (one per line: Name, Org, Role)</label>
-      <textarea id="e_people" placeholder="Priya Shah, Anduril, recruiter"></textarea>
-      <div class="row" style="margin-top:10px"><button class="primary" type="submit">Load event</button></div>
-    </form>
-    <form data-panel="json" id="jsonForm" hidden>
-      <label for="e_json">Either a create-event body {name, date, orgs, people, organizations?} or a data/*.json file</label>
-      <textarea id="e_json" style="min-height:160px" spellcheck="false"></textarea>
-      <div class="row" style="margin-top:10px"><button class="primary" type="submit">Load event</button></div>
-    </form>
-    <div class="msg" id="eventMsg"></div>
+      <div class="act">
+        <button type="button" id="profileUpload">Upload resume</button>
+        <button type="button" id="profileEdit">Edit</button>
+      </div>
+    </div>
+    <div class="row-item" id="eventRow">
+      <div class="txt">
+        <div class="h"><span class="eyebrow">Event</span><span id="eventName">—</span></div>
+        <div class="d" id="eventSummary"></div>
+      </div>
+      <div class="act"><button type="button" id="eventChange">Change</button></div>
+    </div>
   </section>
 </main>
+
+<!-- ===== Profile editor ===== -->
+<dialog id="profileDialog">
+  <form id="profileForm" novalidate>
+    <div class="dlg-h"><h2>Your profile</h2><span class="sub">used to find common ground and shape your ask</span><button type="button" class="quiet" data-close>Close</button></div>
+    <div class="dlg-b">
+      <div class="upload">
+        <div class="txt"><b>Upload your resume and we fill this in</b><span>PDF or .txt. Review the fields, then save.</span></div>
+        <button type="button" id="resumePick">Choose file</button><span class="filename" id="resumeName">no file chosen</span>
+        <input id="p_resumeFile" type="file" accept=".pdf,.txt,application/pdf,text/plain">
+        <button type="button" class="primary" id="p_resumeRead">Read resume</button>
+        <div class="msg" id="resumeMsg"></div>
+      </div>
+      <div class="grid g3">
+        <div class="field" id="f_name"><label for="p_name">Name</label><input id="p_name" required autocomplete="off"><div class="err">Name is required.</div></div>
+        <div class="field"><label for="p_school">School</label><input id="p_school"></div>
+        <div class="field"><label for="p_major">Major</label><input id="p_major"></div>
+        <div class="field" style="grid-column:1/-1"><label for="p_summary">Summary <span class="sub">(2–3 lines)</span></label><textarea id="p_summary"></textarea></div>
+        <div class="field" style="grid-column:1/-1"><label for="p_projects">Projects <span class="sub">(one per line)</span></label><textarea id="p_projects"></textarea></div>
+        <div class="field" style="grid-column:1/-1"><label for="p_interests">Interests <span class="sub">(comma separated)</span></label><input id="p_interests"></div>
+      </div>
+      <details class="more">
+        <summary>More: goal note, availability, resume text</summary>
+        <div class="grid g2">
+          <div class="field"><label for="p_goalNote">Goal note</label><input id="p_goalNote" placeholder="summer 2027 SWE intern"></div>
+          <div class="field"><label for="p_availability">Availability <span class="sub">(for meeting proposals)</span></label><input id="p_availability" placeholder="weekday afternoons, not Tuesdays" maxlength="200"></div>
+          <div class="field" style="grid-column:1/-1"><label for="p_resume">Resume text <span class="sub">(stored on the server only, never sent to the fast LLM or Sentry)</span></label><textarea id="p_resume" style="min-height:140px" spellcheck="false"></textarea></div>
+        </div>
+      </details>
+    </div>
+    <div class="dlg-f"><div class="msg" id="profileMsg"></div><button type="button" class="quiet" data-close>Cancel</button><button class="primary" type="submit" id="profileSave">Save</button></div>
+  </form>
+</dialog>
+
+<!-- ===== Event picker ===== -->
+<dialog id="eventDialog">
+  <div class="dlg-h"><h2>Event</h2><span class="sub">which companies and people to preload</span><button type="button" class="quiet" data-close>Close</button></div>
+  <div class="dlg-b">
+    <div id="eventMeta">-</div>
+    <div data-panel="bundled">
+      <ul class="files" id="files"><li>loading…</li></ul>
+    </div>
+    <details class="more" id="eventAdvanced">
+      <summary>Paste your own list</summary>
+      <div class="tabs" role="tablist" style="margin-top:12px">
+        <button type="button" data-tab="paste" aria-selected="true">Paste list</button>
+        <button type="button" data-tab="json" aria-selected="false">Paste JSON</button>
+      </div>
+      <form data-panel="paste" id="pasteForm">
+        <div class="grid g2">
+          <div class="field"><label for="e_name">Event name</label><input id="e_name" required></div>
+          <div class="field"><label for="e_date">Date</label><input id="e_date" type="date" required></div>
+          <div class="field"><label for="e_orgs">Organizations (one per line)</label><textarea id="e_orgs" placeholder="Anduril&#10;Sentry"></textarea></div>
+          <div class="field"><label for="e_people">People (one per line: Name, Org, Role)</label><textarea id="e_people" placeholder="Priya Shah, Anduril, recruiter"></textarea></div>
+        </div>
+        <div style="margin-top:12px"><button class="primary" type="submit">Load event</button></div>
+      </form>
+      <form data-panel="json" id="jsonForm" hidden>
+        <label for="e_json">A create-event body {name, date, orgs, people, organizations?} or a data/*.json file</label>
+        <textarea id="e_json" style="min-height:160px;font-family:var(--mono);font-size:13px" spellcheck="false"></textarea>
+        <div style="margin-top:12px"><button class="primary" type="submit">Load event</button></div>
+      </form>
+    </details>
+  </div>
+  <div class="dlg-f"><div class="msg" id="eventMsg"></div><button type="button" class="quiet" data-close>Done</button></div>
+</dialog>
+
+<div id="toast" role="status"></div>
 
 <script>
 (() => {
@@ -175,17 +357,25 @@
     ["internship", "Internship"], ["cofounder", "Cofounder"], ["learn", "Learn"],
     ["teammates_sponsors", "Teammates / sponsors"], ["mentorship", "Mentorship"],
   ];
+  const GOAL_LABEL = Object.fromEntries(GOALS);
   const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
   const store = {
     get(k) { try { return localStorage.getItem(k); } catch { return null; } },
     set(k, v) { try { localStorage.setItem(k, v); } catch {} },
   };
 
-  if (new URLSearchParams(location.search).get("view") === "mirror") document.body.classList.add("mirror-only");
+  const mirrorOnly = new URLSearchParams(location.search).get("view") === "mirror";
+  if (mirrorOnly) {
+    document.body.classList.add("mirror-only");
+    const fit = () => document.documentElement.style.setProperty("--hud-scale",
+      String(Math.max(1, Math.min(innerWidth / 576, innerHeight / 288) * 0.92)));
+    addEventListener("resize", fit); fit();
+  }
 
   let token = store.get("cue.token") || "";
   $("token").value = token;
-  $("saveToken").onclick = () => { token = $("token").value.trim(); store.set("cue.token", token); refreshAll(); };
+  $("saveToken").onclick = () => { token = $("token").value.trim(); store.set("cue.token", token); $("tokenbox").classList.remove("show"); refreshAll(); };
+  $("tokenToggle").onclick = () => { $("tokenbox").classList.toggle("show"); if ($("tokenbox").classList.contains("show")) $("token").focus(); };
 
   async function api(method, path, body) {
     const headers = {};
@@ -204,67 +394,123 @@
     return { data, res, ms };
   }
   const say = (el, text, kind) => { el.textContent = text; el.className = "msg" + (kind ? " " + kind : ""); };
+  let toastTimer;
+  function toast(text, bad) {
+    const t = $("toast"); t.textContent = text; t.className = "show" + (bad ? " bad" : "");
+    clearTimeout(toastTimer); toastTimer = setTimeout(() => { t.className = ""; }, 2600);
+  }
+  document.querySelectorAll("dialog [data-close]").forEach((b) => b.onclick = () => b.closest("dialog").close());
 
   // --- State / header
   let state = null;
+  const caps = { llm: null, decision: false, creao: null }; // learned from briefs; /api/state does not expose them
+  function setStatus(cls, text) { $("status").className = cls; $("status").querySelector(".txt").textContent = text; }
   async function loadState() {
     try {
       const { data } = await api("GET", "/api/state");
       state = data;
       const ev = data.event;
-      $("status").textContent = ev
-        ? `event: ${ev.name} (${ev.loadStatus}, ${data.orgs.length} orgs) | goal: ${data.goal} | wearer: ${data.profile.name}`
-        : `no event loaded | goal: ${data.goal}`;
+      setStatus("on", ev ? `online · ${ev.name}` : "online · no event");
+      const goalChanged = state && lastBrief && $("goalLabel").textContent !== (GOAL_LABEL[data.goal] || data.goal);
       renderGoals(data.goal);
+      if (goalChanged) renderHud(lastBrief); // card 3's header names the goal
+      $("eventName").textContent = ev ? ev.name : "No event loaded";
       if (ev) {
         const { data: d } = await api("GET", "/api/events/" + encodeURIComponent(ev.id));
         $("eventMeta").textContent = `${ev.name} | ${ev.date} | ${ev.loadStatus}` +
           (ev.creaoRunId ? ` | CREAO run ${ev.creaoRunId}` : "") + ` | ${d.counts.orgs} orgs, ${d.counts.people} people`;
+        $("eventSummary").textContent = `${ev.date} · ${ev.loadStatus} · ${d.counts.orgs} orgs, ${d.counts.people} ${d.counts.people === 1 ? "person" : "people"}` +
+          (ev.creaoRunId ? " · CREAO loaded" : "");
       } else {
         $("eventMeta").textContent = "No active event.";
+        $("eventSummary").textContent = "";
       }
+      if (!lastBrief) renderHud(null);
     } catch (e) {
-      $("status").textContent = e.status === 401 ? "unauthorized: paste the device token" : "server unreachable: " + e.message;
+      state = null;
+      setStatus("off", e.status === 401 ? "needs device token" : "backend offline");
+      if (e.status === 401) { $("tokenbox").classList.add("show"); $("token").focus(); }
+      $("eventSummary").textContent = "";
     }
   }
 
-  // --- Goal
+  // --- Goal (menu in the lookup bar)
   function renderGoals(current) {
+    $("goalLabel").textContent = GOAL_LABEL[current] || current;
     $("goals").innerHTML = GOALS.map(([g, label]) =>
       `<button type="button" data-goal="${g}" aria-pressed="${g === current}">${esc(label)}</button>`).join("");
   }
   $("goals").onclick = async (ev) => {
     const g = ev.target.closest("button")?.dataset.goal;
     if (!g) return;
+    $("goalMenu").open = false;
     const body = { goal: g };
     if ($("regen").checked && lastBrief) body.briefId = lastBrief.id;
-    say($("goalMsg"), "saving...");
+    say($("goalMsg"), "");
+    $("goalLabel").textContent = GOAL_LABEL[g] + "…";
     try {
       const { data, res, ms } = await api("PUT", "/api/goal", body);
       renderGoals(data.goal);
-      say($("goalMsg"), `goal set to ${data.goal}` + (data.brief ? `; card 3 rewritten (v${data.brief.version}, ${ms}ms${res.headers.get("x-cue-fallback") ? ", template" : ""})` : ""), "ok");
+      toast(`Goal: ${GOAL_LABEL[data.goal] || data.goal}` + (data.brief ? ` · card 3 rewritten in ${(ms / 1000).toFixed(1)} s${res.headers.get("x-cue-fallback") ? " (template)" : ""}` : ""));
       if (data.brief) showLookup(data.brief, res, ms);
+      else if (lastBrief) renderHud(lastBrief); // card 3's header names the goal
       loadState();
-    } catch (e) { say($("goalMsg"), e.message, "bad"); }
+    } catch (e) { renderGoals(state?.goal || "internship"); say($("goalMsg"), e.message, "bad"); }
   };
+  document.addEventListener("click", (ev) => { if (!ev.target.closest("#goalMenu")) $("goalMenu").open = false; });
 
   // --- Profile
   const lines = (s) => s.split("\n").map((x) => x.trim()).filter(Boolean);
+  let profile = null;
+  function renderProfileRow(p) {
+    const name = p?.name || "";
+    $("profileName").textContent = name || "Not set up";
+    const bits = [p?.school, p?.major, p?.goalNote].filter(Boolean);
+    const tags = (p?.interests || []).slice(0, 4);
+    $("profileLine").innerHTML = esc(bits.join(" · ")) + (tags.length ? ` <span class="tags">${tags.map((t) => `<span>${esc(t)}</span>`).join("")}</span>` : "");
+  }
+  function fillProfileForm(p) {
+    $("p_name").value = p.name || ""; $("p_school").value = p.school || ""; $("p_major").value = p.major || "";
+    $("p_goalNote").value = p.goalNote || ""; $("p_summary").value = p.summary || ""; $("p_availability").value = p.availability || "";
+    $("p_projects").value = (p.projects || []).join("\n"); $("p_interests").value = (p.interests || []).join(", ");
+    $("p_resume").value = p.resumeText || "";
+    validateName(true);
+  }
   async function loadProfile() {
     try {
       const { data } = await api("GET", "/api/profile");
-      const p = data.profile;
-      $("p_name").value = p.name || ""; $("p_school").value = p.school || ""; $("p_major").value = p.major || "";
-      $("p_goalNote").value = p.goalNote || ""; $("p_summary").value = p.summary || ""; $("p_availability").value = p.availability || "";
-      $("p_projects").value = (p.projects || []).join("\n"); $("p_interests").value = (p.interests || []).join(", ");
-      $("p_resume").value = p.resumeText || "";
+      profile = data.profile;
+      renderProfileRow(profile);
+      if (!$("profileDialog").open) fillProfileForm(profile);
     } catch {}
   }
+  const validateName = (quiet) => {
+    const bad = !$("p_name").value.trim();
+    $("f_name").classList.toggle("bad", bad && !quiet); $("p_name").setAttribute("aria-invalid", String(bad && !quiet));
+    return !bad;
+  };
+  $("p_name").addEventListener("blur", () => validateName(false));
+  $("p_name").addEventListener("input", () => { if ($("p_name").value.trim()) validateName(false); });
+  const openProfile = () => {
+    if (profile) fillProfileForm(profile);
+    say($("profileMsg"), ""); say($("resumeMsg"), "");
+    $("profileSave").textContent = "Save";
+    $("profileDialog").showModal();
+  };
+  $("profileEdit").onclick = openProfile;
+  $("profileUpload").onclick = () => { openProfile(); $("p_resumeFile").click(); };
+  $("resumePick").onclick = () => $("p_resumeFile").click();
+  $("p_resumeFile").onchange = () => {
+    const f = $("p_resumeFile").files[0];
+    $("resumeName").textContent = f ? `${f.name} (${Math.max(1, Math.round(f.size / 1024))} KB)` : "no file chosen";
+    say($("resumeMsg"), f ? "Press Read resume." : "");
+  };
   $("p_resumeRead").onclick = async () => {
     const f = $("p_resumeFile").files[0];
-    if (!f) return say($("resumeMsg"), "pick a PDF or .txt first", "bad");
+    if (!f) return say($("resumeMsg"), "Choose a PDF or .txt first.", "bad");
     const type = f.type === "application/pdf" || /\.pdf$/i.test(f.name) ? "application/pdf" : "text/plain";
-    say($("resumeMsg"), "reading (about 10 s)...");
+    say($("resumeMsg"), "Reading your resume (about 10 s)…");
+    $("p_resumeRead").disabled = true;
     try {
       const headers = { "content-type": type };
       if (token) headers.authorization = "Bearer " + token;
@@ -275,11 +521,15 @@
       const fill = (id, v) => { if (v) $(id).value = v; };
       fill("p_name", d.name); fill("p_school", d.school); fill("p_major", d.major); fill("p_summary", d.summary);
       fill("p_projects", (d.projects || []).join("\n")); fill("p_interests", (d.interests || []).join(", ")); fill("p_resume", d.text);
-      say($("resumeMsg"), "filled from the resume. Check the fields, then Save profile.", "ok");
+      validateName(false);
+      say($("resumeMsg"), "Filled in. Check the fields, then Save.", "ok");
+      $("p_name").focus();
     } catch (e) { say($("resumeMsg"), e.message, "bad"); }
+    finally { $("p_resumeRead").disabled = false; }
   };
   $("profileForm").onsubmit = async (ev) => {
     ev.preventDefault();
+    if (!validateName(false)) { $("p_name").focus(); say($("profileMsg"), "Name is required.", "bad"); return; }
     const opt = (v) => v.trim() || undefined;
     const body = {
       name: $("p_name").value.trim(), school: opt($("p_school").value), major: opt($("p_major").value),
@@ -288,15 +538,24 @@
       interests: $("p_interests").value.split(",").map((x) => x.trim()).filter(Boolean),
       resumeText: $("p_resume").value, goal: state?.goal || "internship",
     };
-    say($("profileMsg"), "saving...");
-    try { await api("PUT", "/api/profile", body); say($("profileMsg"), "Profile saved.", "ok"); loadState(); }
-    catch (e) { say($("profileMsg"), e.message, "bad"); }
+    say($("profileMsg"), "Saving…");
+    $("profileSave").disabled = true;
+    try {
+      const { data } = await api("PUT", "/api/profile", body);
+      profile = data?.profile || { ...body };
+      renderProfileRow(profile);
+      $("profileDialog").close();
+      toast("Profile saved");
+      loadState();
+    } catch (e) { say($("profileMsg"), e.message, "bad"); }
+    finally { $("profileSave").disabled = false; }
   };
 
   // --- Event
+  $("eventChange").onclick = () => { say($("eventMsg"), ""); $("eventDialog").showModal(); };
   document.querySelectorAll("[data-tab]").forEach((b) => b.onclick = () => {
     document.querySelectorAll("[data-tab]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
-    document.querySelectorAll("[data-panel]").forEach((p) => p.hidden = p.dataset.panel !== b.dataset.tab);
+    document.querySelectorAll("form[data-panel]").forEach((p) => p.hidden = p.dataset.panel !== b.dataset.tab);
   });
   $("e_date").value = new Date().toISOString().slice(0, 10);
 
@@ -304,27 +563,31 @@
     try {
       const { data } = await api("GET", "/api/events/bundled");
       $("files").innerHTML = data.files.length ? data.files.map((f) =>
-        `<li><span><b>${esc(f.name)}</b> <span class="meta">${esc(f.file)} | ${f.orgs} orgs, ${f.people} people</span></span>
+        `<li><span><b>${esc(f.name)}</b> <span class="meta">${esc(f.file)} · ${f.orgs} orgs, ${f.people} people</span></span>
          <button type="button" data-file="${esc(f.file)}">Load</button></li>`).join("") : "<li>No files in backend/data</li>";
     } catch (e) { $("files").innerHTML = `<li>${esc(e.message)}</li>`; }
   }
   $("files").onclick = async (ev) => {
     const file = ev.target.closest("button")?.dataset.file;
     if (!file) return;
-    say($("eventMsg"), "loading...");
+    say($("eventMsg"), "Loading…");
     try {
       const { data } = await api("POST", "/api/events/bundled", { file });
-      say($("eventMsg"), `Loaded ${data.event.name} from ${file}. Your profile was kept.`, "ok");
+      say($("eventMsg"), "");
+      toast(`Loaded ${data.event.name}. Your profile was kept.`);
+      $("eventDialog").close();
       loadState();
     } catch (e) { say($("eventMsg"), e.message, "bad"); }
   };
 
   async function createEvent(body) {
-    say($("eventMsg"), "loading...");
+    say($("eventMsg"), "Loading…");
     try {
       const { data } = await api("POST", "/api/events", body);
-      say($("eventMsg"), `Event ${data.event.name}: ${data.event.loadStatus}` +
-        (data.event.creaoRunId ? ` (CREAO Event Loader run ${data.event.creaoRunId})` : ""), "ok");
+      say($("eventMsg"), "");
+      toast(`Event ${data.event.name}: ${data.event.loadStatus}` +
+        (data.event.creaoRunId ? ` (CREAO Event Loader run ${data.event.creaoRunId})` : ""));
+      $("eventDialog").close();
       loadState();
     } catch (e) { say($("eventMsg"), e.message, "bad"); }
   }
@@ -362,8 +625,8 @@
   // --- Lookup
   function cardsHtml(brief) {
     return `<div class="cards">${brief.cards.map((c) => `
-      <div class="card"><div class="k">${esc(c.kind)}</div><div class="t">${esc(c.title)}</div>
-      <div>${esc(c.body)}</div>${c.source ? `<div class="s">src: ${esc(c.source)}</div>` : ""}</div>`).join("")}</div>`;
+      <div class="bcard"><div class="k">${esc(c.kind)}</div><div class="t">${esc(c.title)}</div>
+      <div class="b">${esc(c.body)}</div>${c.source ? `<div class="s">src: ${esc(c.source)}</div>` : ""}</div>`).join("")}</div>`;
   }
   function parseTiming(res) {
     const st = res.headers.get("server-timing");
@@ -374,34 +637,50 @@
     }
     return out;
   }
+  // res is null when the brief came from the mirror poll (a glasses lookup or a page reload): no headers, so no timings.
   function showLookup(brief, res, ms) {
-    const fb = res.headers.get("x-cue-fallback");
-    const notes = res.headers.get("x-cue-notes") || "";
-    const timing = parseTiming(res);
-    timing.push(["round trip", ms]);
-    const max = Math.max(...timing.map((t) => t[1]), 1);
+    const fb = res ? res.headers.get("x-cue-fallback") : null;
+    const notes = res ? res.headers.get("x-cue-notes") || "" : "";
+    if (res) caps.llm = fb ? "template" : "live";
+    caps.decision = caps.decision || !!brief.decision;
+    if (brief.slowPath && brief.slowPath.status !== "none") caps.creao = brief.slowPath.status;
+    const q = brief.query;
+    const heard = [q.name, q.org, q.role].filter(Boolean).join(", ");
     const cands = brief.match.confidence === "medium" && brief.match.candidates.length
-      ? `<div class="row" style="margin-top:8px">Which one? ${brief.match.candidates.map((c) =>
+      ? `<div class="cands">Which one? ${brief.match.candidates.map((c) =>
           `<button type="button" data-confirm="${esc(c.personId)}">${esc(c.label)}</button>`).join("")}
           <button type="button" data-confirm="">Neither</button></div>` : "";
-    $("lookupOut").innerHTML = `
-      <div class="row"><span class="pill ${esc(brief.match.confidence)}">${esc(brief.match.confidence)}</span>
-        ${fb ? `<span class="pill fallback">fallback: ${esc(fb)}</span>` : ""}
-        <span class="meta">${esc(brief.id)} v${brief.version} | heard: ${esc(brief.query.name)}${brief.query.org ? ", " + esc(brief.query.org) : ""}${brief.query.role ? ", " + esc(brief.query.role) : ""}</span></div>
-      ${cands}
-      ${cardsHtml(brief)}
-      <table class="timing">${timing.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v}ms</td>
-        <td style="width:160px"><div class="bar" style="width:${Math.round(v / max * 100)}%"></div></td></tr>`).join("")}</table>
-      <div class="meta" style="margin-top:6px">X-Cue-Notes: ${esc(notes) || "-"}</div>`;
+    $("briefHead").innerHTML = `Last brief <span class="pill ${esc(brief.match.confidence)}">${esc(brief.match.confidence)} match</span>` +
+      (fb ? `<span class="pill fallback">${esc(fb)} fallback</span>` : "") +
+      `<span class="sub">heard “${esc(heard)}”</span>`;
+    $("lookupOut").innerHTML = cands + cardsHtml(brief);
     $("lookupOut").dataset.brief = brief.id;
+    $("lookupOut").dataset.key = brief.id + ":" + brief.version;
+    if (!res) return;
+    const order = ["search", "decide", "llm", "store"];
+    const timing = parseTiming(res).filter(([k]) => k !== "total").sort((a, b) => (order.indexOf(a[0]) + 1 || 99) - (order.indexOf(b[0]) + 1 || 99));
+    const capsHtml = [
+      caps.llm ? `<span class="cap ${caps.llm === "live" ? "on" : "warn"}">${caps.llm === "live" ? "LLM live" : "template fallback"}</span>` : "",
+      caps.decision ? `<span class="cap on">decision gate</span>` : "",
+      caps.creao ? `<span class="cap ${caps.creao === "failed" ? "warn" : "on"}">CREAO ${esc(caps.creao)}</span>` : "",
+    ].join("");
+    const parts = timing.map(([k, v]) => `${esc(k)} <b>${Math.round(v)}</b>`);
+    parts.push(`round trip <b>${ms}</b> ms`);
+    $("lookupTiming").innerHTML = `<span class="t">${parts.join(" · ")}</span>${capsHtml}`;
+    $("lookupNotes").textContent = notes || "-";
+    $("lookupNotesWrap").hidden = !notes;
+    $("lookupNotesWrap").open = false;
   }
   $("lookupOut").onclick = async (ev) => {
     const b = ev.target.closest("button[data-confirm]");
     if (!b) return;
+    say($("lookupMsg"), "Rewriting for that person…");
     try {
       const { data, res, ms } = await api("POST", `/api/briefs/${encodeURIComponent($("lookupOut").dataset.brief)}/confirm`,
         { personId: b.dataset.confirm || null });
+      say($("lookupMsg"), "");
       showLookup(data.brief, res, ms);
+      pollMirror();
     } catch (e) { say($("lookupMsg"), e.message, "bad"); }
   };
   $("lookupForm").onsubmit = async (ev) => {
@@ -409,17 +688,56 @@
     const text = $("lookupText").value.trim();
     if (!text) return;
     $("lookupBtn").disabled = true;
-    say($("lookupMsg"), "thinking...");
+    $("lookupTiming").innerHTML = ""; $("lookupNotesWrap").hidden = true;
+    say($("lookupMsg"), "Searching and writing the cards…");
+    setHud("Looking up...", 3, "Heard: " + text.split(",").map((s) => s.trim()).filter(Boolean).join(" | "), 4, "2x tap to exit", 2);
     try {
       const { data, res, ms } = await api("POST", "/api/briefs/text", { text });
-      say($("lookupMsg"), `${ms}ms`, "ok");
+      $("lookupMsg").innerHTML = `<span class="big">Brief in ${(ms / 1000).toFixed(1)} s</span>`; $("lookupMsg").className = "msg";
       showLookup(data.brief, res, ms);
       pollMirror();
-    } catch (e) { say($("lookupMsg"), e.message, "bad"); }
+    } catch (e) { say($("lookupMsg"), e.message, "bad"); renderHud(lastBrief); }
     finally { $("lookupBtn").disabled = false; }
   };
 
-  // --- Mirror: polls the latest brief (glasses or laptop lookups)
+  // --- HUD mirror: draws the latest brief exactly as the glasses lay it out (02 section 2).
+  // Three containers: hdr (1 line, level 3), body (5 lines, level 4), foot (1 line, level 2). Levels map to brightness.
+  const OPACITY = { 0: 0.12, 1: 0.35, 2: 0.55, 3: 0.8, 4: 1 };
+  const fitLine = (s, max = 40) => { s = String(s ?? "").replace(/\s+/g, " ").trim(); return s.length > max ? s.slice(0, max - 3).trimEnd() + "..." : s; };
+  const fitBody = (s, max = 200) => { s = String(s ?? "").trim(); return s.length > max ? s.slice(0, max - 3).trimEnd() + "..." : s; };
+  function setHud(hdr, hl, body, bl, foot, fl) {
+    const put = (id, text, level) => { const el = $(id); el.textContent = text || " "; el.style.opacity = String(OPACITY[level] ?? 1); };
+    put("hudHdr", fitLine(hdr), hl); put("hudBody", fitBody(body), bl); put("hudFoot", fitLine(foot), fl);
+  }
+  let hudCard = 0;
+  function cardScreen(b, i) {
+    const c = b.cards[i], n = b.cards.length;
+    const kind = String(c.kind || "").toUpperCase();
+    let who = c.kind === "connect" ? b.query.name : c.kind === "context" ? b.query.org : "goal: " + (state?.goal || "");
+    if (n === 1 && c.kind === "context") who = `${b.query.org} (org only)`;
+    const foot = c.source ? "src: " + c.source : "tap: quiet   swipe up: back";
+    setHud(`${i + 1}/${n} ${kind} | ${who}`, 3, c.body, 4, foot, 2);
+  }
+  function renderHud(b) {
+    if (!b) { // Ready screen
+      const ev = state?.event;
+      setHud(ev ? `Cue | ${ev.name} | goal: ${state.goal}` : "Cue | no event | hold to ask", 2, "", 4, "hold to ask | 2x tap to exit", 2);
+      $("hudTabs").innerHTML = "";
+      return;
+    }
+    if (!b.cards.length) { setHud(`Cue | ${b.query.org || b.query.name}`, 3, "No cards.", 4, "hold to ask | 2x tap to exit", 2); $("hudTabs").innerHTML = ""; return; }
+    hudCard = Math.min(hudCard, b.cards.length - 1);
+    cardScreen(b, hudCard);
+    $("hudTabs").innerHTML = b.cards.map((c, i) =>
+      `<button type="button" data-card="${i}" aria-pressed="${i === hudCard}" title="Card ${i + 1} of ${b.cards.length}">${i + 1} ${esc(String(c.kind).toUpperCase())}</button>`).join("");
+  }
+  $("hudTabs").onclick = (ev) => {
+    const i = ev.target.closest("button[data-card]")?.dataset.card;
+    if (i === undefined || !lastBrief) return;
+    hudCard = Number(i); renderHud(lastBrief);
+  };
+
+  // Polls the latest brief (glasses or laptop lookups) every second.
   let lastBrief = null;
   let lastKey = "";
   async function pollMirror() {
@@ -427,20 +745,20 @@
       const { data, res } = await api("GET", "/api/briefs/latest");
       const b = data?.brief;
       if (!b || res.status === 204) return;
-      lastBrief = b;
       const key = b.id + ":" + b.version;
       if (key === lastKey) return;
-      lastKey = key;
-      const q = b.query;
-      $("mirrorMeta").textContent = `${b.id} v${b.version} | ${b.match.confidence} | slow path: ${b.slowPath.status} | ${new Date(b.updatedAt).toLocaleTimeString()}`;
-      const head = `<div class="hhead">${esc([q.name, q.org, q.role].filter(Boolean).join(" | "))}</div>`;
-      $("hud").innerHTML = head + (b.cards.length ? b.cards.map((c) =>
-        `<div class="hcard"><div class="hhead">${esc(c.title)}</div>${esc(c.body)}${c.source ? `<div class="hsrc">src: ${esc(c.source)}</div>` : ""}</div>`).join("")
-        : `<div class="empty">No cards.</div>`);
+      if (!lastBrief || lastBrief.id !== b.id) hudCard = 0;
+      lastBrief = b; lastKey = key;
+      $("mirrorMeta").textContent = `${b.match.confidence} match · ${new Date(b.updatedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` +
+        (b.slowPath.status !== "none" ? ` · slow path ${b.slowPath.status}` : "");
+      $("mirrorMeta").title = `${b.id} v${b.version}`;
+      renderHud(b);
+      if (!mirrorOnly && $("lookupOut").dataset.key !== key) showLookup(b, null, null); // glasses lookup or page reload
     } catch {}
   }
 
   function refreshAll() { loadState(); loadProfile(); loadFiles(); pollMirror(); }
+  renderHud(null);
   refreshAll();
   setInterval(pollMirror, 1000);
   setInterval(loadState, 10000);

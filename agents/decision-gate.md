@@ -1,5 +1,7 @@
 # Decision Gate (OpenAI Decisions API)
 
+> Not texted to the wearer. If any of this output ever reaches iMessage, it follows [agents/voice.md](voice.md).
+
 Source: design/03-agents-and-research.md section 9. Code: `backend/src/decide.ts`, tests in `backend/test/decide.test.ts`.
 Model: `gpt-6-luna` on `POST https://api.openai.com/v1/decisions` (public beta). Env: `OPENAI_API_KEY`.
 Optional. When the key is missing, the gate returns null and the pipeline behaves exactly as it does today.

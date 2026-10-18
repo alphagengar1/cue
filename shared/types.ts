@@ -46,8 +46,10 @@ export interface Person {
   followUp?: {
     agent?: string; agentId?: string; runLink?: string; debrief?: string;
     email?: { subject: string; body: string }; message?: string; nextSteps?: string[];
+    draftLink?: string | null;                       // Gmail draft link from the Follow-up Writer (never sent)
     // Meeting Scheduler output (agents/meeting-scheduler.md), chained after the Follow-up Writer.
-    schedule?: { proposedTimes: string[]; inviteTitle: string; inviteDescription: string; schedulingMessage: string; calendarEventCreated: boolean; eventLink: string | null };
+    // holdEventId/holdSource: the backend placed (and can move) the tentative hold through Google Calendar (backend/src/calendar.ts).
+    schedule?: { proposedTimes: string[]; inviteTitle: string; inviteDescription: string; schedulingMessage: string; calendarEventCreated: boolean; eventLink: string | null; holdEventId?: string; holdSource?: "agent" | "backend" };
   };
 }
 

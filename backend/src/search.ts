@@ -2,7 +2,7 @@
 // Two parallel searches, linkedin.com excluded at search time, then the name AND org filter.
 import type { Fact, SourceKind } from "../../shared/types.js";
 import { config } from "./config.js";
-import { filterFacts, hostOf, isBoilerplate, isLinkedIn } from "./safety.js";
+import { blockLinkedIn, filterFacts, hostOf, isBoilerplate, isLinkedIn } from "./safety.js";
 
 export interface SearchResult {
   title: string;
@@ -22,7 +22,7 @@ async function exaSearch(query: string, category?: string): Promise<SearchResult
     query,
     type: "fast",
     numResults: 8,
-    excludeDomains: ["linkedin.com"],
+    ...(blockLinkedIn() ? { excludeDomains: ["linkedin.com"] } : {}),
     contents: { highlights: { maxCharacters: 500 } },
   };
   if (category) body.category = category;
@@ -58,7 +58,7 @@ export async function searchPerson(query: string): Promise<SearchResult[]> {
   const seen = new Set<string>();
   const out: SearchResult[] = [];
   for (const r of ok.flatMap((s) => s.value)) {
-    if (seen.has(r.url) || isLinkedIn(r.url)) continue;
+    if (seen.has(r.url) || (blockLinkedIn() && isLinkedIn(r.url))) continue;
     seen.add(r.url);
     out.push(r);
   }

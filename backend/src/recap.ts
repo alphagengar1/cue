@@ -5,6 +5,8 @@ import type { Brief } from "../../shared/types.js";
 import { startCoach } from "./coach.js";
 import { composeAnswer, composeEmail } from "./compose.js";
 import { suggestFollowUp } from "./photon.js";
+import { bookBubbles, holdMovedBubbles } from "./voice.js";
+import { moveHold, pickSlot } from "./calendar.js";
 import { store } from "./store.js";
 
 const LABEL: Record<string, string> = { connect: "Connect", context: "Context", angle: "Ask" };
@@ -60,6 +62,7 @@ const HELP = [
   "I can do a few things:",
   "- say \"email\" for a follow-up email draft",
   "- say \"text\" for a short message to send them",
+  "- say \"book\" for the meeting message, or \"book 2\" to move the calendar hold",
   "- say \"who did I meet\" for today's list",
   "- or just ask me something about them",
 ].join("\n");
@@ -88,9 +91,19 @@ export async function handleReply(text: string, lastBriefId: string | null, now 
     return id ? "on it 🧠 looking at your whole day, give me about a minute" : "the coach isn't set up yet";
   }
   if (/^\s*book\b/.test(t)) {
-    const sched = (last?.match.personId ? store.people.get(last.match.personId) : undefined)?.followUp?.schedule;
+    const person = last?.match.personId ? store.people.get(last.match.personId) : undefined;
+    const sched = person?.followUp?.schedule;
     if (!sched) return "nothing to book yet. meet someone and debrief first";
-    return [`copy this to ${last!.query.name.split(/\s+/)[0]}:`, sched.schedulingMessage, ...(sched.eventLink ? [`your hold: ${sched.eventLink}`] : [])];
+    const first = firstName(last!.query.name);
+    // "book 2" / "book thu": move the tentative hold to that time (calendar.ts), then hand over the message.
+    const pick = pickSlot(t, sched.proposedTimes);
+    if (pick) {
+      const r = await moveHold(sched, pick);
+      if (!r.moved) return [`couldn't move the hold, ${r.reason}`, ...bookBubbles(sched, first)].slice(0, 5);
+      store.putPerson({ ...person!, followUp: { ...(person!.followUp ?? {}), schedule: r.schedule } });
+      return holdMovedBubbles(r.schedule, first);
+    }
+    return bookBubbles(sched, first);
   }
   if (/\b(email|mail|draft)\b/.test(t)) {
     if (!last) return "No recap yet, so nothing to draft. Meet someone first.";

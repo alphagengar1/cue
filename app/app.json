@@ -11,7 +11,7 @@
       "name": "network",
       "desc": "Sends your push-to-talk clip and lookups to the Cue backend to build networking cards.",
       "whitelist": [
-        "https://api.cue.example.com",
+        "https://35.164.205.54.sslip.io",
         "http://localhost:8787",
         "http://172.20.10.2:8787"
       ]

@@ -165,3 +165,17 @@ describe("factAboutPerson (research re-check)", () => {
     assert.ok(ok("Priya Shah hosted an intern panel.", "https://blog.anduril.com/x"));
   });
 });
+
+describe("LinkedIn as a source (ALLOW_LINKEDIN)", () => {
+  test("blocked in tests by default; allowed when the flag is on", async () => {
+    const { config } = await import("../src/config.js");
+    const facts: Fact[] = [{ text: "Priya Shah leads university recruiting at Anduril.", sourceUrl: "https://www.linkedin.com/in/priyashah", sourceKind: "article" }];
+    assert.equal(filterFacts(facts).length, 0);
+    const was = config.allowLinkedIn;
+    (config as { allowLinkedIn: boolean }).allowLinkedIn = true;
+    try {
+      assert.equal(filterFacts(facts).length, 1);
+      assert.equal(enforceCards([{ kind: "context", title: "Who they are", body: "Leads university recruiting.", source: "linkedin.com/in/priyashah" }]).length, 1);
+    } finally { (config as { allowLinkedIn: boolean }).allowLinkedIn = was; }
+  });
+});

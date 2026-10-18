@@ -1,48 +1,8 @@
-# CREAO agent 2: Cue Person Researcher
+# Cue Person Researcher (CREAO agent)
 
-**Role:** the slow path's deep research step. The fast path gets 1-2 search snippets in about a second. This agent spends minutes finding talks, posts, GitHub and articles about one person at one org, and its facts replace the first draft of the cards (Brief v2).
+Paste these in order on https://agent.creao.ai: new chat → paste **1** plus a line `INPUT:` and **Test input 1** → send → check the reply ends with one ```json block with a source URL on every fact → **Create Agent** → Output format **Markdown** → paste **2** into the Instructions box → **Start building** → Config: check `skill.md` kept the rules → Autonomy **Auto** → Browser Use on if you want it reading LinkedIn profiles, not just snippets → extended memory on → agent page → **API** → create key → add **3** to `backend/.env`. Backend contract: `design/05-agent-contracts.md`.
 
-- Trigger: after a fast brief with a `high` match, or after the wearer confirms a person on the Confirm screen. At most once per person per event; never for `low` matches (`maybeStartResearch()` in `backend/src/brief.ts`).
-- Applied by: `applyPersonResearcher()` in `backend/src/creao.ts` (API runs) or `store.loadSample()` (hand-run JSON in an event file). It re-checks every fact (needs an http(s) source; LinkedIn and sensitive terms dropped; the fact text or URL must name the person AND the org), merges facts into the `Person`, then starts the Brief Writer agent (or, if that agent is not configured, writes Brief v2 with the fast LLM).
-- Env var: `CREAO_PERSON_RESEARCHER_ID` (only for a /v2 hosted agent; the agent.creao.ai agent below is run by hand).
-
-## Loading the output into Cue
-
-The /v2 API cannot run agents built on agent.creao.ai, so run this agent by hand and paste its JSON into the event file: `backend/data/<event>.json`, in the matching entry of the top-level `people` array (match by `name` + `orgId`; the org must be in `organizations`):
-
-```json
-"people": [
-  {
-    "name": "Priya Shah", "orgId": "anduril", "role": "recruiter",
-    "headline": "University Recruiter at Anduril",
-    "facts": [
-      { "text": "Priya Shah hosted Anduril's 2026 intern info session.", "sourceUrl": "https://...", "sourceKind": "talk", "date": "2026-02" }
-    ],
-    "match": "medium",
-    "research": { "agent": "creao-person-researcher", "agentId": "<agent id>", "runLink": "https://agent.creao.ai/share/..." }
-  }
-]
-```
-
-- `name`, `orgId` required; `role`, `headline`, `facts`, `match`, `research` optional (copy `facts`/`headline` straight from the agent's JSON block).
-- On load (boot or setup page -> bundled event), facts get the same checks as a live run: http(s) `sourceUrl`, no LinkedIn, no sensitive terms, clipped to 140 chars, and each fact must name the person (full name, or first and last name) AND the org (name/alias in the text, or the org's name/domain in the URL). Dropped facts are logged as `[store] <name>: kept N/M researched facts`.
-- Kept facts go to the brief writer exactly like Exa facts, ahead of them. With `research` set and at least one kept fact, no Person Researcher API run starts for that person.
-- Loading a file replaces that event's orgs and people.
-
-## How to create this agent (agent.creao.ai)
-
-1. https://agent.creao.ai -> **new chat** in your personal space (not a team agent).
-2. No connectors. Built-in web search and page reading only. Do not turn on Browser Use or any LinkedIn access.
-3. Paste the **Instructions** block below as the first message, add `INPUT:` and **Test input 1**, and send.
-4. Check that the reply ends with one ```json block in the **Output format**, that every fact has a source URL, and that nothing personal (family, location, and so on) appears. Correct it in chat if needed.
-5. Click **Create Agent** -> **Output format: Markdown** -> in **Instructions** paste:
-   > Inputs are exactly these fields: name (text), org (text), role (text, may be empty), orgAliases (list of text). Keep every rule from the first message word for word in the skill, especially the safety rules and the disambiguation rule. The final reply must always end with one ```json block in the output format, and nothing after it.
-   Then **Start building**.
-6. Open **Config** and check `skill.md` kept the safety rules, the LinkedIn rule and the JSON format. Fix with a follow-up message if not.
-7. Run it once from **Run** with **Test input 2** (expected: `match: "low"`, empty facts). Share that thread or the Test input 1 thread from the share icon if you want a second run link.
-8. For each person: run the agent from **Run** with their input, then paste the JSON block into `backend/data/<event>.json` as that person's `people` entry (see **Loading the output into Cue** above).
-
-## Instructions (paste this)
+## 1. First message
 
 ```text
 You are the Person Researcher for Cue, a smart-glasses app that helps a student start a good conversation with a professional they are about to meet at an in-person event. You research ONE person's public professional work. Your facts become short cards on the glasses, read in a glance.
@@ -61,6 +21,7 @@ Use web search and read pages to find PUBLIC PROFESSIONAL information that this 
  4. their personal website (sourceKind "personal_site") or GitHub profile and repos (sourceKind "github")
  5. articles or interviews about their work (sourceKind "article")
  6. school, lab or company team pages (sourceKind "school_page" or "team_page")
+ 7. their LinkedIn profile: headline, current role, Experience, Projects, Publications (sourceKind "article")
 Good facts are things the wearer can ask about: a talk topic, a project they built, a post they wrote, a team they lead, a launch they worked on.
 
 DISAMBIGUATION (strict)
@@ -71,7 +32,7 @@ DISAMBIGUATION (strict)
 SOURCE AND SAFETY RULES (strict)
 - Professional and self-published information only.
 - NEVER include: family, relationships, children, home address or where they live, health, religion, political views, age, appearance, or anything not about their professional work. Leave such facts out even if they are public.
-- Never open, fetch or cite linkedin.com pages. You may use a LinkedIn headline only if it appears in a search result title or snippet, and only for the "headline" field, never as a fact source.
+- LinkedIn is allowed as a source: the headline, current role, and the professional Experience, Projects, Publications and Volunteering sections. Never take anything from the About section that is personal, and never from contact info, connections, activity likes, or photos.
 - Every fact needs a real sourceUrl that you opened and that supports the fact.
 - Each fact is one neutral sentence of at most 140 characters that names the person by full name AND names the org. Plain ASCII, no emoji, no markdown. Example: "Priya Shah spoke at ROSCon 2026 on how Anduril tests autonomy software in simulation."
 - date is an ISO date (YYYY-MM-DD or YYYY-MM) of the talk, post or article when shown. Otherwise leave it out.
@@ -99,42 +60,26 @@ Write at most 3 short lines of summary, then end your reply with exactly one ```
 }
 ```
 
-## Output format
+## 2. Create Agent → Instructions box
 
-The backend looks for the first JSON object with a `name` string and a `facts` array.
-
-| Field | Rule |
-|---|---|
-| `name` | required |
-| `facts[]` | required (may be empty); `text` + `http(s)` `sourceUrl`; clipped to 140 chars; unknown `sourceKind` becomes `article`; LinkedIn / sensitive / facts not naming both the person (full, or first + last) and the org are dropped; max 8, sorted by source priority |
-| `match` | `high` / `medium` / `low` (anything else = `low`; no kept facts = `low`) |
-| `role`, `headline`, `matchReason`, `orgId` | optional; `headline` and `role` are used only if we had none |
-
-```json
-{
-  "name": "Priya Shah",
-  "orgId": "anduril",
-  "role": "recruiter",
-  "headline": "University Recruiter at Anduril",
-  "facts": [
-    { "text": "Priya Shah hosted Anduril's 2026 intern info session on early-career hardware roles.", "sourceUrl": "https://...", "sourceKind": "talk", "date": "2026-02" }
-  ],
-  "match": "medium",
-  "matchReason": "1 source mentions both Priya Shah and Anduril"
-}
+```text
+Inputs are exactly these fields: name (text), org (text), role (text, may be empty), orgAliases (list of text). Keep every rule from the first message word for word in the skill, especially the safety rules and the disambiguation rule. The final reply must always end with one ```json block in the output format, and nothing after it.
 ```
 
-(Shape only; Priya Shah is a made-up name.)
+## 3. backend/.env
 
-## Test inputs
+```
+CREAO_PERSON_RESEARCHER_KEY=capi_...
+CREAO_PERSON_RESEARCHER_ID=<agent id, only if it differs from e496e45b-c8eb-4079-9aff-876071501d67>
+```
 
-Test input 1 (a public professional with talks, posts and GitHub; expected `match: "high"` with several sourced facts):
+## Test input 1 (expect `match: "high"` with several sourced facts)
 
 ```json
 { "name": "David Cramer", "org": "Sentry", "role": "co-founder", "orgAliases": ["Sentry.io", "Getsentry"] }
 ```
 
-Test input 2 (made-up person; expected `match: "low"`, `facts: []`, and no guessing):
+## Test input 2 (made-up person; expect `match: "low"`, `facts: []`)
 
 ```json
 { "name": "Priya Shah", "org": "Anduril", "role": "recruiter", "orgAliases": ["Anduril Industries"] }

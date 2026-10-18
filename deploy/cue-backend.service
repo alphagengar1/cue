@@ -22,6 +22,8 @@ Environment=NODE_ENV=production
 ExecStart=/opt/cue/backend/node_modules/.bin/tsx src/server.ts
 Restart=always
 RestartSec=3
+# tsx exits 143 on SIGTERM; count that as a clean stop so the journal only shows real crashes.
+SuccessExitStatus=143
 TimeoutStopSec=15
 KillSignal=SIGTERM
 SyslogIdentifier=cue-backend

@@ -1,26 +1,8 @@
-# CREAO agent 3: Cue Brief Writer
+# Cue Brief Writer (CREAO agent)
 
-**Role:** the last slow-path step. It takes the Person Researcher's facts, the Event Loader's org record and the wearer's profile, and writes the 3 cards the glasses show (Brief v2). The fast path writes a quick first draft. This agent writes the final, checked version, and the glasses show a dim "updated" marker when it arrives.
+Paste these in order on https://agent.creao.ai: new chat → paste **1** plus a line `INPUT:` and **Test input 1** → send → check the cards fit the limits and the reply ends with one ```json block → **Create Agent** → Output format **Markdown** → paste **2** into the Instructions box → **Start building** → Config: check `skill.md` kept the rules → Autonomy **Auto** → agent page → **API** → create key → add **3** to `backend/.env`. Backend contract: `design/05-agent-contracts.md`.
 
-- Trigger: started by the backend right after a Person Researcher run completes with new facts (`applyPersonResearcher()` in `backend/src/creao.ts`).
-- Applied by: `applyBriefWriter()` in `backend/src/creao.ts`. It enforces the card limits and source rules (`enforceCards`: drops connect/context cards with no source and any card with a sensitive term). It applies v2 only if the wearer is still on that brief.
-- Optional: if `CREAO_BRIEF_WRITER_ID` is unset, the backend writes v2 with the fast LLM instead. Event Loader and Person Researcher stay on CREAO either way.
-- Env var: `CREAO_BRIEF_WRITER_ID`.
-
-## How to create this agent (agent.creao.ai)
-
-1. https://agent.creao.ai -> **new chat** in your personal space (not a team agent).
-2. No connectors needed. Web search is allowed only to double-check a fact that is already in the input.
-3. Paste the **Instructions** block as the first message, add `INPUT:` and **Test input 1**, and send.
-4. Check the cards against the limits (title <= 20 chars, body <= 200 chars and <= 5 lines of <= 40 chars, a source on connect/context). Correct it in chat if needed.
-5. **Create Agent** -> **Output format: Markdown** -> in **Instructions** paste:
-   > Inputs are exactly these fields: person (object), organization (object or null), wearer (object), goal (text), eventName (text). Keep every rule from the first message word for word in the skill, especially the card length limits and "use ONLY facts in the input". The final reply must always end with one ```json block in the output format, and nothing after it.
-   Then **Start building**.
-6. Check **Config** -> `skill.md`; fix with a follow-up if a rule was dropped.
-7. Run once from **Run** with **Test input 2** (expected: only a `context` card starting "No public info found for Priya Shah.").
-8. Copy the `agent_id` into `backend/.env` as `CREAO_BRIEF_WRITER_ID`.
-
-## Instructions (paste this)
+## 1. First message
 
 ```text
 You are the Brief Writer for Cue. You write a 3-card conversation brief for a student wearing smart glasses at a networking event. The cards appear on a tiny monochrome display and are read in a glance, mid-conversation.
@@ -60,21 +42,20 @@ End your reply with exactly one ```json code block containing one JSON object in
 }
 ```
 
-## Output format
+## 2. Create Agent → Instructions box
 
-The backend looks for the first JSON object with a `cards` array.
+```text
+Inputs are exactly these fields: person (object), organization (object or null), wearer (object), goal (text), eventName (text). Keep every rule from the first message word for word in the skill, especially the card length limits and "use ONLY facts in the input". The final reply must always end with one ```json block in the output format, and nothing after it.
+```
 
-| Field | Rule |
-|---|---|
-| `cards[].kind` | `connect` / `context` / `angle`; only kinds already on the brief are replaced |
-| `cards[].title` | clipped to 20 chars |
-| `cards[].body` | re-wrapped to <= 5 lines of <= 40 chars, <= 200 chars |
-| `cards[].source` | cleaned to bare domain/path <= 34 chars; connect/context without a source are dropped |
-| `improvesOn` | optional, logged |
+## 3. backend/.env
 
-## Test inputs
+```
+CREAO_BRIEF_WRITER_KEY=capi_...
+CREAO_BRIEF_WRITER_ID=<agent id, only if it differs from d5ded73b-03b6-407d-be3e-5d332d6e869a>
+```
 
-Test input 1 (high match; facts are illustrative test data, the agent must only use them, not add to them):
+## Test input 1
 
 ```json
 {
@@ -100,7 +81,7 @@ Test input 1 (high match; facts are illustrative test data, the agent must only 
 }
 ```
 
-Test input 2 (low match; expected only a `context` card about Anduril that starts "No public info found for Priya Shah."):
+## Test input 2 (expect only a `context` card starting "No public info found for Priya Shah.")
 
 ```json
 {

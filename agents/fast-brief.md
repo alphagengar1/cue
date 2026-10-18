@@ -1,5 +1,7 @@
 # Fast Brief Writer (backend LLM call)
 
+> Not texted to the wearer. If any of this output ever reaches iMessage, it follows [agents/voice.md](voice.md).
+
 Source: design/03-agents-and-research.md section 5, "Fast brief LLM call: draft system prompt".
 Used by `backend/src/llm.ts` as the system prompt. Model: `claude-haiku-5-5` (env `BRIEF_MODEL`), `output_config.effort: "low"`, JSON via structured outputs.
 The backend reads everything below the `<!-- prompt -->` marker. `{goal}` and `{name}` are filled in by the backend.

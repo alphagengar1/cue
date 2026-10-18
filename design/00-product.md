@@ -142,7 +142,7 @@ These features are not required for the demo. Build them only after the live mom
 - **No face recognition.** G2 has no camera. Identity comes only from what the wearer says.
 - **No recording of conversations.** Audio is captured only while push-to-talk is held. It is discarded after transcription and never stored.
 - **No scheduled-meeting prep.** Cue is for the walk-up moment, not calendar meetings.
-- **No LinkedIn scraping.** Cue never fetches LinkedIn page contents. Reading a headline that appears in a search result title or snippet is allowed.
+- **LinkedIn: professional sections only.** Decided Oct 18 for the hackathon: the Researcher may read a profile's headline, role, experience, projects and publications. Contact info, connections, activity and anything personal in About are never used. `ALLOW_LINKEDIN=0` restores the full block.
 - No ambient or always-on listening.
 - No covert use. Cue helps you remember and prepare. It is not a way to pretend you know someone.
 
@@ -160,7 +160,7 @@ The brief writer and every agent must follow these rules. We enforce them in cod
 **Never use or display:**
 - Family, home address, health, politics, religion, or other personal life
 - Anything from a login-gated page
-- LinkedIn page contents. Drop `linkedin.com` URLs before any content fetch.
+- LinkedIn contact info, connections, activity, photos, and personal lines in About.
 
 **Disambiguation:**
 - Keep a result only if its title or text mentions **both** the name and the org.

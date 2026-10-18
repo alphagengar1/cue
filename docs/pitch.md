@@ -1,74 +1,67 @@
 # Cue - table pitch
 
-For expo-style table visits (about 4 minutes). Person A wears the glasses, Person B talks and drives the laptop. The laptop shows the phone mirror and a second tab with the CREAO console. Goal set to Internship before the judge arrives, and the mirror shows the quiet line. Between judges, hold the temple and say "I'm looking for an internship" (or reset the goal on the setup page). The demo person has consented and is in the preloaded event.
+For expo-style table visits. Person A wears the glasses. Person B talks and drives the laptop, which shows two tabs: the setup page's Judge view (`/setup?view=mirror`, the lens, large) and the CREAO Sessions tab with the live runs. Before the judge arrives: goal preset to Internship on the setup page, the mirror on the quiet line, the demo person (David Cramer, Sentry co-founder, the same person as the video script: public bio, in the preloaded event) chosen, the wearer's one "hi" text already sent to the Photon line so the links are clickable, and A's phone face up on the table with the iMessage thread open. Between judges, reset the goal on the setup page and keep the Sessions tab on the most recent runs.
 
-## The 2-minute pitch
+## The 90-second table pitch
 
 | Time | Beat | Say / do |
 |---|---|---|
-| 0:00-0:10 | Hook and live moment, start immediately | B: "Watch the glasses, not me." A reads the rep's badge, holds the temple, says "Priya, Anduril, recruiter." Mirror shows `Listening`, then `Heard:`, then card 1. |
-| 0:10-0:30 | The three cards | B: "Three cards, each with a source. Connect is an opener that is not small talk. Context is who they are and what their company is doing. Your angle is what to ask, given your goal." A taps through them. |
-| 0:30-0:45 | Quiet | A starts talking with the rep. B: "And now it is gone. One dim line. Nothing whispers in your ear during the conversation. That is the whole point: a little help when you need it, then out of the way." |
-| 0:45-1:00 | Why it is different | B: "Other projects talk during the conversation or recognize faces with a camera. Cue has no camera, no face recognition, push-to-talk only, and no recording. You decide when it speaks." |
-| 1:00-1:25 | CREAO agents | B switches to the CREAO tab. "Before the event, our Event Loader agent read the whole event and built the company store. The Person Researcher and Brief Writer ran on the people we expected to meet, and their facts are loaded into the event data. The Follow-up Writer runs after the conversation." Show a finished run and the researched brief in the event data. "Remove the agents and the product stops working: no event, no company cards, no deeper brief." |
-| 1:25-1:35 | Goal switch | A steps back from the rep, turns to B, holds the temple and says "I'm looking for a cofounder." B: "Same person, new goal. Only the angle card changes." |
-| 1:35-1:48 | Debrief and recap | A holds the temple and says "She said email her about the autonomy team, they're hiring interns for summer." The quiet line shows `★ note saved, recap texted` and A's phone buzzes with the recap. B: "After the conversation you say a ten-second debrief in your own words. Photon texts you the recap. Only ever to you, never to the person you met." |
-| 1:48-2:00 | Honesty and close | B: "Person lookup is real web search. We preloaded the demo event with people who have public bios. If nothing is found, Cue says so." Optionally show the unknown-name org-only card. "Public professional info only. Cue." Then offer the glasses to the judge to try. |
+| 0:00-0:08 | Hook and live lookup | B: "Watch the glasses, not me." A reads the badge, holds the temple, says "David Cramer, Sentry, co-founder," lets go. Mirror shows `Listening`, `Heard: David Cramer | Sentry | co-founder`, then card 1 in about 3 seconds. |
+| 0:08-0:22 | The three cards | B: "Three cards, each with a source. Connect is an opener that is not small talk. Context is who they are and what their company is doing now. Your angle is what to ask, given your goal." A taps through them. |
+| 0:22-0:30 | Quiet | A turns to the "rep". B: "And now it is gone. One dim line. Nothing talks to you during the conversation. A little help when you need it, then out of the way." |
+| 0:30-0:45 | Spoken debrief, recap, follow-up | A holds the temple: "He said email him about Seer, they're hiring interns for summer." Quiet line shows `★ note saved, recap texted`; the phone buzzes with the recap in seconds. B: "Ten seconds in your own words. The recap is instant, and in a minute or two the Follow-up Writer texts a draft email, a short message and next steps." B scrolls the thread to a follow-up from earlier today while this one runs. |
+| 0:45-0:55 | Times from the Scheduler | B points at the next bubbles in the thread: "Then the Meeting Scheduler proposes three half-hour times from the wearer's real calendar and puts a tentative hold on the wearer's own calendar. No guests, nothing sent. You reply `book` to get the message to send." |
+| 0:55-1:08 | "How did I do today?" and the coach | A picks up the phone and texts "how did I do today?" in the same thread (the verified path; say it into the temple instead only once the spoken coach intent is tested on the G2). While the run starts, B shows the coach bubbles from the last run on the phone: "The Networking Coach reads the whole day, every brief, every debrief, and compares with earlier days from memory. Patterns, who to follow up with first, and one thing to do differently." |
+| 1:08-1:20 | CREAO Sessions tab | B switches to the Sessions tab. "Six CREAO agents, all started by our backend. Here is the Researcher and Brief Writer run from the lookup you just saw, and the Follow-up Writer and Scheduler from the debrief." If the lens shows the dim `★ updated` marker, point at it: "That is the Brief Writer rewriting the cards with sourced facts, about 90 seconds in." |
+| 1:20-1:30 | Privacy close and offer | B: "No camera, no face recognition, no recording without a consent screen the other person sees you tap. Public professional info only, and nothing ever goes to the person you met, only to you. Want to try it?" Hand the glasses to the judge. |
 
-Timing rule: if a judge interrupts, answer, then resume at the next beat. The beats that cannot be skipped are the live moment, Quiet, and CREAO.
+Timing rule: if a judge interrupts, answer, then resume at the next beat. The beats that cannot be skipped are the live lookup, Quiet, the phone buzzing, and the Sessions tab.
 
-Unverified on hardware: the spoken goal switch (1:25), the spoken debrief (1:35) and the spoken correction ("Cramer with a C") were built Oct 17 late and have not been tested on the glasses. Test them before the expo. If one misfires in front of a judge, use Text me a recap from the menu for the recap and the setup page for the goal.
+### The 20-second version
 
-## The 30-second version
+"At a career fair you meet thirty people and forget who does what. Cue is a G2 glasses app: hold the temple, say a name, company and role, and three cards appear on your lens in three seconds, then it goes quiet so you can talk. Afterwards you say what happened and six CREAO agents turn it into a recap, a follow-up, a meeting time and end-of-day coaching, all texted to you and only you. No camera, no face recognition, public professional info only."
 
-"At a career fair you meet thirty people and forget who does what. Cue is a G2 app: hold the temple, say a name, company and role, and three cards appear on your lens: how to connect, who they are, and what to ask for your goal. Then the display goes quiet so you can actually talk. Hold again and say anything: a new goal, a name fix, or a debrief that gets texted to you. No camera, no face recognition, no recording, public professional info only. Our CREAO agents load the event and research the people before, and write the follow-up after; without them Cue does not work. Want to try it?"
+## Honesty line
 
-## Honesty line (use whenever asked how real it is)
+Use it whenever asked how real it is: "Person lookup is real web search and every agent run you see is live. We preloaded the demo event with people who agreed to be in it and have public bios. The spoken commands beyond a plain lookup, and conversation recording, were built last night and are verified from the backend and the setup page, not yet on the glasses in front of you."
 
-"Person lookup is real web search. We preloaded the demo event with people who have public bios."
+## Ten judge questions
 
-## Likely judge questions
+Two sentences each. Agent IDs and share links are in the README.
 
-**Isn't this creepy?**
-Fair question. Three design choices answer it. There is no camera, so Cue cannot recognize anyone's face. The wearer has to say the name aloud, which means you only look up people who just told you who they are. And it only uses public professional information, like a talk, a company page, or a personal site, and filters out family, home, health, and politics. It is the same thing you would do by glancing at your phone and searching their name, minus looking down. It is not for pretending you know someone.
+**1. Isn't this creepy?**
+There is no camera and no face recognition, and the wearer has to say the name out loud, so Cue only looks up someone who just introduced themselves, using public professional information with family, home, health, religion, politics, age and appearance dropped by a blocklist and a sensitive-fact check. It is what you would do by searching their name on your phone, minus looking down, and nothing Cue finds ever goes to the other person.
 
-**Does it record?**
-No. The microphone is on only while you hold the press. The audio goes to speech-to-text and is discarded; it is never stored. We keep the transcript text and the cards on our backend for the event so updates and goal switches work, and we delete them after. The debrief is the wearer's own words, spoken after the conversation, once the other person has walked away; the other person is never recorded. There is no always-on listening.
+**2. Does it record people?**
+Push-to-talk audio is discarded after transcription, and a conversation is recorded only after the lens shows the consent screen (ask them whether the glasses may take notes, tap once they say yes) and the wearer taps, with swipe up to cancel and a 15-minute cap. The transcript lives only on that brief on our backend (`brief.conversation`), rides into the Follow-up Writer, Scheduler and Coach, and is never stored on the glasses or phone and never logged.
 
-**Why glasses? Why not a phone app?**
-Looking at a phone in the middle of a handshake breaks eye contact, and that is the moment you are trying to make count. With glasses the card is in your line of sight, you read it in a glance, and then it disappears. Hold-to-talk with your hand at your temple also looks like a natural gesture, not like checking a screen.
+**3. Why Haiku for the three seconds and CREAO for the rest?**
+The lens gives us about three seconds, so that path is Deepgram, Exa, one decision call and one Claude Haiku 5.5 call (Haiku also writes the instant texts), while the CREAO agents run for about 80 seconds to a few minutes because nobody is staring at a lens by then. The Researcher and Brief Writer rewrite the cards with sourced facts about 90 seconds in, the Follow-up Writer and Scheduler turn a spoken debrief into a draft and a calendar hold, and the Coach reads the whole day.
 
-**What if it mishears the name?**
-We echo what it heard right on the lens: `Heard: Priya | Anduril | recruiter`. We pass the event's company and people names to the speech-to-text as hints, which helps with names like Anduril, and if what it heard is within two edits of exactly one person on the event list we look them up as that person: "David Kramer" is researched as David Cramer with no confirm screen, even though the echo line shows what was heard. If it is still wrong, hold and say the fix, "Cramer with a C" or "no, it's Priya not Maya", and Cue re-runs the lookup with the corrected name. The "Which Priya?" screen appears only for a real ambiguity, when the search turns up several possible people; you choose, or pick Neither and get the company card only.
+**4. Why a decision model and not the chat model?**
+A chat model is bad at saying no, and its "confidence: 0.8" is prose you cannot threshold, so the OpenAI Decisions API (`gpt-6-luna`) routes what the wearer says (lookup, correction, debrief, goal, recap, coach, quiet) and gates each brief before the cards are written. The thresholds are plain: match below 0.6 gives "No public info found" instead of cards about a stranger, goal fit below 0.5 gives one quiet line, a sensitive probability above 0.5 drops the fact, lead picks the first card, and both calls are optional, never throw and fall back to rules.
 
-**What if nothing is found?**
-Cue says so. You get one company card that begins "No public info found for Priya." and nothing invented about the person. If even the company is unknown, you get a generic ask for your goal, marked low info. A wrong fact about a person is worse than no fact.
+**5. What is unverified?**
+Unverified on the physical G2 as of this morning: the spoken intents (correction, debrief, goal, recap, coach, never mind), the goal-gate quiet line, and Record conversation with its consent screen and 20-second chunked streaming, all built in the last day and tested from the setup page and the backend. Everything else, the six agents started from the backend, the three chains, the calendar hold through the agent's connector, and every Photon send, was verified live tonight; the backend's own Google Calendar path is tested with stubs only, and the agent's connector made the hold you see.
 
-**Why CREAO? Is it really needed?**
-Yes, and we can show it. The Event Loader agent turns an event's company and speaker list into the store that makes company cards fast. The Person Researcher and Brief Writer agents do deeper multi-step research on the people we expect to meet before the event, and their briefs are loaded into the event data. The Follow-up Writer drafts the email, a short message and next steps after the conversation. Those runs take minutes, so they cannot sit in the live path, but they are what makes Cue better than a single search. If you remove them there is no preloaded event and no deep brief. The quick path alone is just a search wrapper, and we want to be clear about that. Agent IDs and a run link are in the README.
+**6. Does it ever contact the other person?**
+Never: Photon only messages the wearer, the backend refuses any number but `WEARER_PHONE`, and the Photon project allowlist enforces the same rule. The Follow-up Writer's email is saved as a Gmail draft with no recipient and is never sent, and the Scheduler's 30-minute hold sits on the wearer's own calendar with no guests, so the wearer sends everything by hand.
 
-**Why a decision model?**
-We use the OpenAI Decisions API in two places. First, intent routing: anything the wearer says into the temple that is not a plain "name, company, role" goes to one call that picks lookup, correction, debrief, goal, recap, or never mind; a rules classifier is the fallback and the tie-breaker. Second, the cue gate: one call per brief that decides whether it is worth showing at all, by asking is this the right person, does it fit the goal, which card should lead, and is any fact private. A chat model is good at writing cards and bad at saying no; its "confidence: 0.8" is prose, while the decision model returns calibrated probabilities we can put a threshold on. Both calls are optional, never throw, and fall back to rules when the key is missing or the call is slow.
+**7. You read LinkedIn?**
+Only the professional sections: headline, current role, Experience, Projects and Publications, each fact kept only with a source URL, and never contact info, connections, activity, photos or anything personal in About. `ALLOW_LINKEDIN=0` restores the block, and the same blocklist and sensitive-fact check apply to every source.
 
-**What is the business model?**
-We have not committed to one. Options we considered, from most to least likely for us:
-1. Per-seat subscription for students and job seekers who go to career fairs, with a free tier of a few lookups per event.
-2. Event organizer licensing: organizers pre-load the attendee and company list for exhibitors, and charge for a branded version.
-3. Recruiter and sales teams: a team plan for people who work conferences, with CRM export of who they met.
-4. Employers sponsoring a career-fair mode that gives students a card about their open roles (opt-in for the company, clearly labeled).
-We would not sell data about the people being looked up.
+**8. What if it mishears the name or picks the wrong person?**
+Deepgram gets the event's names and orgs as keyterms, the lens echoes what it heard, and a transcript within two edits of one listed attendee snaps to them, so "David Kramer" is researched as David Cramer. A search result counts only if it names both the person and the org, the gate drops the brief to "No public info found" when match is below 0.6, and the "Which Priya?" confirm screen appears only for a real ambiguity.
 
-**How is this different from Wingman, LookBack, or Even's own Prep Notes?**
-Wingman whispers during the conversation. LookBack uses faces for context. Prep Notes shows notes during a conversation. Cue is the opposite on all three: it helps in the five seconds before you speak, it uses no camera or face, and it is silent during the conversation.
+**9. What is live and what is preloaded?**
+Live: the push-to-talk audio, the speech-to-text, the Exa web search, the decision calls, the Haiku cards, every CREAO run and every Photon text. Preloaded: the demo event, with a few people who agreed to be in it and have public bios, so a judge sees a strong result instead of a lucky one.
 
-**What is real and what is faked?**
-The audio, speech-to-text, web search, and model call are live. The demo event and the people in it are preloaded, and they agreed to be in the demo and have public bios. CREAO runs take minutes, so the Event Loader, Person Researcher and Brief Writer ran before the event and we show the finished runs; the Follow-up Writer is the one that can run on camera. The iMessage recap is a real Photon send to the wearer's phone.
+**10. Why six agents?**
+Each agent has one job with pinned inputs and a JSON output the backend validates, and the backend chains them: Researcher then Brief Writer, Follow-up Writer then Scheduler, and the Coach over the day, with extended memory on four of them, Google Calendar on the Scheduler, Gmail drafts on the Follow-up Writer and Browser Use (optional) on the Researcher. The Coach is the long-run agent the CREAO team asked for: it reads every brief, debrief and consented transcript from the day, compares with earlier days from memory, and texts patterns, priorities and coaching.
 
-**How fast is it?**
-[MEDIAN: X.X seconds from release to first card, measured over N runs on venue wifi.] The company card appears sooner because the event is preloaded. We did not claim a number we did not measure. [DELETE THIS LINE IF NOT MEASURED.]
+## If something fails
 
-**What did you learn from the hardware?**
-A long press reaches the app, so true hold-to-talk works. The firmware line height is a fixed 27 pixels, so our first layout showed partial lines until we made every container height an exact multiple of 27 and capped the body at 5 lines. Brightness level 1 is unreadable, so the quiet status uses level 2.
-
-**Can the person opt out?**
-[ANSWER HONESTLY. Today there is no opt-out mechanism beyond not saying their name; Cue only looks up information that is already public. Say that it is a next step.]
+- **A spoken intent misfires** (the lens shows the hint line or the wrong action): use the Talk menu item for a plain lookup, set the goal on the setup page, and send the debrief from the laptop with the curl line below. Say that this is the part built last night.
+- **Photon is slow** (no buzz within a few seconds): switch to the CREAO Sessions tab and show the run that the debrief started, then scroll the iMessage thread to the earlier recap, follow-up and times from today.
+- **The coach question misfires** (spoken into the temple): text "how did I do today?" in the iMessage thread; that path is verified.
+- **The hardware debrief fails**: send the same words from the laptop terminal to the path the glasses use, `curl -X POST https://35.164.205.54.sslip.io/api/say -H "Authorization: Bearer $DEVICE_TOKEN" -H "Content-Type: application/json" -d '{"text":"he said email him about Seer, hiring interns for summer"}'` (keep it ready in a terminal tab, token from `backend/.env` on the server, never shown on screen). It is the same `POST /api/say` route, so the recap, the Follow-up Writer, the Scheduler and the Coach all still fire; the setup page has a typed lookup box but no debrief box.

@@ -25,7 +25,8 @@ Rules:
 - Nothing private: no family, location, health, politics, age, appearance.
 - Never write the raw card titles as if they were topics (not "keep talking about Ask about Seer"). Say what the thing is.
 - Keep the event name short (for example "LA Hacks", not the full official title).
-- If creaoFollowUp is present it was written earlier by the CREAO Follow-up Writer for this person: keep its substance and specifics, update it with the debrief, and shorten it to the format asked for.`;
+- If creaoFollowUp is present it was written earlier by the CREAO Follow-up Writer for this person: keep its substance and specifics, update it with the debrief, and shorten it to the format asked for.
+- Say what to do, not what you observed ("send it tonight, lead with the video", not "this maps to your internship goal"). Never more than 5 bubbles. Style guide: agents/voice.md.`;
 
 const RecapOut = z.object({ bubbles: z.array(z.string()) });
 const EmailOut = z.object({ subject: z.string(), body: z.string() });
@@ -98,10 +99,12 @@ export async function composeEmail(brief: Brief, debrief?: string): Promise<{ su
   try {
     const out = await parseWithModel(SYSTEM, {
       task: "email",
-      format: "Return subject (under 60 characters, no 'Re:') and body. Body: 80-140 words in 3 short paragraphs separated by one blank line. " +
-        "Open 'Hi <first name>,'. Paragraph 1: thanks, name the event, one specific thing from the conversation (debrief first, then facts). " +
-        "Paragraph 2: one clear ask tied to the wearer's goal (for example a 15-minute call, or how to apply). " +
-        "Paragraph 3: sign-off 'Best,' then the wearer's name and school on the next line. Normal email register, not texting voice.",
+      format: "Return subject (under 60 characters, no 'Re:') and body. Body: 60-90 words in 3 short paragraphs separated by one blank line. " +
+        "Open 'Hi <first name>,'. Paragraph 1: thanks, name the event, the one specific thing they said (debrief first, then facts). " +
+        "Paragraph 2: the one ask, or the thing they asked for (for example the demo video, a 15-minute call, how to apply). " +
+        "Paragraph 3: one line sign-off 'Best,' then the wearer's name and school on the next line. " +
+        "Plain and specific, normal capitalization, not texting voice. No cover-letter phrases: never 'I would be glad to be considered', " +
+        "'I wanted to reach out', 'while the conversation is fresh', 'I am passionate about'.",
       ...context(brief, debrief),
     }, EmailOut, { maxTokens: 700, timeoutMs: 8000 });
     const subject = clean(out.subject).replace(/\n/g, " ").slice(0, 80);

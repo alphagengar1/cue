@@ -10,6 +10,7 @@ These docs are the source of truth for both teammates and for coding agents. Rea
 | [01-architecture.md](01-architecture.md) | Components, live path, latency budget, API endpoints, data types, failure handling | Building the backend or the app API client |
 | [02-glasses-ux.md](02-glasses-ux.md) | HUD layout, render contract, gestures, state machine, example briefs, card writing rules | Building the glasses app (Person A) |
 | [03-agents-and-research.md](03-agents-and-research.md) | Event Loader, Person Researcher, Brief Writer, search and disambiguation, safety filter, CREAO integration | Building research and agents (Person B) |
+| [05-agent-contracts.md](05-agent-contracts.md) | What the backend sends to and reads from each of the six CREAO agents, and what it does with the result; `agents/*.md` are paste-only | Wiring or debugging an agent |
 | [04-build-plan.md](04-build-plan.md) | Milestones to submission, task list by person, checkpoints, cut lines, repo layout, test plan, demo script | Planning or picking the next task |
 
 ## Key facts at a glance
