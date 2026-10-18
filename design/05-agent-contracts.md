@@ -84,3 +84,12 @@ Setup, once, on the laptop:
 
 Scopes are `calendar.events` and `calendar.freebusy` only: the backend can see when the wearer is busy, not what the events are. The wearer adds the other person to the hold themselves, in Google Calendar, once a time is agreed. Unverified until the first real run: that a Desktop-app client's loopback redirect works on this machine's port 8788 (set `GOOGLE_AUTH_PORT` otherwise), and the refresh token's lifetime while the consent screen is in Testing (Google expires them after 7 days in that state; publish the consent screen to keep one).
 
+
+## The Cue Journal (shared store for long-horizon agents)
+
+`backend/src/journal.ts`. Every stage appends an entry to `backend/data/journal.local.jsonl` (gitignored, the wearer's own data): `brief` (cards, confidence, decision), `research` (facts kept), `cards_updated`, `debrief`, `transcript` (consented chunks), `recap`, `follow_up`, `schedule`, `coaching`, `goal`. Served behind `JOURNAL_TOKEN` (separate from the device token, `?token=` or Bearer):
+
+- `GET /journal.md?token=…`: Markdown, one `###` section per person (newest first) with cards, facts, debriefs, transcript, follow-up, times; then Coaching; then a Timeline. This is what scheduled CREAO agents read (they fetch URLs natively).
+- `GET /api/journal.json`: `{ generatedAt, wearer, people[], entries[] }`. `GET /api/journal/people.json`: the per-person summaries.
+
+Agents on top (specs in `agents/`): **Journal Sync** (hourly, Sheets connector: one row per person in "Cue Connections"), **Network Analyst** (nightly dashboard, trends across periods, open loops), and the **Networking Coach**'s scheduled run can read the same URL. None of them need the backend to start them.

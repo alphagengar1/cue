@@ -5,6 +5,7 @@ import type { Brief, Card, Confidence, Goal, Organization, Person, Query } from 
 import { config } from "./config.js";
 import { creaoEnabled, startRun } from "./creao.js";
 import { decide, type Decision } from "./decide.js";
+import { journal } from "./journal.js";
 import { CueError } from "./errors.js";
 import { LlmUnavailable, writeCards, type BriefInput } from "./llm.js";
 import { findListedPersonByName, findOrg, findStoredPerson, parseTranscript } from "./parse.js";
@@ -276,6 +277,11 @@ export async function buildBrief(text: string): Promise<BriefOutcome> {
     createdAt: t, updatedAt: t,
   };
   store.briefs.set(brief.id, brief);
+  journal({ type: "brief", briefId: brief.id, person: query, data: {
+    confidence, eventId: event.id, goal: store.goal, fallback,
+    cards: brief.cards.map((c) => ({ kind: c.kind, title: c.title, body: c.body })),
+    ...(decision ? { decision: brief.decision } : {}),
+  } });
   if (confidence === "high" && person) maybeStartResearch(brief, person, org);
   timings.total = Date.now() - tStart;
   notes.push(`store ${timings.store}ms`, `total ${timings.total}ms`);

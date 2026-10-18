@@ -15,6 +15,7 @@ import { CueError, sendError } from "./errors.js";
 import { LlmUnavailable } from "./llm.js";
 import { parseTranscript } from "./parse.js";
 import { readResume, RESUME_MAX_BYTES, RESUME_TYPES, type ResumeType } from "./resume.js";
+import { journal, journalEntries, journalMarkdown, journalPeople } from "./journal.js";
 import { handleSay } from "./say.js";
 import { composeRecap } from "./compose.js";
 import { photonConfigured, sendRecap } from "./photon.js";
@@ -51,6 +52,20 @@ const requireToken = (req: Request, res: Response, next: NextFunction) => {
   if (req.headers.authorization === `Bearer ${config.deviceToken}`) return next();
   sendError(res, 401, "UNAUTHORIZED", "Missing or wrong device token");
 };
+// The Cue Journal: read access for long-horizon CREAO agents, with its own token (query ?token= or
+// Bearer), so the device token never leaves the glasses. Mounted before the /api device-token check.
+const requireJournalToken = (req: Request, res: Response, next: NextFunction) => {
+  if (!config.journalToken) { sendError(res, 503, "INTERNAL", "Journal not enabled (set JOURNAL_TOKEN)"); return; }
+  const given = (typeof req.query.token === "string" ? req.query.token : undefined) ?? req.headers.authorization?.replace(/^Bearer\s+/i, "");
+  if (given === config.journalToken) return next();
+  sendError(res, 401, "UNAUTHORIZED", "Missing or wrong journal token");
+};
+app.get("/journal.md", requireJournalToken, (_req, res) => {
+  res.type("text/markdown; charset=utf-8").setHeader("Cache-Control", "no-store").send(journalMarkdown());
+});
+app.get("/api/journal.json", requireJournalToken, (_req, res) => { res.json({ generatedAt: new Date().toISOString(), wearer: { name: store.profile.name, goal: store.goal }, people: journalPeople(), entries: journalEntries() }); });
+app.get("/api/journal/people.json", requireJournalToken, (_req, res) => { res.json({ people: journalPeople() }); });
+
 app.use("/api", requireToken);
 
 // --- Simple per-minute rate limit on lookups (token is extractable from the .ehpk).
@@ -221,6 +236,7 @@ app.post("/api/briefs/:id/debrief", json, asyncRoute(async (req, res) => {
   const brief: Brief = { ...cur, debrief: text, version: cur.version + 1, updatedAt: new Date().toISOString() };
   store.briefs.set(brief.id, brief);
   log.info("debrief saved", { "cue.brief": brief.id, "cue.chars": text.length });
+  journal({ type: "debrief", briefId: brief.id, person: brief.query, data: { text } });
   const body: BriefResponse = { brief };
   res.json(body);
 }));
@@ -245,6 +261,7 @@ app.post(
     const brief: Brief = { ...cur, conversation, version: cur.version + 1, updatedAt: new Date().toISOString() };
     store.briefs.set(brief.id, brief);
     log.info("transcript chunk", { "cue.brief": brief.id, "cue.audio_bytes": req.body.length, "cue.added_chars": text.length });
+    if (text) journal({ type: "transcript", briefId: brief.id, person: brief.query, data: { text } });
     res.json({ chars: conversation.length, added: text.length });
   }),
 );
@@ -260,6 +277,7 @@ app.post("/api/briefs/:id/recap", json, asyncRoute(async (req, res) => {
     return sendRecap(brief, undefined, { force, bubbles });
   });
   if (out.sent) log.info("recap sent", { "cue.brief": brief.id, "cue.chars": out.text.length });
+  journal({ type: "recap", briefId: brief.id, person: brief.query, data: { sent: out.sent, ...(out.sent ? { chars: out.text.length } : { reason: out.reason }) } });
   const body: RecapResponse = out.sent ? { sent: true, chars: out.text.length } : { sent: false, reason: out.reason, configured: photonConfigured() };
   res.json(body);
 }));
@@ -269,6 +287,7 @@ const goalHandler = asyncRoute(async (req, res) => {
   const { goal, briefId } = parseBody(z.object({ goal: GoalEnum, briefId: z.string().optional() }), req.body);
   store.goal = goal;
   store.saveLocal();
+  journal({ type: "goal", data: { goal, via: "setup" } });
   const body: GoalResponse = { goal };
   if (briefId) {
     const out = await regenerateAngle(briefId);

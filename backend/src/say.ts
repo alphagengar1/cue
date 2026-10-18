@@ -7,6 +7,7 @@ import type { Brief, Query, SayResponse } from "../../shared/types.js";
 import { buildBrief, regenerateAngle, type BriefOutcome } from "./brief.js";
 import { composeRecap } from "./compose.js";
 import { debriefsToday, startCoach } from "./coach.js";
+import { journal } from "./journal.js";
 import { creaoEnabled, startRun } from "./creao.js";
 import { CueError } from "./errors.js";
 import { classifyIntent } from "./intent.js";
@@ -62,7 +63,9 @@ export async function handleSay(text: string, briefId?: string): Promise<SayOutc
     if (!current) return done({ intent: "unknown", say: "No one to debrief yet.\nSay a name, company, role first." });
     const brief: Brief = { ...current, debrief: text.trim().slice(0, 600), version: current.version + 1, updatedAt: new Date().toISOString() };
     store.briefs.set(brief.id, brief);
+    journal({ type: "debrief", briefId: brief.id, person: brief.query, data: { text: brief.debrief } });
     const recap = await recapFor(brief);
+    journal({ type: "recap", briefId: brief.id, person: brief.query, data: recap.sent ? { sent: true, chars: recap.chars } : { sent: false, reason: recap.reason } });
     // CREAO Follow-up Writer, live when its app key is set: the full email + message + next steps,
     // texted when the run completes (about a minute). The Haiku recap above is the instant part.
     let creaoRunId: string | undefined;
@@ -112,6 +115,7 @@ export async function handleSay(text: string, briefId?: string): Promise<SayOutc
       if (!goal) return done({ intent: "unknown", say: "Which goal? Internship, cofounder,\nmentorship, learning, or teammates." });
       store.goal = goal;
       store.saveLocal();
+      journal({ type: "goal", data: { goal, via: "spoken", said: text } });
       if (!current) return done({ intent: "goal", goal });
       const out = await regenerateAngle(current.id);
       notes.push(...out.notes);

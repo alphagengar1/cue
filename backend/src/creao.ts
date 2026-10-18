@@ -12,6 +12,7 @@ import type { Brief, Card, Organization, Person } from "../../shared/types.js";
 import { config } from "./config.js";
 import { writeCards, type BriefInput } from "./llm.js";
 import { cleanFacts, enforceCards, factAboutPerson, hostOf, sanitize, sortFacts } from "./safety.js";
+import { journal } from "./journal.js";
 import { sendText } from "./photon.js";
 import { availabilityWithCalendar, confirmSchedule } from "./calendar.js";
 import { coachBubbles, firstName, followUpBubbles, scheduleBubbles } from "./voice.js";
@@ -583,6 +584,9 @@ async function applyFollowUpWriter(rec: RunRecord, out: unknown): Promise<string
   const r = await sendText(followUpBubbles({ email: { subject, body }, message, nextSteps }, firstName(person?.name))
     .concat(d.draftLink && /^https?:\/\//.test(d.draftLink) ? [`saved as a gmail draft too: ${d.draftLink}`] : []));
   let note = `follow-up stored${person ? ` on ${person.name}` : ""}; text ${r.sent ? "sent" : `not sent (${r.reason})`}`;
+  { const b0 = rec.briefId ? store.briefs.get(rec.briefId) : undefined;
+    journal({ type: "follow_up", briefId: rec.briefId, person: b0?.query ?? (person ? { name: person.name, org: person.orgId } : undefined),
+      data: { subject, body, message, nextSteps, draftLink: d.draftLink ?? null, runId: rec.runId, texted: r.sent } }); }
   // Orchestration: Follow-up Writer -> Meeting Scheduler (agents/meeting-scheduler.md).
   const brief = rec.briefId ? store.briefs.get(rec.briefId) : undefined;
   if (brief && creaoEnabled("meeting_scheduler")) {
@@ -629,6 +633,8 @@ async function applyMeetingScheduler(rec: RunRecord, out: unknown): Promise<stri
   if (person) store.putPerson({ ...person, followUp: { ...(person.followUp ?? {}), schedule } });
   const first = person?.name.split(/\s+/)[0] ?? "them";
   const r = await sendText(scheduleBubbles(schedule, first));
+  { const b0 = rec.briefId ? store.briefs.get(rec.briefId) : undefined;
+    journal({ type: "schedule", briefId: rec.briefId, person: b0?.query ?? (person ? { name: person.name, org: person.orgId } : undefined), data: { ...schedule, runId: rec.runId, texted: r.sent } }); }
   return `schedule stored${person ? ` on ${person.name}` : ""}, hold ${schedule.calendarEventCreated ? `created (${schedule.holdSource ?? "agent"})` : "not created"}, ${calNote}; text ${r.sent ? "sent" : `not sent (${r.reason})`}`;
 }
 
@@ -653,6 +659,7 @@ async function applyNetworkingCoach(rec: RunRecord, out: unknown): Promise<strin
   };
   const c = lastCoaching;
   const r = await sendText(coachBubbles(c));
+  journal({ type: "coaching", data: { summary: c.summary, patterns: c.patterns, priorities: c.priorities, coaching: c.coaching, nextTime: c.nextTime, runId: rec.runId, texted: r.sent } });
   return `coaching stored (${c.priorities.length} priorities); text ${r.sent ? "sent" : `not sent (${r.reason})`}`;
 }
 
@@ -748,6 +755,8 @@ async function applyPersonResearcher(rec: RunRecord, out: unknown): Promise<stri
   };
   store.putPerson(updated);
   const summary = `${facts.length} new facts kept, agent match ${agentMatch}`;
+  journal({ type: "research", briefId: rec.briefId, person: { name: updated.name, org: org?.name ?? updated.orgId, role: updated.role },
+    data: { agent: "person_researcher", runId: rec.runId, kept: facts.length, match: agentMatch, facts: updated.facts.map((f) => ({ text: f.text, sourceUrl: f.sourceUrl })) } });
   if (!rec.briefId) return summary;
   if (!facts.length) { setSlowPath(rec.briefId, { status: "done", runId: rec.runId }); return `${summary}; brief unchanged`; }
 
@@ -822,6 +831,7 @@ function applyCardsV2(briefId: string, cards: Card[], runId: string, why: string
     return `${why}; not applied (no usable cards)`;
   }
   setSlowPath(briefId, { status: "done", runId }, next);
+  journal({ type: "cards_updated", briefId, person: brief.query, data: { why, runId, cards: next.map((c) => ({ kind: c.kind, title: c.title, body: c.body })) } });
   return `${why}; brief ${briefId} -> v${store.briefs.get(briefId)!.version}`;
 }
 
