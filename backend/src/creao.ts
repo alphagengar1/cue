@@ -609,7 +609,9 @@ async function applyFollowUpWriter(rec: RunRecord, out: unknown): Promise<string
     // Merged agent: email + times in ONE wave of at most 4 bubbles (voice.ts followUpWave).
     const s = await applySchedule(rec, d.schedule, { quiet: true });
     scheduleNote = `; ${s.note}`;
-    r = await sendText(followUpWave({ email: { subject, body }, message, nextSteps }, s.schedule, firstName(person?.name), d.draftLink)); // draft link rides inside the last bubble
+    // Nothing is texted here: the recap already said "just say email". The wearer asks and gets this
+    // (recap.ts: "email" -> the CREAO email, "text" -> the message, "book" -> the times and the hold).
+    void followUpWave; r = { sent: false, reason: "stored; texted on request" };
   } else {
     r = await sendText(followUpBubbles({ email: { subject, body }, message, nextSteps }, firstName(person?.name)).concat(draftLine));
   }

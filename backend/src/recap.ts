@@ -90,7 +90,7 @@ export async function handleReply(text: string, lastBriefId: string | null, now 
     const id = await startCoach(text, "text");
     return id ? "on it 🧠 looking at your whole day, give me about a minute" : "the coach isn't set up yet";
   }
-  if (/^\s*book\b/.test(t)) {
+  if (/^\s*(book|times?)\b/.test(t)) {
     const person = last?.match.personId ? store.people.get(last.match.personId) : undefined;
     const sched = person?.followUp?.schedule;
     if (!sched) return "nothing to book yet. meet someone and debrief first";

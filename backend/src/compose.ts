@@ -80,12 +80,13 @@ export async function composeRecap(brief: Brief, debrief?: string): Promise<stri
   try {
     const out = await parseWithModel(SYSTEM, {
       task: "recap",
-      format: "Return bubbles: exactly ONE string, under 200 characters, texting voice: who you just met (first and last name, role, org), " +
-        "then the one or two things that matter most (what they said they wanted, from the debrief first). " +
-        "No offer, no sources, no card titles; the follow-up email and times arrive by themselves a few minutes later.",
+      format: "Return bubbles: 3 to 5 strings, each ONE line under 100 characters. " +
+        "First: who you just met (first and last name, role, org). " +
+        "Then one bubble per thing worth remembering, most useful first: what they said they wanted (debrief first), then one hook from the facts. " +
+        "Last: a short offer ending with: just say email. No sources, no card titles.",
       ...context(brief, debrief),
     }, RecapOut, { maxTokens: 600, timeoutMs: 8000 });
-    const bubbles = splitBubbles(out.bubbles.map(clean), 220, 1); // one text, by request
+    const bubbles = splitBubbles(out.bubbles.map(clean));
     if (bubbles.length >= 1) return bubbles;
   } catch (err) {
     console.warn(`[compose] recap fell back: ${err instanceof LlmUnavailable ? err.message : String(err)}`);
@@ -95,6 +96,9 @@ export async function composeRecap(brief: Brief, debrief?: string): Promise<stri
 
 /** Follow-up email with real paragraphs. Falls back to the template in recap.ts. */
 export async function composeEmail(brief: Brief, debrief?: string): Promise<{ subject: string; body: string }> {
+  // The CREAO Follow-up agent is the engine: its email wins whenever it has landed.
+  const ready = (brief.match.personId ? store.people.get(brief.match.personId) : undefined)?.followUp?.email;
+  if (ready?.subject && ready.body) return ready;
   try {
     const out = await parseWithModel(SYSTEM, {
       task: "email",
@@ -121,6 +125,9 @@ export async function composeEmail(brief: Brief, debrief?: string): Promise<{ su
 
 /** Answer a free-form text ("what was his talk about?", "write me a short text to send him"). */
 export async function composeAnswer(question: string, brief: Brief | null): Promise<string> {
+  // "text" -> the CREAO Follow-up agent's message when it has landed.
+  const readyMsg = brief?.match.personId ? store.people.get(brief.match.personId)?.followUp?.message : undefined;
+  if (brief && readyMsg && /\b(text|message|dm)\b/i.test(question) && !/\b(what|why|how|should)\b/i.test(question)) return `here's one to send ${brief.query.name.split(/\s+/)[0]}:\n${readyMsg}`;
   if (!brief) return "I don't have anyone on file yet. Hold a temple and say a name, company, role, and I'll keep notes.";
   try {
     const out = await parseWithModel(SYSTEM, {
