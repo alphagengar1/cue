@@ -514,11 +514,12 @@ export async function finalize(runId: string, via: "webhook" | "poll"): Promise<
     if (!out) {
       // The wearer-facing agents sometimes answer in prose instead of the JSON block. The prose is
       // still worth texting; it just cannot be stored as structured output.
-      if (await proseFallback(rec, run)) { rec.status = "completed"; return; }
+      if (await proseFallback(rec, run)) { rec.status = "completed"; store.runs.set(rec.runId, rec); failBriefFollowUp(rec); return; } // prose: no JSON to store, the fast writer covers "email"
       markFailed(rec, "NO_JSON_IN_RESULT");
       return;
     }
     rec.status = "completed";
+    store.runs.set(rec.runId, rec); // persist the status change (SavedMap only sees set), so a restart never replays a finished run
     console.log(`[creao] run ${runId} (${rec.agent}) completed via ${via}, tokens=${m.tokens ? `${m.tokens.in}/${m.tokens.out}` : "?"} usd~${m.usd?.toFixed(4) ?? "?"}`);
     await applyResult(rec, out);
   } catch (err) {
@@ -545,6 +546,7 @@ async function proseFallback(rec: RunRecord, run: CreaoRun): Promise<boolean> {
 
 function markFailed(rec: RunRecord, code: string): void {
   rec.status = "failed";
+  store.runs.set(rec.runId, rec);
   const m = meta.get(rec.runId);
   if (m) m.errorCode = code;
   console.warn(`[creao] run ${rec.runId} (${rec.agent}) failed: ${code}`);
@@ -554,12 +556,17 @@ function markFailed(rec: RunRecord, code: string): void {
     if (ev && ev.creaoRunId === rec.runId && ev.loadStatus === "loading") ev.loadStatus = "failed";
   }
   if (rec.briefId && rec.agent === "follow_up_writer") {
-    // The gate reads this: failed means the fast writer covers. Only this run's own status, never a newer debrief's.
-    const b = store.briefs.get(rec.briefId);
-    if (b?.followUp && b.followUp.runId === rec.runId) store.briefs.set(b.id, { ...b, followUp: { ...b.followUp, status: "failed" }, version: b.version + 1 });
+    failBriefFollowUp(rec);
   } else if (rec.briefId && (rec.agent === "person_researcher" || rec.agent === "brief_writer")) {
     setSlowPath(rec.briefId, { status: "failed", runId: rec.runId }); // the research chain is what slowPath tracks
   }
+}
+
+/** The gate (recap.ts followUpGate) reads this: failed means the fast writer covers. Only this run's own status, never a newer debrief's. */
+function failBriefFollowUp(rec: RunRecord): void {
+  if (!rec.briefId || rec.agent !== "follow_up_writer") return;
+  const b = store.briefs.get(rec.briefId);
+  if (b?.followUp && b.followUp.runId === rec.runId && b.followUp.status === "pending") store.briefs.set(b.id, { ...b, followUp: { ...b.followUp, status: "failed" }, version: b.version + 1 });
 }
 
 /** Terminal slow-path change. Bumps version so the app's ?since= poll sees it. */
@@ -633,7 +640,8 @@ async function applyFollowUpWriter(rec: RunRecord, out: unknown): Promise<string
   if (person) store.putPerson({ ...person, followUp: { ...(person.followUp ?? {}), ...written } });
   // The brief is the source of truth (a walk-up with no matched person still gets the agent's email).
   { const b = rec.briefId ? store.briefs.get(rec.briefId) : undefined;
-    if (b) store.briefs.set(b.id, { ...b, followUp: { ...(b.followUp ?? {}), ...written, status: "ready", runId: rec.runId }, version: b.version + 1, updatedAt: new Date().toISOString() }); }
+    // Only this run's own brief: a newer debrief already started a newer run and must not be overwritten by the older draft.
+    if (b && (!b.followUp?.runId || b.followUp.runId === rec.runId)) store.briefs.set(b.id, { ...b, followUp: { ...(b.followUp ?? {}), ...written, status: "ready", runId: rec.runId }, version: b.version + 1, updatedAt: new Date().toISOString() }); }
   // The agent's own recap and research notes go to the journal only; Haiku's instant recap already
   // reached the phone, and the wearer asked for fewer texts, not more.
   const recap = (d.recap ?? []).map((b) => sanitize(b).trim().slice(0, 160)).filter(Boolean).slice(0, 5);
@@ -698,7 +706,7 @@ async function applySchedule(rec: RunRecord, d: z.infer<typeof ScheduleOut>, opt
   const person = rec.personId ? store.people.get(rec.personId) : undefined;
   if (person) store.putPerson({ ...person, followUp: { ...(person.followUp ?? {}), schedule } });
   { const b = rec.briefId ? store.briefs.get(rec.briefId) : undefined;
-    if (b) store.briefs.set(b.id, { ...b, followUp: { status: "ready", runId: rec.runId, ...(b.followUp ?? {}), schedule }, version: b.version + 1 }); }
+    if (b && (!b.followUp?.runId || b.followUp.runId === rec.runId)) store.briefs.set(b.id, { ...b, followUp: { status: "ready", runId: rec.runId, ...(b.followUp ?? {}), schedule }, version: b.version + 1 }); }
   const first = person?.name.split(/\s+/)[0] ?? "them";
   const r = opts.quiet ? { sent: false as const, reason: "sent with the follow-up wave" } : await sendText(scheduleBubbles(schedule, first));
   { const b0 = rec.briefId ? store.briefs.get(rec.briefId) : undefined;

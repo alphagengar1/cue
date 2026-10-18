@@ -112,12 +112,13 @@ export function findOrg(orgText: string, orgs?: Organization[]): Organization | 
   // Active event first; then every other loaded event (an org from last night's pack, or the demo file, still counts).
   const here = findOrgIn(q, store.eventOrgs());
   if (here) return here;
-  return findOrgIn(q, [...store.orgs.values()].filter((o) => o.eventId !== store.activeEventId));
+  return findOrgIn(q, [...store.orgs.values()].filter((o) => o.eventId !== store.activeEventId), false); // other events: exact names only, no fuzzy snap
 }
-function findOrgIn(q: string, orgs: Organization[]): Organization | null {
+function findOrgIn(q: string, orgs: Organization[], fuzzy = true): Organization | null {
   const labels = (o: Organization) => [o.id, o.name, ...o.aliases].map(norm).filter(Boolean);
   const exact = orgs.find((o) => labels(o).includes(q));
   if (exact) return exact;
+  if (!fuzzy) return null;
   let best: { org: Organization; score: number } | null = null;
   for (const o of orgs) {
     for (const l of labels(o)) {

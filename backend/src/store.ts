@@ -88,7 +88,10 @@ class Store {
   }
   /** Follow-up output for a brief: its own run first, then the matched person's (hand-loaded, or an earlier conversation). */
   followUpFor(brief: Pick<Brief, "match" | "followUp">): FollowUp | undefined {
-    return brief.followUp ?? this.personFor(brief)?.followUp;
+    const own = brief.followUp; const theirs = this.personFor(brief)?.followUp;
+    if (!own) return theirs;
+    if (own.email || !theirs) return own;
+    return { ...theirs, ...own }; // a failed start keeps the person's hand-loaded or earlier email
   }
   seenDeliveries = new Set<string>();
   activeEventId: string | null = null;
@@ -212,7 +215,8 @@ class Store {
       fs.mkdirSync(path.dirname(LOCAL_SESSION_FILE), { recursive: true });
       const briefs = [...this.briefs.values()].sort((a, b) => a.updatedAt.localeCompare(b.updatedAt)).slice(-200);
       const runs = [...this.runs.values()].slice(-300);
-      fs.writeFileSync(LOCAL_SESSION_FILE, JSON.stringify({ savedAt: new Date().toISOString(), briefs, runs }));
+      fs.writeFileSync(LOCAL_SESSION_FILE + ".tmp", JSON.stringify({ savedAt: new Date().toISOString(), briefs, runs }));
+      fs.renameSync(LOCAL_SESSION_FILE + ".tmp", LOCAL_SESSION_FILE); // atomic: a kill mid-write never leaves half a file
     } catch (err) {
       console.warn(`[store] could not save session: ${err instanceof Error ? err.message : String(err)}`);
     }

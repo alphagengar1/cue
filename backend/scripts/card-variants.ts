@@ -26,7 +26,7 @@ const goal: Goal = store.goal;
 
 // People: a rich public profile from the loaded pack, a mid-profile public engineer found live, a made-up person.
 const PEOPLE: { name: string; org: string; role?: string }[] = [
-  { name: "Tim Cook", org: "Apple", role: "co-founder" },
+  { name: "Tim Cook", org: "Apple", role: "CEO" },
   { name: "Armin Ronacher", org: "Sentry", role: "engineer" },
   { name: "Maya Lin", org: "Even Realities", role: "recruiter" },
 ];

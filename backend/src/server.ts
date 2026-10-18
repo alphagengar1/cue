@@ -7,6 +7,9 @@ import { journal } from "./journal.js";
 import { handleReply } from "./recap.js";
 import { store } from "./store.js";
 
+// systemd restarts (every deploy) send SIGTERM; flush the debounced session save first so no brief or run is lost.
+for (const sig of ["SIGTERM", "SIGINT"] as const) process.on(sig, () => { try { store.saveSession(); } finally { process.exit(0); } });
+
 app.listen(config.port, () => {
   const keys = {
     deepgram: !!config.deepgramKey, exa: !!config.exaKey, anthropic: !!config.anthropicKey,
