@@ -80,7 +80,7 @@ CREAO agent IDs and run share links:
 |---|---|---|---|
 | 1 | Research (before: event pack, person research, final cards) | `5283bd7f-cc11-4b29-902b-2debe558b46f` | https://agent.creao.ai/install/5283bd7f-cc11-4b29-902b-2debe558b46f?version=4c8c119a-7514-4dca-9e6b-64798d859bbd |
 | 2 | Follow-up (after: email, message, next steps, times, calendar hold, Gmail draft) | `7a639acb-b15a-4d88-b66d-c76831b92ddf` | https://agent.creao.ai/install/7a639acb-b15a-4d88-b66d-c76831b92ddf?version=e2188ecf-8212-4b00-a590-4396a046cc07 |
-| 3 | Coach (long-running: journal, Connections sheet, dashboard, coaching, nightly with memory) | [COACH AGENT ID] | [COACH SHARE LINK] |
+| 3 | Coach (long-running: journal, Connections sheet, dashboard, coaching, nightly with memory) | `b095ddf1-cccc-42ae-a381-ccc7906b14a4` | https://agent.creao.ai/install/b095ddf1-cccc-42ae-a381-ccc7906b14a4?version=58dfa39f-5361-4cb3-9e04-e92d421dda4f |
 
 We show the agents running in the CREAO Sessions tab in the demo video.
 
