@@ -105,6 +105,19 @@ The earlier six single-purpose agents (Event Loader `7ed5ac12…`, Person Resear
 - **No agent contacts the other person.** Agents produce drafts and holds for the wearer; the wearer sends them. Photon texts only the wearer.
 - Hand-run JSON pasted into `backend/data/<event>.json` is still supported as a pre-event path and lands in the same store.
 
+## For the long-term agents (teammate track)
+
+The post-conversation, long-horizon side is a separate track: agents that live on CREAO, read the Cue Journal on their own schedule with extended memory, and help the wearer get better over time (speech and delivery, networking skills across weeks, patterns about the wearer, relationship state, dashboards). Full freedom on design. The backend's only job here is to record everything, in a readable form, which it does.
+
+What you need:
+
+1. **Clone the repo** and read, in this order: `design/06-journal.md` (the schema of every entry the backend records and what each agent can derive), `docs/journal-sample.md` (a real journal from the server), `agents/voice.md` (the texting voice if an agent ever texts the wearer).
+2. **The data**: `https://35.164.205.54.sslip.io/journal.md?token=<JOURNAL_TOKEN>` (Markdown, what an agent reads) and `/api/journal.json?token=…` (JSON). The token is the `JOURNAL_TOKEN` line in `backend/.env`; ask the team for it, never commit it. The journal is append-only and holds: every utterance the wearer spoke (verbatim, with how it was understood), cards shown, research facts, debriefs, consented transcript chunks, the recap texts, iMessage replies, follow-ups, proposed times and holds, coaching, goal changes.
+3. **Build agents on CREAO** with the chat: `cat agents/coach.md | pbcopy` is the starting point (reads the journal nightly, keeps the "Cue Connections" Google Sheet, renders a dashboard, coaches with memory). Replace `JOURNAL_URL` in the text before pasting. New agents of your own: same pattern, one paste file per agent in `agents/`, give it the journal URL, a schedule, extended memory, and whichever connectors it needs (Sheets, Calendar, Gmail drafts).
+4. **If an agent should be reachable from the backend** (for example "how did I do today?" from the glasses), send the agent id and key to the backend owner for `backend/.env` (`CREAO_COACH_KEY`, `CREAO_COACH_ID`); the backend starts it and texts its result. Scheduled runs need nothing from the backend.
+5. **Rules that do not bend**: professional content only, never write anything private about anyone into a sheet, dashboard or text; never contact the other person, only the wearer; the journal is the wearer's own data.
+6. **Need a field the journal does not record?** Say which entry type and which fields; the backend owner adds it.
+
 ## Setup
 
 1. **Clone** the repo and install: `cd backend && npm install`, `cd app && npm install`.
