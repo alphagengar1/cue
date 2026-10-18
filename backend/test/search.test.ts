@@ -32,3 +32,17 @@ describe("resultsToFacts: skips nav / boilerplate sentences", () => {
     assert.equal(f.text, "Priya Shah leads university recruiting at Anduril.");
   });
 });
+
+describe("misheard surnames across events", () => {
+  test("a listed attendee from another loaded event still matches within 2 edits", async () => {
+    const { findListedPersonByName } = await import("../src/parse.js");
+    const { store } = await import("../src/store.js");
+    store.loadSample(); // lahacks-f26 active
+    const other = "other-event-" + process.pid;
+    store.events.set(other, { id: other, name: "Other", date: "2026-10-18", sources: [], loadStatus: "ready" });
+    store.upsertPerson(other, "sentry", "David Cramer", { role: "co-founder", facts: [], match: "high", matchReason: "list", fromEventList: true });
+    assert.equal(findListedPersonByName("David Kramer")?.name, "David Cramer");
+    assert.equal(findListedPersonByName("Davit Cramer")?.name, "David Cramer");
+    assert.equal(findListedPersonByName("Someone Else"), null);
+  });
+});

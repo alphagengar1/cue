@@ -90,7 +90,7 @@ export function parseTranscript(text: string, orgs: Organization[] = store.event
   return { name: words[0] ?? "", org: words[1] ?? "" };
 }
 
-function levenshtein(a: string, b: string): number {
+export function levenshtein(a: string, b: string): number {
   const dp = Array.from({ length: b.length + 1 }, (_, i) => i);
   for (let i = 1; i <= a.length; i++) {
     let prev = dp[0];
@@ -160,9 +160,15 @@ export function fuzzyPerson(name: string, pool: Person[]): Person | null {
 
 /** With no org match, a listed attendee whose name is a near-miss of what was heard. */
 export function findListedPersonByName(name: string, eventId: string | null = store.activeEventId): Person | null {
-  if (!eventId) return null;
-  const listed = store.eventPeople(eventId).filter((p) => p.fromEventList || p.confirmed);
-  const exact = listed.filter((p) => norm(p.name) === norm(name));
-  if (exact.length === 1) return exact[0];
-  return fuzzyPerson(name, listed);
+  const pools: Person[][] = [];
+  if (eventId) pools.push(store.eventPeople(eventId).filter((p) => p.fromEventList || p.confirmed));
+  // Then every other loaded event: an attendee from last night's pack is still "David Cramer" today.
+  pools.push([...store.people.values()].filter((p) => p.eventId !== eventId && (p.fromEventList || p.confirmed)));
+  for (const listed of pools) {
+    const exact = listed.filter((p) => norm(p.name) === norm(name));
+    if (exact.length === 1) return exact[0];
+    const fuzzy = fuzzyPerson(name, listed);
+    if (fuzzy) return fuzzy;
+  }
+  return null;
 }

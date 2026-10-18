@@ -8,7 +8,7 @@ import { decide, type Decision } from "./decide.js";
 import { journal } from "./journal.js";
 import { CueError } from "./errors.js";
 import { LlmUnavailable, writeCards, type BriefInput } from "./llm.js";
-import { findListedPersonByName, findOrg, findStoredPerson, parseTranscript } from "./parse.js";
+import { findListedPersonByName, findOrg, findStoredPerson, levenshtein, parseTranscript } from "./parse.js";
 import { cleanSource, enforceCards, hostOf, isBoilerplate } from "./safety.js";
 import {
   filterResults, fullNamesIn, resultsToFacts, searchPerson, SearchUnavailable, type SearchResult,
@@ -159,8 +159,8 @@ export async function buildBrief(text: string): Promise<BriefOutcome> {
   });
   timings.store = Date.now() - tStore;
   if (!query.name) throw new CueError("BAD_REQUEST", "Could not find a name in the text");
-  const name = stored?.name ?? query.name;
-  const firstOnly = !name.includes(" ");
+  let name = stored?.name ?? query.name;
+  let firstOnly = !name.includes(" ");
   const orgName = org?.name ?? query.org;
   const orgId = org?.id ?? slug(query.org || "unknown");
   notes.push(org ? `org ${org.id}` : "org not in store");
@@ -179,6 +179,20 @@ export async function buildBrief(text: string): Promise<BriefOutcome> {
     }, { "cue.provider": "exa" });
     kept = filterResults(results, name, org ? [org.name, ...org.aliases] : [query.org]);
     notes.push(`search ${Date.now() - t0}ms, kept ${kept.length}/${results.length}`);
+    // Misheard surname ("David Kramer" for David Cramer) and nobody on a list: search by first name
+    // and the org, and accept the one full name whose surname is within 2 edits of what was heard.
+    if (!kept.length && !stored && !firstOnly) {
+      const [first, ...rest] = name.split(/\s+/);
+      const heardLast = norm(rest.join(" "));
+      const retry = await searchPerson(`${first} ${orgName} ${query.role ?? ""}`.trim());
+      const near = [...new Set(fullNamesIn(filterResults(retry, first, org ? [org.name, ...org.aliases] : [query.org]), first))]
+        .filter((full) => { const last = norm(full.split(/\s+/).slice(1).join(" ")); return last && last !== heardLast && levenshtein(last, heardLast) <= 2; });
+      if (near.length === 1) {
+        notes.push(`name corrected: "${name}" -> "${near[0]}" (search)`);
+        name = near[0];
+        kept = filterResults(retry, name, org ? [org.name, ...org.aliases] : [query.org]);
+      }
+    }
   } catch (err) {
     searchFailed = true;
     notes.push(`search unavailable: ${err instanceof SearchUnavailable ? err.message : String(err)}`);

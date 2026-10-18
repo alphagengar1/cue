@@ -48,6 +48,7 @@ export function keyterms(): string[] {
   const terms = new Set<string>();
   for (const o of store.eventOrgs()) terms.add(o.name);
   for (const p of store.eventPeople()) if (p.fromEventList || p.confirmed) terms.add(p.name); // not search guesses
+  for (const p of store.people.values()) if ((p.fromEventList || p.confirmed) && terms.size < 50) terms.add(p.name); // other loaded events too
   return [...terms].slice(0, 50);
 }
 
