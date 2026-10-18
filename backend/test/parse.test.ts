@@ -113,7 +113,7 @@ describe("findOrg / findStoredPerson", () => {
     assert.equal(findOrg("Creo")?.id, "creao");
   });
   test("unrelated and empty org -> null", () => {
-    assert.equal(findOrg("Anduril"), null);
+    assert.equal(findOrg("Nonexistent Widgets Corp"), null);
     assert.equal(findOrg(""), null);
   });
   test("first-name expansion when unique at the org", () => {

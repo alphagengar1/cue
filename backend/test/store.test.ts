@@ -45,7 +45,8 @@ describe("bundled event files", () => {
     store.loadSample(dataFile("sample-event.json"));
     store.loadSample(dataFile("creao-career-fair.json"));
     assert.deepEqual(store.eventOrgs().map((o) => o.id).sort(), ["anduril", "cloudflare", "vercel"]);
-    assert.equal(findOrg("Sentry"), null);
+    assert.equal(findOrg("Sentry", store.eventOrgs()), null); // active event only when the pool is given
+    assert.equal(findOrg("Sentry")?.id, "sentry"); // without a pool, orgs from other loaded events count
   });
   test("reloading a file with the same event id does not keep the other file's people", () => {
     store.loadSample(dataFile("sample-event.json"));

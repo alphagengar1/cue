@@ -105,16 +105,14 @@ export function levenshtein(a: string, b: string): number {
 }
 
 /** Exact or alias match, then case-insensitive fuzzy match. */
-export function findOrg(orgText: string, orgs: Organization[] = store.eventOrgs()): Organization | null {
+export function findOrg(orgText: string, orgs?: Organization[]): Organization | null {
   const q = norm(orgText);
   if (!q) return null;
+  if (orgs) return findOrgIn(q, orgs);
   // Active event first; then every other loaded event (an org from last night's pack, or the demo file, still counts).
-  if (orgs === store.eventOrgs()) {
-    const here = findOrgIn(q, orgs);
-    if (here) return here;
-    return findOrgIn(q, [...store.orgs.values()].filter((o) => o.eventId !== store.activeEventId));
-  }
-  return findOrgIn(q, orgs);
+  const here = findOrgIn(q, store.eventOrgs());
+  if (here) return here;
+  return findOrgIn(q, [...store.orgs.values()].filter((o) => o.eventId !== store.activeEventId));
 }
 function findOrgIn(q: string, orgs: Organization[]): Organization | null {
   const labels = (o: Organization) => [o.id, o.name, ...o.aliases].map(norm).filter(Boolean);
