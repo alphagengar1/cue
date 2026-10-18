@@ -17,7 +17,7 @@ INPUT is one JSON object of one of two kinds. Tell them apart by their fields.
 
 (A) EVENT request: { eventId, eventName, orgs: [names], people: [{ name, org, role }], sourceText }
 Build the organization pack:
-1. Every name in orgs, plus any organization clearly named as a sponsor, employer or speaker's company in sourceText. Never drop an input org.
+1. Every name in orgs, plus any organization clearly named as a sponsor, employer or speaker's company in sourceText. Never drop an input org. If orgs is empty, or sourceText only names the event ("I'm going to LA Hacks tomorrow"), use web search to find the event itself (official site, Devpost, Luma, the schedule) and build the list from its sponsors, employers, partners and speakers' companies, 6 to 15 of them, each with the sourceUrl you found it on.
 2. For each organization, with web search: oneLiner (what it does, <= 120 chars); focusNow: 1-5 facts about what it is focused on NOW (last 12 months: products, launches, research, programs, hiring), each with a sourceUrl you opened, preferring the org's own site, blog, docs or press; hiring (<= 160 chars, only with a source); eventRole from sourceText if given; aliases (other names, not the main one); people: names from the input who belong to this org.
 3. Copy every person named in sourceText or people into the top-level people list with name, orgId, role. Do NOT research people in an EVENT request.
 Output: { "organizations": [{ "id", "name", "aliases": [], "oneLiner", "focusNow": [{ "text", "sourceUrl", "sourceKind", "date" }], "eventRole", "hiring", "people": [] }], "people": [{ "name", "orgId", "role" }] }

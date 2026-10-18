@@ -16,6 +16,7 @@ import { LlmUnavailable } from "./llm.js";
 import { parseTranscript } from "./parse.js";
 import { readResume, RESUME_MAX_BYTES, RESUME_TYPES, type ResumeType } from "./resume.js";
 import { journal, journalEntries, journalMarkdown, journalPeople } from "./journal.js";
+import { createEvent } from "./events.js";
 import { handleSay } from "./say.js";
 import { composeRecap } from "./compose.js";
 import { photonConfigured, sendRecap } from "./photon.js";
@@ -335,33 +336,7 @@ app.post("/api/profile", json, profileHandler);
 
 app.post("/api/events", json, asyncRoute(async (req, res) => {
   const b = parseBody(EventSchema, req.body);
-  const id = slug(b.name) || newId("evt");
-  const event: Event = {
-    id, name: b.name, date: b.date,
-    sources: b.sourceText ? [{ kind: "employers", raw: b.sourceText }] : [],
-    loadStatus: "empty",
-  };
-  store.events.set(id, event);
-  store.activeEventId = id;
-
-  const orgs: Organization[] = (b.organizations ?? []).map((o) => ({
-    ...o, id: o.id ?? slug(o.name), eventId: id,
-  }));
-  for (const name of b.orgs) {
-    if (!orgs.some((o) => o.id === slug(name))) {
-      orgs.push({ id: slug(name), eventId: id, name, aliases: [], oneLiner: "", focusNow: [], people: [] });
-    }
-  }
-  for (const o of orgs) store.putOrg(o);
-  for (const p of b.people) {
-    store.upsertPerson(id, slug(p.org), p.name, { role: p.role, match: "high", matchReason: "on the event list", fromEventList: true });
-  }
-  if (b.organizations?.length) event.loadStatus = "ready";
-
-  const runId = await startRun("event_loader", {
-    eventId: id, eventName: b.name, orgs: b.orgs, people: b.people, sourceText: b.sourceText,
-  }, { eventId: id });
-  if (runId) { event.loadStatus = "loading"; event.creaoRunId = runId; }
+  const event = await createEvent(b, { via: "setup" }); // same path as "I'm going to X tomorrow" over iMessage
   res.json({ event });
 }));
 

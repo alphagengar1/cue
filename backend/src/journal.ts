@@ -10,7 +10,7 @@ import { store } from "./store.js";
 
 export type JournalType =
   | "say" | "brief" | "research" | "cards_updated" | "debrief" | "transcript" | "recap"
-  | "follow_up" | "schedule" | "coaching" | "goal" | "reply";
+  | "follow_up" | "schedule" | "coaching" | "goal" | "reply" | "event";
 
 export interface JournalEntry {
   at: string;

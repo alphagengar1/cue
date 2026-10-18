@@ -555,12 +555,23 @@ function setSlowPath(briefId: string, slowPath: Brief["slowPath"], cards?: Card[
 export async function applyResult(rec: RunRecord, out: unknown): Promise<void> {
   const m = meta.get(rec.runId);
   const note = (s: string) => { if (m) m.outcome = s; console.log(`[creao] ${rec.agent} ${rec.runId}: ${s}`); };
-  if (rec.agent === "event_loader") note(applyEventLoader(rec, out));
+  if (rec.agent === "event_loader") { note(applyEventLoader(rec, out)); await notifyEventReady(rec.eventId); }
   else if (rec.agent === "person_researcher") note(await applyPersonResearcher(rec, out));
   else if (rec.agent === "follow_up_writer") note(await applyFollowUpWriter(rec, out));
   else if (rec.agent === "meeting_scheduler") note(await applyMeetingScheduler(rec, out));
   else if (rec.agent === "networking_coach") note(await applyNetworkingCoach(rec, out));
   else note(applyBriefWriter(rec, out));
+}
+
+/** An event announced over iMessage: when its pack lands, text who is there and who to talk to first. */
+async function notifyEventReady(eventId: string | undefined): Promise<void> {
+  const ev = eventId ? store.events.get(eventId) : undefined;
+  if (!ev || ev.loadStatus !== "ready" || !ev.sources.some((s) => s.kind === "imessage")) return;
+  const orgs = store.eventOrgs(ev.id);
+  const { composeEventAnswer } = await import("./compose.js");
+  const answer = await composeEventAnswer(`${ev.name} pack just loaded. In 3 short lines: who is there, and who I should talk to first for my goal and why.`);
+  const r = await sendText([`your ${ev.name} pack is ready: ${orgs.length} orgs`, ...answer.split("\n").filter(Boolean).slice(0, 3), "say \"look up <name>, <company>\" for anyone and i'll prep you"]);
+  console.log(`[creao] event pack texted: ${r.sent ? "sent" : `not sent (${r.reason})`}`);
 }
 
 // Follow-up Writer (agents/follow-up-writer.md): email + message + next steps from the brief and the

@@ -170,3 +170,17 @@ describe("pre-event texting", () => {
     assert.match(String(ev), /look up <name>, <company>|people on the list|No event loaded/);
   });
 });
+
+describe("announcing an event over iMessage", () => {
+  test("'hey, I'm going to LA Hacks tomorrow' creates the event (no agent in tests) and answers", async () => {
+    const { parseEventText } = await import("../src/events.js");
+    const now = new Date("2026-10-17T20:00:00.000Z");
+    assert.deepEqual(parseEventText("hey, I'm going to LA Hacks tomorrow", now), { name: "LA Hacks", date: "2026-10-18", orgs: [] });
+    assert.equal(parseEventText("hey, I'm going to the UCLA Engineering Career Fair on Friday with Sentry, Anduril", now)?.name, "UCLA Engineering Career Fair");
+    assert.equal(parseEventText("what time is it", now), null);
+    const out = await handleReply("hey im going to LA Hacks tomorrow", null);
+    assert.match(String(out), /LA Hacks is set|building your LA Hacks pack/);
+    assert.equal(store.activeEvent()?.name, "LA Hacks");
+    store.loadSample();
+  });
+});

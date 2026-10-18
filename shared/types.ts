@@ -17,7 +17,7 @@ export interface Fact {
 
 export interface Event {
   id: string; name: string; date: string;           // ISO date
-  sources: { kind: "employers" | "speakers" | "luma" | "url"; raw: string }[];
+  sources: { kind: "employers" | "speakers" | "luma" | "url" | "imessage"; raw: string }[];
   loadStatus: "empty" | "loading" | "ready" | "failed";
   creaoRunId?: string;
 }

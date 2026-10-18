@@ -3,7 +3,8 @@
 // plus the pure "who did I meet" list. Only ever addressed to the wearer.
 import type { Brief } from "../../shared/types.js";
 import { startCoach } from "./coach.js";
-import { composeAnswer, composeEmail, composeEventAnswer } from "./compose.js";
+import { composeAnswer, composeEmail, composeEventAnswer, extractEvent } from "./compose.js";
+import { createEvent } from "./events.js";
 import { suggestFollowUp } from "./photon.js";
 import { bookBubbles, holdMovedBubbles } from "./voice.js";
 import { moveHold, pickSlot } from "./calendar.js";
@@ -77,6 +78,15 @@ export async function handleReply(text: string, lastBriefId: string | null, now 
   if (!t) return null;
   const last = lastBriefId ? store.briefs.get(lastBriefId) ?? null : null;
 
+  // "hey, I'm going to LA Hacks tomorrow": create the event and start the Research agent on it.
+  if (/\b(going to|heading to|headed to|attending|i'?ll be at|i'?m at|i am at)\b/.test(t) && !/^\s*(look ?up|prep|brief me|who is|who's)\b/.test(t)) {
+    const ev = await extractEvent(text);
+    if (ev) {
+      const event = await createEvent({ name: ev.name, date: ev.date || new Date().toISOString().slice(0, 10), orgs: ev.orgs, sourceText: text }, { via: "imessage" });
+      if (event.loadStatus === "loading") return `on it 👀 building your ${ev.name} pack: who's there, what they're focused on, who's hiring. couple of minutes`;
+      return `got it, ${ev.name} is set${ev.orgs.length ? ` with ${ev.orgs.join(", ")}` : ""}. say "look up <name>, <company>" and i'll prep you (the research agent isn't connected, so i can't find the sponsor list myself)`;
+    }
+  }
   // Pre-event prep by text: "look up David Cramer, Sentry" / "prep me for Priya Shah, Anduril" / "who is X at Y".
   const prep = /^\s*(look ?up|prep( me)?( for)?|brief me on|who is|who's)\s+(.+)$/i.exec(text.trim());
   if (prep) {

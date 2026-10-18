@@ -5,6 +5,7 @@
 // unavailable, so a missing key or a timeout never blocks a text.
 import { z } from "zod";
 import type { Brief, Fact } from "../../shared/types.js";
+import { parseEventText } from "./events.js";
 import { LlmUnavailable, parseWithModel } from "./llm.js";
 import { formatRecap } from "./photon.js";
 import { draftEmail, suggestText } from "./recap.js";
@@ -121,6 +122,21 @@ export async function composeEmail(brief: Brief, debrief?: string): Promise<{ su
   const t = draftEmail(brief);
   const [subjectLine, ...rest] = t.split("\n");
   return { subject: subjectLine.replace(/^Subject:\s*/, ""), body: rest.join("\n").trim() };
+}
+
+const EventOut = z.object({ name: z.string(), date: z.string(), orgs: z.array(z.string()), isEvent: z.boolean() });
+/** "hey, I'm going to LA Hacks tomorrow, sponsors are Sentry and Anduril" -> { name, date, orgs }. Haiku, regex fallback. */
+export async function extractEvent(text: string, now = new Date()): Promise<{ name: string; date: string; orgs: string[] } | null> {
+  try {
+    const out = await parseWithModel(
+      "Extract the event a student says they are going to. Return name (the event's name, e.g. 'LA Hacks Fall 2026' or 'UCLA Engineering Career Fair'), date as YYYY-MM-DD resolved from words like tomorrow relative to today (empty if unknown), orgs (companies or sponsors they mention, exact spelling), and isEvent false if the text is not about attending an event.",
+      { today: now.toISOString().slice(0, 10), text }, EventOut, { maxTokens: 200, timeoutMs: 4000 });
+    if (!out.isEvent || !out.name.trim()) return null;
+    return { name: out.name.trim().slice(0, 80), date: /^\d{4}-\d{2}-\d{2}$/.test(out.date) ? out.date : "", orgs: out.orgs.map((s) => s.trim()).filter(Boolean).slice(0, 10) };
+  } catch (err) {
+    console.warn(`[compose] event extraction fell back: ${err instanceof LlmUnavailable ? err.message : String(err)}`);
+    return parseEventText(text, now);
+  }
 }
 
 /** Before an event, or with nothing on file: answer from the loaded event pack (orgs, focus, hiring, listed people). */
