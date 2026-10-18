@@ -11,7 +11,7 @@ export type Clip = Uint8Array<ArrayBuffer>
 export const BYTES_PER_SEC = 32000
 export const TAIL_MS = 300        // keep capturing after stop (02: Listening)
 export const MIN_CLIP_MS = 400    // shorter clips are discarded (02: Listening)
-export const MAX_CLIP_MS = 8000   // auto-stop (02: Listening)
+export const MAX_CLIP_MS = 12000  // auto-stop (02: Listening); a spoken debrief needs more than a name
 const LATE_MS = 150               // 1-2 frames trickle in after audioControl(false) (measured)
 
 export interface MicStats {

@@ -304,3 +304,19 @@ Input and output schemas are in 03. All three are started with `POST https://dev
 - What "agent run share link" do CREAO judges want in the README?
 - Real latencies on venue wifi for Deepgram and Exa (benchmark 5 calls each).
 - Whether to stream PCM to the backend during the hold to cut STT time. Not needed unless the budget is missed.
+
+## 11. Hosting
+
+Status: decided Sat Oct 17 2026. Replaces "Vultr" wherever it appears above.
+
+The backend runs on one AWS Lightsail instance (Ubuntu 24.04, $5/month plan, 1 GB RAM) paid from
+the team's AWS credits. Caddy terminates HTTPS on `https://<static-ip>.sslip.io` with an automatic
+Let's Encrypt certificate and proxies to the backend on `127.0.0.1:8787`. The backend is a systemd
+service (`cue-backend`) that starts on boot and restarts on any exit after 3 s with no start limit,
+because the Photon reply listener holds a long-lived connection. Logs are in the journal
+(`journalctl -u cue-backend -f`). Secrets live only in `/opt/cue/backend/.env` on the server, a copy
+of the local file; beyond `.env.example` it must also carry `DEVICE_TOKEN` (non-empty, so `/api/*`
+is gated), `OPENAI_API_KEY` (decision gate), and the Photon keys. The static IP is mandatory: the
+hostname encodes it, and the hostname is baked into the app's `app.json` whitelist and
+`VITE_BACKEND_URL`, so changing it means a new Even Hub build. The store is in memory, so the event
+must be reloaded after a restart. Setup steps and scripts: `deploy/README.md`.

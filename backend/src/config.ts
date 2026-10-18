@@ -38,7 +38,8 @@ export const config = {
   },
   publicBaseUrl: env("PUBLIC_BASE_URL"),
   sentryDsn: env("SENTRY_DSN"),
-  sampleEventFile: env("SAMPLE_EVENT_FILE") ?? path.join(BACKEND_DIR, "data", "sample-event.json"),
+  // Relative to backend/ (systemd and nohup start elsewhere). Demo default: the CREAO sponsors event.
+  sampleEventFile: path.resolve(BACKEND_DIR, env("SAMPLE_EVENT_FILE") ?? "data/creao-lahacks-sponsors.json"),
   // Timeouts (01 section 7). STT is longer than 01's 2 s because there is no Groq fallback yet.
   sttTimeoutMs: num("STT_TIMEOUT_MS", 4000),
   searchTimeoutMs: num("SEARCH_TIMEOUT_MS", 1500),

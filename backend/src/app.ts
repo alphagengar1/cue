@@ -15,6 +15,7 @@ import { CueError, sendError } from "./errors.js";
 import { LlmUnavailable } from "./llm.js";
 import { parseTranscript } from "./parse.js";
 import { readResume, RESUME_MAX_BYTES, RESUME_TYPES, type ResumeType } from "./resume.js";
+import { handleSay } from "./say.js";
 import { composeRecap } from "./compose.js";
 import { photonConfigured, sendRecap } from "./photon.js";
 import { newId, slug, store } from "./store.js";
@@ -171,6 +172,16 @@ app.post(
 app.post("/api/briefs/text", json, rateLimit, asyncRoute(async (req, res) => {
   const { text } = parseBody(z.object({ text: z.string().trim().min(1).max(300) }), req.body);
   sendBrief(res, await span("lookup total", "cue.brief", () => buildBrief(text)));
+}));
+
+// One entry point for "hold the temple and say anything" (say.ts): the intent classifier picks
+// lookup / correction / debrief / goal / recap / quiet, and this does it. Rate-limited like a lookup.
+app.post("/api/say", json, rateLimit, asyncRoute(async (req, res) => {
+  const { text, briefId } = parseBody(z.object({ text: z.string().trim().min(1).max(600), briefId: z.string().optional() }), req.body);
+  const out = await span("say total", "cue.say", () => handleSay(text, briefId));
+  if (out.fallback) res.setHeader("X-Cue-Fallback", "template");
+  res.setHeader("X-Cue-Notes", out.notes.join("; ").replace(/[^\x20-\x7e]/g, "?").slice(0, 900));
+  res.json(out.response);
 }));
 
 // Latest brief (setup page mirror). 204 when there is none yet. Registered before /:id.

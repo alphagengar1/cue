@@ -1,0 +1,21 @@
+# Caddy reverse proxy for the Cue backend. HTTPS is automatic (Let's Encrypt, with
+# ZeroSSL as fallback) because __HOST__ is a public hostname that resolves to this box.
+#
+# Template: deploy/setup.sh replaces __HOST__ (e.g. 54.1.2.3.sslip.io or api.cue.example)
+# and __PORT__ (PORT from backend/.env, default 8787), then writes /etc/caddy/Caddyfile.
+#
+# Logs: journalctl -u caddy -f
+
+__HOST__ {
+	encode zstd gzip
+	# Audio uploads to /api/stt are up to ~1 MB (MAX_AUDIO_BYTES); Caddy sets no body
+	# limit by default, so nothing to raise here.
+	reverse_proxy 127.0.0.1:__PORT__ {
+		# The CREAO webhook replies within 10 s; lookups take a few seconds. Give slow
+		# upstream calls room without hanging forever.
+		transport http {
+			response_header_timeout 60s
+		}
+	}
+	log
+}

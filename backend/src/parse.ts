@@ -134,5 +134,35 @@ export function findStoredPerson(name: string, org: Organization | null): Person
   if (full.length === 1) return full[0];
   const first = norm(name.split(" ")[0]);
   const byFirst = atOrg.filter((p) => norm(p.name.split(" ")[0]) === first);
-  return byFirst.length === 1 && !name.includes(" ") ? byFirst[0] : null;
+  if (byFirst.length === 1 && !name.includes(" ")) return byFirst[0];
+  return fuzzyPerson(name, atOrg);
+}
+
+/**
+ * Misheard names: STT gives "David Kramer" for David Cramer. Within the people at the org (or, with
+ * no org match, every listed attendee), accept a unique person whose normalized full name is within
+ * 2 edits, or whose first name matches and last name is within 2 edits. Never applied to search
+ * guesses, only to the event list.
+ */
+export function fuzzyPerson(name: string, pool: Person[]): Person | null {
+  const n = norm(name);
+  if (n.length < 5 || !name.trim().includes(" ")) return null;
+  const [first, ...rest] = name.trim().split(/\s+/);
+  const last = norm(rest.join(" "));
+  const hits = pool.filter((p) => {
+    const pn = norm(p.name);
+    if (levenshtein(pn, n) <= 2) return true;
+    const [pf, ...pr] = p.name.trim().split(/\s+/);
+    return norm(pf) === norm(first) && !!last && levenshtein(norm(pr.join(" ")), last) <= 2;
+  });
+  return hits.length === 1 ? hits[0] : null;
+}
+
+/** With no org match, a listed attendee whose name is a near-miss of what was heard. */
+export function findListedPersonByName(name: string, eventId: string | null = store.activeEventId): Person | null {
+  if (!eventId) return null;
+  const listed = store.eventPeople(eventId).filter((p) => p.fromEventList || p.confirmed);
+  const exact = listed.filter((p) => norm(p.name) === norm(name));
+  if (exact.length === 1) return exact[0];
+  return fuzzyPerson(name, listed);
 }

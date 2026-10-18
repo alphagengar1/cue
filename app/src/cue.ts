@@ -9,7 +9,7 @@ import { measureTextWrap, pxTruncate } from '@evenrealities/pretext'
 import { BODY_LINES, INNER_W, render, serial, type Level, type Screen } from './layout'
 import { label, type Gesture } from './input'
 import { BYTES_PER_SEC, MAX_CLIP_MS, MIN_CLIP_MS, Mic, peak, type Clip } from './audio'
-import { BACKEND_URL, getBrief, getState, postBriefText, postConfirm, postDebrief, postRecap, postStt, putGoal, type ApiResult } from './api'
+import { BACKEND_URL, getBrief, getState, postConfirm, postRecap, postSay, postStt, putGoal, type ApiResult } from './api'
 import { MOCK, MOCK_TRANSCRIPT, mockBrief, mockConfirm, mockGoal, mockSlowPath } from './mock'
 
 // Measured on hardware: long press = sysEvent 9, release = 10. See 02 "Measured on hardware".
@@ -17,14 +17,8 @@ export const PTT_MODE = 'hold' as 'hold' | 'tapToggle'
 
 export const MENU = [
   { id: 1, name: 'Talk' },
-  { id: 2, name: 'Goal: Internship' },
-  { id: 3, name: 'Goal: Cofounder' },
-  { id: 4, name: 'Goal: Learn from experts' },
-  { id: 5, name: 'Goal: Teammates/sponsors' },
-  { id: 6, name: 'Goal: Mentorship' },
   { id: 7, name: 'Last brief' },
   { id: 10, name: 'Text me a recap' },   // Photon: iMessage to the wearer, never to the person met
-  { id: 11, name: 'Debrief + text me' },  // say your own note after the conversation, then the recap is texted
   { id: 8, name: 'Go quiet' },
   // Dev only (?dev=1): judges should not see it. The phone page button still opens it.
   ...(new URLSearchParams(location.search).has('dev') ? [{ id: 9, name: 'Hardware test' }] : []),
@@ -39,7 +33,6 @@ const GOAL_LABEL: Record<Goal, string> = {
 
 const CARD_IDLE_MS = 25000
 const FLASH_MS = 5000                     // quiet-line note, e.g. "★ recap texted"
-const DEBRIEF_MAX_MS = 15000              // the wearer's own note after a conversation (longer than a lookup)
 const CONFIRM_IDLE_MS = 10000
 const THINK_SLOW_MS = 6000
 const THINK_TIMEOUT_MS = 15000
@@ -50,8 +43,6 @@ const MOCK_SLOW_PATH_MS = 15000
 
 export type StateName = 'ready' | 'listening' | 'thinking' | 'card' | 'confirm' | 'quiet' | 'error'
 type ErrorKind = 'stt_empty' | 'offline' | 'timeout' | 'mic' | 'failed'
-/** What a capture is for: a name/org/role lookup, or the wearer's own debrief note (-> Photon recap). */
-type ListenMode = 'lookup' | 'debrief'
 
 export interface LogLine { t: string; text: string }
 
@@ -76,7 +67,6 @@ const st = {
   peak: 0,
   listenStart: 0,
   listenByTap: false,                   // menu Talk: no finger held, so "tap to send"
-  listenMode: 'lookup' as ListenMode,
   backend: BACKEND_URL ? 'checking...' : 'VITE_BACKEND_URL not set',
   bridgeStatus: 'waiting for bridge...',
   lastNote: '',                         // why the last brief came from where it did
@@ -89,8 +79,7 @@ let mic: Mic | null = null
 let active = true                        // false while hardware test mode owns the HUD
 let lookupGen = 0                        // bump to cancel an in-flight lookup
 let lookupAbort: AbortController | null = null
-let pendingTalk: '' | ListenMode = ''   // menu Talk/Debrief: start listening after the menu closes
-const maxClipMs = () => (st.listenMode === 'debrief' ? DEBRIEF_MAX_MS : MAX_CLIP_MS)
+let pendingTalk = false                  // menu Talk: start listening after the menu closes
 const timers: Record<string, number | undefined> = {}
 const listeners: (() => void)[] = []
 
@@ -194,22 +183,16 @@ export function currentScreen(): Screen {
       }
       return scr(readyHeader(), 2, '', 2, 'hold to ask | 2x tap to exit', 2)
     case 'listening': {
-      const filled = Math.min(BAR, Math.round(((Date.now() - st.listenStart) / maxClipMs()) * BAR))
+      const filled = Math.min(BAR, Math.round(((Date.now() - st.listenStart) / MAX_CLIP_MS) * BAR))
       // The first frame lands ~450 ms after the press; words spoken before it are lost.
       const open = !!mic?.stats.firstFrameAt
-      if (st.listenMode === 'debrief') {
-        return scr(open ? '● Debrief' : '○ Mic opening...', 4,
-          `${open ? 'Say' : 'Wait for ●, then say'} what to remember:\nwhat they said, what to send them\n\n${'━'.repeat(filled)}${'─'.repeat(BAR - filled)}`, 3,
-          'tap to save | up to 15 s', 2)
-      }
       return scr(open ? '● Listening' : '○ Mic opening...', 4,
-        `${open ? 'Say' : 'Wait for ●, then say'}: name, company, role\n\n${'━'.repeat(filled)}${'─'.repeat(BAR - filled)}`, 3,
+        `${open ? 'Say' : 'Wait for ●, then say'}: name, company, role\nor what they said, or your goal\n${'━'.repeat(filled)}${'─'.repeat(BAR - filled)}`, 3,
         PTT_MODE === 'hold' && !st.listenByTap ? 'release to send' : 'tap to send', 2)
     }
     case 'thinking': {
       const heard = st.heard ? `Heard: ${st.heard}${st.heardIsMock ? ' (sample)' : ''}\n\n■ heard  □ cards` : '□ heard  □ cards'
-      if (st.listenMode === 'debrief') return scr('Saving your note...', 3, st.heard ? `Heard: ${st.heard}` : '', 4, '2x tap to exit', 2)
-      return scr('Looking up...', 3, heard, 4, st.thinkingSlow ? 'still searching...' : '2x tap to exit', 2)
+      return scr('Working on it...', 3, heard, 4, st.thinkingSlow ? 'still working...' : '2x tap to exit', 2)
     }
     case 'card': {
       if (!b || !b.cards.length) return scr('Cue | problem', 3, 'No cards in this brief.', 4, 'hold to ask', 2)
@@ -309,6 +292,12 @@ function showBrief(b: Brief, isMock: boolean) {
   st.angleUpdating = false
   log(`brief ${b.id} v${b.version} ${b.match.confidence} cards=${b.cards.map(c => c.kind).join(',')}${isMock ? ' (MOCK)' : ''}`)
   if (b.match.confidence === 'medium' && b.match.candidates.length) go('confirm')
+  // Decision gate (agents/decision-gate.md): a real person with nothing here for the wearer's goal
+  // gets one quiet line, not three cards. The cards stay one menu tap away (Last brief).
+  else if (b.decision && b.decision.goalFit < 0.5 && b.match.confidence !== 'low') {
+    log(`decision: goal fit ${b.decision.goalFit.toFixed(2)} < 0.5 -> quiet line`)
+    flash(`${personName(b)}: nothing for your goal`)
+  }
   else go('card')
   if (isMock && b.slowPath.status === 'running') {
     const id = b.id
@@ -335,7 +324,7 @@ function applyUpdate(b: Brief, why: string) {
 
 // ---- listening ----------------------------------------------------------------
 
-async function startListening(reason: string, mode: ListenMode = 'lookup') {
+async function startListening(reason: string) {
   if (st.state === 'listening') return
   if (!mic) { log(`listen (${reason}) ignored: no bridge/mic`); return }
   cancelLookup()
@@ -344,12 +333,10 @@ async function startListening(reason: string, mode: ListenMode = 'lookup') {
   st.peak = 0
   st.listenStart = Date.now()
   st.listenByTap = reason.startsWith('menu')
-  st.listenMode = mode
   log(`listen start (${reason})`)
   go('listening')
   timers.bar = window.setInterval(() => { if (st.state === 'listening') show() }, 1000)   // 1 s: keep BLE light
-  const maxMs = maxClipMs()
-  setTimer('autoStop', maxMs, () => void finishListening(`${maxMs / 1000} s auto-stop`))
+  setTimer('autoStop', MAX_CLIP_MS, () => void finishListening(`${MAX_CLIP_MS / 1000} s auto-stop`))
   if (MOCK !== 'on') {
     setTimer('noFrame', 2000, () => {
       if (st.state !== 'listening' || mic?.stats.frames) return
@@ -376,12 +363,11 @@ async function finishListening(reason: string) {
   const ms = ((clip?.length ?? 0) / BYTES_PER_SEC) * 1000
   log(`clip ${(ms / 1000).toFixed(2)} s, ${s.frames} frames, first frame after ${s.firstFrameAt ? s.firstFrameAt - s.startedAt : '-'} ms, peak ${st.peak.toFixed(2)}${st.peak >= 0.99 ? ' (clipping?)' : ''}`)
   if (!clip || ms < MIN_CLIP_MS) {
-    if (MOCK === 'on' && s.frames === 0) { log('no audio frames; MOCK=on so continuing with the sample'); return void (st.listenMode === 'debrief' ? debrief({}) : lookup({})) }
+    if (MOCK === 'on' && s.frames === 0) { log('no audio frames; MOCK=on so continuing with the sample'); return void lookup({}) }
     log(`clip under ${MIN_CLIP_MS} ms: discarded`)
     return go(st.prev)
   }
-  if (st.listenMode === 'debrief') void debrief({ clip })
-  else void lookup({ clip })
+  void lookup({ clip })
 }
 
 async function cancelListening(reason: string) {
@@ -454,18 +440,46 @@ export async function lookup(src: { clip?: Clip; text?: string }) {
     brief = mockBrief(text, st.goal); isMock = true
     st.lastNote = MOCK === 'on' ? 'MOCK=on' : 'no backend URL'
   } else {
-    const r = await postBriefText(text, ctrl.signal)
+    // One call: the backend decides whether this was a lookup, a correction, a note about the
+    // conversation (debrief -> recap texted), a goal, "text me", or nothing, and does it.
+    const r = await postSay(text, st.brief?.id, ctrl.signal)
     if (stale()) return
-    log(`POST /api/briefs/text -> ${r.ok ? `${r.status}${r.fallback ? ' (template fallback)' : ''} (${r.ms} ms)` : apiWhy(r)}`)
+    log(`POST /api/say -> ${r.ok ? `${r.status} ${r.data?.intent ?? '?'} ${r.data?.intentConfidence?.toFixed(2) ?? ''} ${r.data?.intentSource ?? ''}${r.fallback ? ' (template fallback)' : ''} (${r.ms} ms)` : apiWhy(r)}`)
     if (r.notes) log(`notes: ${r.notes}`)
-    const usable = r.ok && r.data?.brief
-    if (usable && !r.fallback) { brief = r.data!.brief; st.lastNote = `backend (${r.ms} ms)` }
-    else if (MOCK === 'auto' && (usable ? r.fallback : r.status === 0 || r.status >= 500 || r.error === 'NO_EVENT')) {
+    if (r.ok && r.data) {
+      const d = r.data
+      lookupAbort = null
+      switch (d.intent) {
+        case 'lookup':
+        case 'correction':
+          if (!d.brief) return fail('failed', 'no brief in the response')
+          st.lastNote = `backend${r.fallback ? ' template fallback' : ''} (${r.ms} ms)`
+          return showBrief(d.brief, false)
+        case 'debrief':
+          if (d.brief && st.brief?.id === d.brief.id) { st.brief = d.brief; save() }
+          return flash(d.recap?.sent ? '★ note saved, recap texted' : 'note saved, not texted')
+        case 'goal': {
+          if (d.goal) { st.goal = d.goal; save() }
+          if (d.brief) {
+            st.brief = d.brief; st.briefIsMock = false
+            const i = d.brief.cards.findIndex(c => c.kind === 'angle')
+            if (i >= 0) { openBrief(i); st.updated = true; show(); return }
+          }
+          return flash(`goal: ${d.goal ? GOAL_LABEL[d.goal] : '?'}`)
+        }
+        case 'recap':
+          return flash(d.recap?.sent ? '★ recap texted' : `recap: ${d.recap && !d.recap.sent ? d.recap.reason : 'not sent'}`)
+        case 'quiet':
+          return go(st.brief ? 'quiet' : 'ready')
+        default:
+          return flash(d.say?.split('\n')[0] ?? "didn't catch that")
+      }
+    }
+    if (MOCK === 'auto' && (r.status === 0 || r.status >= 500 || r.error === 'NO_EVENT')) {
       brief = mockBrief(text, st.goal); isMock = true
-      st.lastNote = usable ? 'MOCK auto: backend returned a template fallback brief' : `MOCK auto: backend ${apiWhy(r)}`
+      st.lastNote = `MOCK auto: backend ${apiWhy(r)}`
       log(st.lastNote)
-    } else if (usable) { brief = r.data!.brief; st.lastNote = `backend template fallback (${r.ms} ms)` }
-    else return fail(r.status === 0 ? 'offline' : 'failed', apiWhy(r))
+    } else return fail(r.status === 0 ? 'offline' : 'failed', apiWhy(r))
   }
   if (stale()) return
   lookupAbort = null
@@ -609,7 +623,7 @@ function act(g: Gesture) {
       void cancelListening('foreground enter (menu opened?)')
       return
     case 'foreground_exit':
-      if (pendingTalk) { const m = pendingTalk; pendingTalk = ''; void startListening(`menu ${m}`, m) }
+      if (pendingTalk) { pendingTalk = false; void startListening('menu Talk') }
       return
     case 'menu':
       return onMenu(g.menuItemId ?? 0)
@@ -672,7 +686,7 @@ function onMenu(id: number) {
   switch (id) {
     case 1:
       if (st.state === 'listening') return void finishListening('menu Talk')
-      return armMenuListen('lookup')
+      return armMenuListen()
     case 7:
       if (!openBrief(0)) log('menu Last brief: no brief yet')
       return
@@ -684,57 +698,13 @@ function onMenu(id: number) {
       return onTestMode?.()
     case 10:
       return void sendRecap()
-    case 11:
-      if (st.state === 'listening') return void finishListening('menu Debrief')
-      if (!st.brief) return flash('no brief to debrief yet')
-      return armMenuListen('debrief')
   }
 }
 
-/** Menu Talk/Debrief: start only after the FOREGROUND_EXIT that follows the click (menu closing), 1.5 s fallback. */
-function armMenuListen(mode: ListenMode) {
-  pendingTalk = mode
-  setTimeout(() => { if (pendingTalk) { const m = pendingTalk; pendingTalk = ''; void startListening(`menu ${m} (no fg exit)`, m) } }, 1500)
-}
-
-/**
- * Debrief: the wearer's own spoken note after the conversation (their voice only, never a recording
- * of the other person) -> STT -> saved on the brief -> the recap is texted over Photon.
- */
-async function debrief(src: { clip?: Clip }) {
-  const b = st.brief
-  if (!b) { st.listenMode = 'lookup'; return flash('no brief to debrief yet') }
-  cancelLookup()
-  const gen = lookupGen
-  const ctrl = new AbortController()
-  lookupAbort = ctrl
-  const stale = () => gen !== lookupGen
-  const done = () => { st.listenMode = 'lookup'; lookupAbort = null }
-  st.heard = ''; st.heardIsMock = false; st.thinkingSlow = false
-  go('thinking')
-  setTimer('thinkTimeout', THINK_TIMEOUT_MS, () => {
-    if (stale() || st.state !== 'thinking') return
-    cancelLookup(); done(); fail('timeout', '15 s')
-  })
-  if (MOCK === 'on' || !BACKEND_URL || !src.clip || st.briefIsMock) {
-    await delay(500); if (stale()) return
-    st.heard = 'said to email about the demo'; st.heardIsMock = true; show()
-    await delay(700); if (stale()) return
-    done()
-    return flash('note saved (sample, not texted)')
-  }
-  const r = await postStt(src.clip, ctrl.signal)
-  if (stale()) return
-  log(`POST /api/stt (debrief) -> ${r.ok ? `${r.status} "${r.data?.transcript}" (${r.ms} ms)` : apiWhy(r)}`)
-  if (!r.ok || !r.data?.transcript) { done(); return fail(r.status === 0 ? 'offline' : 'stt_empty', apiWhy(r)) }
-  st.heard = r.data.transcript; show()
-  const d = await postDebrief(b.id, r.data.transcript)
-  if (stale()) return
-  log(`POST /api/briefs/${b.id}/debrief -> ${d.ok ? `${d.status} (${d.ms} ms)` : apiWhy(d)}`)
-  if (!d.ok) { done(); return fail(d.status === 0 ? 'offline' : 'failed', apiWhy(d)) }
-  if (d.data?.brief && st.brief?.id === b.id) { st.brief = d.data.brief; save() }
-  done()
-  await sendRecap()
+/** Menu Talk: start only after the FOREGROUND_EXIT that follows the click (menu closing), 1.5 s fallback. */
+function armMenuListen() {
+  pendingTalk = true
+  setTimeout(() => { if (pendingTalk) { pendingTalk = false; void startListening('menu Talk (no fg exit)') } }, 1500)
 }
 
 /** Show a short note in the quiet line for a few seconds (goes quiet first if needed). */

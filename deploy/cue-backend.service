@@ -1,0 +1,34 @@
+# Cue backend: Node/Express via tsx on port 8787, behind Caddy (deploy/Caddyfile).
+# Installed to /etc/systemd/system/cue-backend.service by deploy/setup.sh, which also
+# replaces "User=ubuntu" with the SSH user that ran it.
+#
+# Logs:    journalctl -u cue-backend -f
+# Restart: sudo systemctl restart cue-backend
+
+[Unit]
+Description=Cue backend (Node/Express, port 8787)
+After=network-online.target
+Wants=network-online.target
+# Never give up: the Photon reply listener holds a long-lived connection and the
+# process should come back no matter how often it drops.
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/opt/cue/backend
+# backend/.env is loaded by src/config.ts (process.loadEnvFile), so no EnvironmentFile here.
+Environment=NODE_ENV=production
+ExecStart=/opt/cue/backend/node_modules/.bin/tsx src/server.ts
+Restart=always
+RestartSec=3
+TimeoutStopSec=15
+KillSignal=SIGTERM
+SyslogIdentifier=cue-backend
+StandardOutput=journal
+StandardError=journal
+NoNewPrivileges=true
+PrivateTmp=true
+
+[Install]
+WantedBy=multi-user.target

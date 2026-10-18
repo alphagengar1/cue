@@ -8,6 +8,7 @@ for (const k of [
   "PHOTON_PROJECT_ID", "PHOTON_PROJECT_SECRET", "SPECTRUM_PROJECT_ID", "SPECTRUM_PROJECT_SECRET", "WEARER_PHONE", "OPENAI_API_KEY",
 ]) process.env[k] = "";
 process.env.LOOKUPS_PER_MINUTE = "10000";
+process.env.SAMPLE_EVENT_FILE = "data/sample-event.json"; // the demo default is the CREAO file
 
 // Backstop: any network call that is not to this machine fails loudly instead of costing money.
 const realFetch = globalThis.fetch;

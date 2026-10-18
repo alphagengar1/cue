@@ -114,6 +114,18 @@ export interface CreateEventRequest {
   sourceText: string;
 }
 export interface EventResponse { event: Event }
+/** POST /api/say: hold the temple and say anything; the backend decides what it was (say.ts). */
+export type SayIntent = "lookup" | "debrief" | "correction" | "goal" | "recap" | "quiet" | "unknown";
+export interface SayRequest { text: string; briefId?: string }
+export interface SayResponse {
+  intent: SayIntent;
+  intentConfidence?: number;
+  intentSource?: "decisions" | "rules";
+  brief?: Brief;                                    // lookup/correction: new; debrief: note stored; goal: angle rewritten
+  goal?: Goal;
+  recap?: { sent: true; chars: number } | { sent: false; reason: string };
+  say?: string;                                     // one HUD line when nothing else applies (<= 2 lines of 40)
+}
 /** POST /api/briefs/:id/recap (Photon add-on). sent=false is a normal answer, not an error. */
 export type RecapResponse =
   | { sent: true; chars: number }

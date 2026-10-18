@@ -309,3 +309,23 @@ Answered on hardware (see "Measured on hardware" at the top): chars per line (ab
 2. Unverified: readability of level 2 under bright venue lights; whether 0 is invisible.
 3. Unverified: STT accuracy with peaks at 1.00 (possible clipping).
 4. Unverified: reviewer view of `tapToggle` and 25 s auto-quiet. Ask at the 3-4 PM workshop.
+
+## Menu and spoken intents (Oct 17, late)
+
+Menu is four items: **Talk**, **Last brief**, **Text me a recap**, **Go quiet** (plus **Hardware test** with `?dev`). Goals and the debrief are spoken, not menu items.
+
+Hold the temple and say anything. The glasses send the transcript to `POST /api/say`; a decision model (OpenAI Decisions API, rules as fallback) picks the intent and the backend does it:
+
+| You say | Intent | What the HUD does |
+|---|---|---|
+| "Priya Shah, Anduril, recruiter" | lookup | cards, as before |
+| "Cramer with a C" / "no, it's Priya not Maya" | correction | re-runs the last lookup with the fixed name |
+| "he said email him about Seer, they're hiring interns" | debrief | note saved on the brief, recap texted; quiet line "★ note saved, recap texted" |
+| "I'm looking for a cofounder" | goal | goal set, angle card rewritten and shown |
+| "text me the recap" | recap | quiet line "★ recap texted" |
+| "never mind" | quiet | back to quiet |
+| anything else | unknown | one quiet line with a hint |
+
+Misheard names: Deepgram gets the event's names and orgs as keyterms, and the backend accepts a listed attendee within 2 edits ("David Kramer" -> David Cramer), so no confirm screen for a near miss. Hold cap is 12 s. Decision gate: `decision.goalFit < 0.5` shows one quiet line "<name>: nothing for your goal" instead of cards (cards stay under Last brief).
+
+Unverified on hardware: the spoken intents and the quiet-line case (built Oct 17 late).

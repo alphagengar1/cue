@@ -7,7 +7,7 @@ import { creaoEnabled, startRun } from "./creao.js";
 import { decide, type Decision } from "./decide.js";
 import { CueError } from "./errors.js";
 import { LlmUnavailable, writeCards, type BriefInput } from "./llm.js";
-import { findOrg, findStoredPerson, parseTranscript } from "./parse.js";
+import { findListedPersonByName, findOrg, findStoredPerson, parseTranscript } from "./parse.js";
 import { cleanSource, enforceCards, hostOf, isBoilerplate } from "./safety.js";
 import {
   filterResults, fullNamesIn, resultsToFacts, searchPerson, SearchUnavailable, type SearchResult,
@@ -147,8 +147,12 @@ export async function buildBrief(text: string): Promise<BriefOutcome> {
   const tStore = Date.now();
   const { query, org, stored } = span("store lookup", "cue.lookup", () => {
     const query = parseTranscript(text);
-    const org = query.name ? findOrg(query.org) : null;
-    const stored = query.name ? findStoredPerson(query.name, org) : null;
+    let org = query.name ? findOrg(query.org) : null;
+    let stored = query.name ? findStoredPerson(query.name, org) : null;
+    if (!stored && query.name && !org) {
+      const listed = findListedPersonByName(query.name, event.id);
+      if (listed) { stored = listed; org = store.getOrg(event.id, listed.orgId) ?? null; }
+    }
     spanAttrs({ "cue.org_found": !!org, "cue.person_found": !!stored });
     return { query, org, stored };
   });

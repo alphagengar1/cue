@@ -3,7 +3,7 @@
 // No third-party keys here; only our backend origin and the device token.
 
 import type {
-  BriefResponse, ConfirmRequest, Goal, GoalRequest, GoalResponse, RecapResponse, StateResponse, SttResponse,
+  BriefResponse, ConfirmRequest, Goal, GoalRequest, GoalResponse, RecapResponse, SayRequest, SayResponse, StateResponse, SttResponse,
 } from '../../shared/types'
 
 export const BACKEND_URL = ((import.meta.env.VITE_BACKEND_URL as string | undefined) ?? '').replace(/\/+$/, '')
@@ -84,6 +84,10 @@ export const postConfirm = (id: string, personId: string | null, signal?: AbortS
 /** POST /api/briefs/:id/recap -> { sent, ... } (Photon texts the wearer; sent=false when not set up). */
 export const postRecap = (id: string) =>
   call<RecapResponse>(`/api/briefs/${encodeURIComponent(id)}/recap`, jsonInit('POST', {}), 12000)
+
+/** POST /api/say { text, briefId? } -> { intent, brief?, goal?, recap?, say? }: hold and say anything. */
+export const postSay = (text: string, briefId: string | undefined, signal?: AbortSignal) =>
+  call<SayResponse>('/api/say', jsonInit('POST', { text, briefId } satisfies SayRequest), 20000, signal)
 
 /** POST /api/briefs/:id/debrief { text } -> { brief } (version + 1; the wearer's own spoken note). */
 export const postDebrief = (id: string, text: string) =>
