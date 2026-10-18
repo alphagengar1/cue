@@ -54,6 +54,9 @@ export const config = {
   wearerTimezone: env("WEARER_TIMEZONE") ?? "America/Los_Angeles",
   // LinkedIn as a fact source. On for the hackathon (professional-only still applies); ALLOW_LINKEDIN=0 restores the block.
   allowLinkedIn: env("ALLOW_LINKEDIN") !== "0",
+  // Off by default (Oct 18 decision): Exa + LinkedIn + Haiku are the live cards; nobody waits two minutes
+  // for a CREAO rewrite mid-conversation. RESEARCH_AFTER_LOOKUP=1 turns the background run back on.
+  researchAfterLookup: env("RESEARCH_AFTER_LOOKUP") === "1",
   // Read access to the Cue Journal (/journal.md, /api/journal.json) for CREAO agents. Separate from the device token.
   journalToken: env("JOURNAL_TOKEN"),
   publicBaseUrl: env("PUBLIC_BASE_URL"),

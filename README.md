@@ -8,7 +8,6 @@ Public professional info only. No camera, no face recognition, no recording with
 
 - **Before the event**, the CREAO **Research** agent builds the org store and seed people from the event's sponsor or employer list (setup page, `POST /api/events`).
 - **The live moment** (about 3 s, on our backend): Deepgram STT with the event's names as keyterms, Exa search, the OpenAI Decisions API gate, one Claude Haiku call, three cards on the HUD. If the facts do not match the person, you get "No public info found" instead of cards about a stranger. If they match but offer nothing for your goal, one quiet line.
-- **About two minutes later**, the Research agent has rewritten the cards from sourced facts (a dim "★ updated" marker on the HUD).
 - **Everything you say is spoken, not a menu**: a decision model routes it as a lookup, a correction, a debrief, a goal change, a recap request, a coach question or "never mind".
 - **After a conversation**, your spoken debrief gets an instant Haiku recap by iMessage, then the CREAO **Follow-up** agent texts the email, a short message, next steps, three proposed times, a tentative hold on your own calendar and a Gmail draft, in one run.
 - **Over the day and the weeks**, the CREAO **Coach** agent reads the Cue Journal, keeps the "Cue Connections" sheet, renders a dashboard, answers "how did I do today?" by voice or text, runs after every third debrief and every night, and remembers earlier days.
@@ -62,7 +61,7 @@ The menu is five items: **Talk**, **Last brief**, **Text me a recap**, **Record 
 
 | You say | Intent | What happens |
 |---|---|---|
-| "Priya Shah, Anduril, recruiter" | lookup | three cards in about 3 s, rewritten by the CREAO agents about 90 s later ("★ updated") |
+| "Priya Shah, Anduril, recruiter" | lookup | three cards in about 3 s |
 | "Cramer with a C" / "no, it's Priya not Maya" | correction | the last lookup re-runs with the fixed name |
 | "he said email him about Seer, they're hiring interns" | debrief | note saved on the brief, recap texted ("★ note saved, recap texted"), then Follow-up Writer and Meeting Scheduler text their results |
 | "I'm looking for a cofounder" | goal | goal set, the angle card is rewritten and shown |
@@ -83,7 +82,7 @@ Three agents, split by when they run, all built on agent.creao.ai and all starte
 
 | # | Agent | Agent ID | Link | Started by | Returns |
 |---|---|---|---|---|---|
-| 1 | Research | [RESEARCH AGENT ID] | [RESEARCH SHARE LINK] | `POST /api/events` from the setup page (EVENT request); the backend after a lookup with a high match or a confirmed pick (PERSON request) | organizations and seed people; or sourced facts, headline, match level and the final three cards with an `improvesOn` note |
+| 1 | Research | [RESEARCH AGENT ID] | [RESEARCH SHARE LINK] | `POST /api/events` from the setup page (EVENT request); optionally after a lookup (PERSON request, `RESEARCH_AFTER_LOOKUP=1`, off by default) | organizations and seed people; or sourced facts, headline, match level and the final three cards with an `improvesOn` note |
 | 2 | Follow-up | [FOLLOW-UP AGENT ID] | [FOLLOW-UP SHARE LINK] | the backend on a spoken or texted debrief, right after the instant Haiku recap | email, message (300 chars or less), next steps, Gmail draft link (never sent), three half-hour times, scheduling message, one tentative 30-minute hold on the wearer's own calendar with no guests; texted by Photon, "book" for the message |
 | 3 | Coach | [COACH AGENT ID] | [COACH SHARE LINK] | intent `coach` by voice or iMessage, automatically after every third debrief, and a nightly Schedule on the agent | summary, patterns, priorities, coaching, next time, 7-day metrics and trend, open loops; syncs the "Cue Connections" sheet and renders a dashboard; texted as a few bubbles |
 
@@ -158,7 +157,7 @@ What works with missing keys: the setup page and `/api/briefs/text` always answe
 
 Verified live from the backend and on the AWS server (Oct 18, early), with the six single-purpose agents the three merged ones replace:
 
-- Lookup -> Haiku cards in about 3 s -> Researcher -> Brief Writer rewrite (v2 at 135 s, v3 at 185 s with an `improvesOn` note), on the server, via webhook.
+- Lookup -> Haiku cards in about 3 s (Exa + LinkedIn + Haiku). The background CREAO rewrite (Research agent, v2 at 100 s) also works on the server but is off by default (`RESEARCH_AFTER_LOOKUP=1` to enable): nobody waits two minutes mid-conversation.
 - Typed or texted debrief -> instant Haiku recap -> Follow-up Writer -> Meeting Scheduler, each texted by Photon as it completes.
 - Networking Coach on a texted or typed "how did I do today?" and after every third debrief, texted as bubbles.
 - Real Photon sends to the wearer, and the replies "email", "text", "who did I meet", "book" and coach questions in the thread.
@@ -167,6 +166,6 @@ Verified live from the backend and on the AWS server (Oct 18, early), with the s
 Not yet verified:
 
 - The three merged agents (Research, Follow-up, Coach) as such: created Oct 18 from the paste-only specs; the backend accepts their merged outputs (tests) but no live run yet.
-- On the physical G2: the spoken intents (correction, debrief, goal, recap, coach, never mind), the goal-gate quiet line, Record conversation (consent screen, chunked streaming), and the "★ updated" rewrite arriving on the lens. Lookups and the debrief recap have been seen on hardware.
+- On the physical G2: the spoken intents (correction, debrief, goal, recap, coach, never mind), the goal-gate quiet line, Record conversation (consent screen, chunked streaming). Lookups and the debrief recap have been seen on hardware.
 - The backend-side Google Calendar OAuth path (`GOOGLE_*`) is wired and tested with stubs; the agent's own connector hold is the verified path.
 - Known caveats: `DECIDE_TIMEOUT_MS` defaults to 1.2 s against the 700 ms design target.

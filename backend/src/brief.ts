@@ -311,7 +311,7 @@ function mergeFacts(a: Person["facts"], b: Person["facts"]): Person["facts"] {
 
 /** Person Researcher: high/confirmed only, at most once per person per event (01 section 8). */
 function maybeStartResearch(brief: Brief, person: Person, org: Organization | null): void {
-  if (!creaoEnabled("person_researcher") || person.lastResearchedAt) return;
+  if (!config.researchAfterLookup || !creaoEnabled("person_researcher") || person.lastResearchedAt) return;
   store.putPerson({ ...person, lastResearchedAt: now() });
   store.briefs.set(brief.id, { ...brief, slowPath: { status: "running" } });
   const input = { name: person.name, org: org?.name ?? brief.query.org, role: person.role ?? "", orgAliases: org?.aliases ?? [] };

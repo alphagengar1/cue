@@ -29,8 +29,7 @@ Cue is an app for Even Realities G2 smart glasses, with a backend that runs thre
    - **Context:** their role and what their company is focused on now.
    - **Your angle:** how this person fits your goal for the event (internship, cofounder, learn, teammates and sponsors, mentorship), and one specific thing to ask.
 4. Tap or swipe to flip. After you finish reading, or after 25 seconds, the HUD drops to one dim status line. Nothing pops up while you are talking.
-5. About 90 seconds later, while you talk, the CREAO Research agent have rewritten the cards from sourced research. The HUD shows only a dim "★ updated" marker. You see the better brief the next time you open Last brief.
-
+5. 
 **The menu is five items:** Talk, Last brief, Text me a recap, Record conversation, Go quiet. Everything else is spoken. Hold the temple (up to 12 seconds) and say anything. A decision model picks what you meant, and the backend does it:
 
 - "Priya Shah, Anduril, recruiter": a lookup, three cards.
@@ -152,7 +151,7 @@ We show the agents running in the CREAO Sessions tab in the demo video.
 **Verified live tonight (Oct 18 early), from the deployed backend:**
 
 - Lookup on the glasses: hold to talk, Deepgram with event keyterms, Exa search, decision gate, Haiku cards in about three seconds, echo line, "Which Priya?" confirm screen.
-- Research agent then Research agent, started by the backend after a lookup, rewriting the cards about 90 seconds later (Brief v2, then v3 with an `improvesOn` note).
+- The background CREAO rewrite after a lookup (Research agent, v2 cards about 100 s later), verified on the server and switched off by default so nobody waits mid-conversation.
 - Research agent (event request) started from the setup page (`POST /api/events`).
 - Debrief to instant Haiku recap to the Follow-up agent, each texted by Photon as it completes, including the Gmail draft link and the Follow-up agent's own calendar hold with its link.
 - Coach agent by texted question in iMessage (and the typed path) and after every third debrief, texted as bubbles.
