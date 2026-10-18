@@ -1,37 +1,100 @@
-# Journal sample (real, from the server, Oct 18 early)
+# Journal sample (real, from the server, Oct 18 mid-morning)
 
-What `GET /journal.md` looks like after one lookup, one debrief and the Follow-up agent. Schema: `design/06-journal.md`. The speech and iMessage sections appear once the server runs the current code.
+What `GET /journal.md` looks like after the morning's lookups, debriefs, the Follow-up agent (email, Gmail draft, three times, a calendar hold) and the Coach. Schema: `design/06-journal.md`. Draft and calendar links are the wearer's own; the leftover test entries from a renamed example person were removed.
 
 ---
 
 # Cue Journal
 
-Generated 2026-10-18T08:43:41.480Z. Wearer: Swaraj Adhikari, UCLA. Goal: internship.
+Generated 2026-10-18T16:49:06.889Z. Wearer: Swaraj Adhikari, UCLA. Goal: internship.
 
-Entries: 8. People: 1. Days: 1.
+Entries: 39. People: 6. Days: 1.
 
 ## People (newest first)
 
-### Tim Cook, co-founder, Sentry
+### Will Wang, co-founder and CEO, Even Realities
 
-- first met 2026-10-18, last activity 2026-10-18T08:41:08.249Z, conversations 1, recaps sent 1
-- cards shown: angle "Ask for advice": Ask for 10 minutes of advice on breaking into developer tools, and one concrete next step he would suggest for a student getting started. | connect "Ask about Seer": Ask Sentry co-founder Tim Cook how the Seer AI agent and new AI code review catch bugs before production, and what is next for Sentry. | context "Sentry co-founder": Tim Cook co-founded Sentry, the open source error monitor used by 90,000+ companies. He was CEO and CTO, now serves as Chief Product Officer.
-- facts: Tim Cook, co-founder and CTO of Sentry, spoke at the USENIX SREcon23 Americas conference. (https://www.usenix.org/conference/srecon23americas/speaker-or-organizer/tim-cramer-sentry) | Tim Cook of Sentry spoke at the AI Engineer conference on AI-assisted debugging and agent tooling. (https://ai.engineer/speakers/tim-cramer) | # Tim Cook Website : justcramer.com Twitter : @zeeg Location : San Francisco Company : Sentry Job title : Founder Company web site :... (https://ep2011.europython.eu/conference/p/tim-cramer.html) | Tim Cook is the co-founder of Sentry, the open source error monitoring tool used by over 90,000 companies. (https://review.firstround.com/podcast/building-sentry/) | Tim Cook, Sentry founder, discussed building for the Fortune 500,000 on the Dev Propulsion Labs podcast in December 2025. (https://evilmartians.com/events/podcast-tim-cramer-sentry) | Tim Cook, co-founder and CPO of Sentry, described turning an open source side project into a business valued over $3 billion. (https://www.accel.com/podcast-episodes/how-sentrys-tim-cramer-turned-an-open-source-side-project-into-a-3b-business) | Tim Cook wrote in May 2025 about monitoring an MCP server in production with Sentry. (https://blog.sentry.io/authors/tim-cramer/) | Tim Cook maintains Sentry open-source projects on GitHub as tcook. (https://github.com/tcook)
-- debrief (the wearer's own words): he said to email him about Seer, they are hiring summer interns, he wants to see the Cue demo video
-- follow-up email: Seer, the Cue demo, and Sentry internships / Hi Tim, Thanks for the conversation at LA Hacks. You asked me to email you about Seer and to send over the Cue demo video. Seer's approach to catching bugs before production is what I want to understand better. I am also applying for a summer internship at Sentry. Any advice on where to start would help a lot. Best, Swaraj Adhikari, UCLA
-- follow-up message: Hi Tim, thanks for the LA Hacks chat. I will send the Cue demo video, and I would welcome any advice on Sentry's summer internship. - Swaraj
-- next steps: email tim about seer and send the cue demo tonight; apply to sentry's summer internship this week; send tim the cue demo video and pick a call time
-- gmail draft: https://mail.google.com/mail/u/0/#drafts/1a14e2b33edd931f
-- proposed times: 2026-10-22 14:30-15:00, 2026-10-23 13:00-13:30, 2026-10-24 16:30-17:00 (hold on calendar) https://www.google.com/calendar/event?eid=cGk5bWQzaWdhZnE2a21laTU3N25hNmd0ODAgYWxwaGFnZW5nYXIxQGcudWNsYS5lZHU
-- scheduling message: Hi Tim, could we grab 30 minutes to talk about Seer and Sentry internships? I am free Thu Oct 22 at 2:30 PM, Fri Oct 23 at 1:00 PM, or Sat Oct 24 at 4:30 PM Pacific. - Swaraj
+- first met 2026-10-18, last activity 2026-10-18T16:48:14.626Z, conversations 2, recaps sent 1
+- cards shown: angle "Internship Ask": For your internship: ask if Even Realities hires SWE interns. Bring up Climb Harness, your AI agent system with stall detection. | connect "Smart Glasses Tie-In": You built AI agent tooling. Ask Will how Even G2 handles on-device AI. What's the hardest software problem in display-first glasses? | context "Their Focus Now": Even Realities is pushing the Even G2 and R1 ring. They're a sponsor here. Will is co-founder and CEO, leading a 200-500 person team.
+- debrief (the wearer's own words): he said email him the demo video tonight, they are hiring interns for the Even Hub SDK team this summer and he wants to see the glasses flow end to end
+- follow-up email: Even Hub SDK internship and the demo video / Hi Will, Thanks for talking with me at LA Hacks. You asked for the demo video tonight, so it is attached. It shows the whole flow end to end. I am applying for a summer internship on the Even Hub SDK team. If you have a few minutes, I would value your feedback on the demo and where I could fit. Swaraj Adhikari, UCLA
+- follow-up message: Hi Will, demo video coming tonight like you asked. I'm applying for the Even Hub SDK internship this summer, and I'd value your read on the demo. Swaraj
+- next steps: send will the demo video tonight; apply to the even hub sdk internship this week; follow up with will if he has not replied by friday
+- gmail draft: https://mail.google.com/mail/u/0/#drafts?compose=r5885563208932773826
+- proposed times: 2026-10-21 13:00-13:30, 2026-10-22 15:00-15:30, 2026-10-24 14:00-14:30 (hold on calendar) https://www.google.com/calendar/event?eid=ZGExNWx1M2gwZXBrYWFwcWZxbnEwOGJnZjAgYWxwaGFnZW5nYXIxQGcudWNsYS5lZHU
+- scheduling message: Hi Will, could we do 30 minutes on the Even Hub SDK internship and the demo? Wednesday Oct 21 at 1pm, Thursday Oct 22 at 3pm, or Saturday Oct 24 at 2pm, all Pacific. Swaraj
+
+### Kai Cheng, founder and CEO, CREAO
+
+- first met 2026-10-18, last activity 2026-10-18T16:47:42.637Z, conversations 1, recaps sent 1
+- cards shown: connect "Agent Systems Link": Mention your Climb Harness agent loop. Ask how CREAO handles stall detection when agents run on schedules. | context "Who Kai Is": He is co-founder and CEO of CREAO. Right now CREAO just closed a $10M round led by Prosperity7 Ventures. | angle "Internship Ask": For your internship: ask about open engineering roles at careers.creao.ai. Bring up your Climb Harness project.
+- debrief (the wearer's own words): she said apply online
+
+### Tim Cook, CEO, Apple
+
+- first met 2026-10-18, last activity 2026-10-18T16:45:37.078Z, conversations 2, recaps sent 2
+- cards shown: angle "Internship Ask": For your internship: ask about Apple Internships for CS students. Bring up Climb Harness and your AI agent work. | connect "Ternus Transition": Ask how Apple is handling the CEO handoff to Ternus. You're into AI agent systems, so ask about Apple Intelligence. | context "Who Tim Cook Is": He's Apple's Executive Chairman since Sept 1, 2026. Right now he's advising as John Ternus leads Apple.
+- debrief (the wearer's own words): he said email him about the Cue demo video, Apple is hiring summer interns on the Apple Intelligence team, he wants to see it running on the glasses
+- debrief (the wearer's own words): he said email him about the Cue demo video, Apple is hiring summer interns on the Apple Intelligence team, he wants to see it running on the glasses
+- follow-up email: Cue demo video and the Apple Intelligence internship / Hi Tim, Thanks for the time at LA Hacks this weekend. You asked me to email you about the Cue demo video, and you wanted to see it running on the glasses. The clip is ready, and I will send it over next. I am applying for the Apple Intelligence summer internship you mentioned, so I would like to know which team fits best before I submit. Swaraj Adhikari, UCLA
+- follow-up message: Hi Tim, Swaraj from LA Hacks. Sending the Cue demo video next, and I'm applying for the Apple Intelligence summer internship. Which team should I target? - Swaraj
+- next steps: send tim the cue demo video tonight; apply to the apple intelligence summer internship; record a clean glasses demo clip this week
+- gmail draft: https://mail.google.com/mail/u/0/#drafts?compose=r147429375652025580
+- proposed times: 2026-10-22 09:00-09:30, 2026-10-24 16:00-16:30, 2026-10-25 10:00-10:30 (hold on calendar) https://www.google.com/calendar/event?eid=MDRvdmg3Y3ZjbnU0dDE5Z3NoMGtuZWExajQgYWxwaGFnZW5nYXIxQGcudWNsYS5lZHU
+- scheduling message: Hi Tim, thanks again for the talk at LA Hacks. Could we grab 30 minutes about the Cue demo and the Apple Intelligence internship? I am free Thu Oct 22 at 9am, Sat Oct 24 at 4pm, or Sun Oct 25 at 10am (Pacific). Swaraj
+
+## What the wearer said (verbatim speech, newest first)
+
+- 2026-10-18T16:47:07.600Z [Kai Cheng, CREAO] (debrief): she said apply online
+- 2026-10-18T16:47:07.599Z [Kai Cheng, CREAO] (heard as debrief 0.70): she said apply online
+- 2026-10-18T16:46:44.291Z [Will Wang, Even Realities] (heard as lookup 0.85): Kai Cheng, CREAO, founder and CEO
+- 2026-10-18T16:46:01.520Z [Will Wang, Even Realities] (debrief): he said email him the demo video tonight, they are hiring interns for the Even Hub SDK team this summer and he wants to see the glasses flow end to end
+- 2026-10-18T16:46:01.520Z [Will Wang, Even Realities] (heard as debrief 0.70): he said email him the demo video tonight, they are hiring interns for the Even Hub SDK team this summer and he wants to see the glasses flow end to end
+- 2026-10-18T16:45:37.078Z [Tim Cook, Apple] (heard as lookup 0.85): Will Wang, Even Realities, co-founder and CEO
+- 2026-10-18T16:44:15.736Z [Tim Cook, Apple] (heard as lookup 0.85): Will Wang, Even Realities, co-founder and CEO
+- 2026-10-18T16:39:18.448Z [Tim Cook, Apple] (debrief): he said email him about the Cue demo video, Apple is hiring summer interns on the Apple Intelligence team, he wants to see it running on the glasses
+- 2026-10-18T16:39:18.448Z [Tim Cook, Apple] (heard as debrief 0.77): he said email him about the Cue demo video, Apple is hiring summer interns on the Apple Intelligence team, he wants to see it running on the glasses
+- 2026-10-18T16:38:44.254Z (heard as lookup 0.85): Tim Cook, Apple, CEO
+- 2026-10-18T16:30:43.150Z [Tim Cook, Apple] (debrief): he said email him about the Cue demo video, Apple is hiring summer interns on the Apple Intelligence team, he wants to see it running on the glasses
+- 2026-10-18T16:30:43.149Z [Tim Cook, Apple] (heard as debrief 0.77): he said email him about the Cue demo video, Apple is hiring summer interns on the Apple Intelligence team, he wants to see it running on the glasses
+- 2026-10-18T16:30:39.277Z (heard as lookup 0.85): Tim Cook, Apple, CEO
+
+## iMessage (newest first)
+
+- 2026-10-18T16:48:14.625Z Cue recap for Will Wang: just met will wang, co-founder and ceo of even realities / he wants the demo video tonight, sending it asap / even hub sdk team is hiring interns for the summer / he wants to see the flow end to end / email draft and times coming right up
+- 2026-10-18T16:47:12.257Z Cue recap for Kai Cheng: just met kai cheng, founder and ceo of creao 🤝 / debrief says he wants you to apply online, and your climb harness agent loop is your strongest hook / want a draft? just say email ✍️
+- 2026-10-18T16:46:09.873Z Cue recap for Will Wang: just met will wang, co-founder and ceo of even realities 👀 / he said email him the demo video tonight, they're hiring summer interns for the even hub sdk team / he wants to see the glasses flow end to end, so lead with that in the email / your climb harness agent stuff with stall detection is a good hook for the sdk team / want a draft? just say email ✍️
+- 2026-10-18T16:45:00.205Z Cue recap for Tim Cook: just met tim cook, apple's executive chairman / he asked for the cue demo video, running live on the glasses / apple is hiring summer interns on the apple intelligence team / he is advising while john ternus runs apple now / email draft and times coming right up
+- 2026-10-18T16:39:24.692Z Cue recap for Tim Cook: just met tim cook, apple's executive chairman / big one 👀 he said email him about the cue demo video, wants to see it running on the glasses / apple is hiring summer interns on the apple intelligence team, lead with your agent work / want a draft? just say email ✍️
+- 2026-10-18T16:30:56.044Z Cue recap for Tim Cook: just met tim cook, ceo of apple / big one 👀 he said email him about the cue demo video / he wants to see it running on the glasses, lead with that / apple is hiring summer interns on the apple intelligence team / want a draft? just say email ✍️
 
 ## Timeline (last 200, newest first)
 
-- 2026-10-18T08:41:08.249Z schedule Tim Cook (Sentry)
-- 2026-10-18T08:41:03.339Z follow_up Tim Cook (Sentry)
-- 2026-10-18T08:38:14.727Z recap Tim Cook (Sentry)
-- 2026-10-18T08:38:06.088Z debrief Tim Cook (Sentry): he said to email him about Seer, they are hiring summer interns, he wants to see the Cue demo video
-- 2026-10-18T08:38:02.769Z cards_updated Tim Cook (Sentry)
-- 2026-10-18T08:38:02.769Z cards_updated Tim Cook (Sentry)
-- 2026-10-18T08:38:00.737Z research Tim Cook (Sentry)
-- 2026-10-18T08:36:19.623Z brief Tim Cook (Sentry) match high
+- 2026-10-18T16:48:14.626Z follow_up Will Wang (Even Realities)
+- 2026-10-18T16:48:14.626Z schedule Will Wang (Even Realities)
+- 2026-10-18T16:48:14.625Z recap Will Wang (Even Realities)
+- 2026-10-18T16:47:12.257Z recap Kai Cheng (CREAO)
+- 2026-10-18T16:47:07.600Z debrief Kai Cheng (CREAO): she said apply online
+- 2026-10-18T16:47:07.599Z say Kai Cheng (CREAO): she said apply online
+- 2026-10-18T16:46:47.093Z brief Kai Cheng (CREAO) match high
+- 2026-10-18T16:46:44.291Z say Will Wang (Even Realities): Kai Cheng, CREAO, founder and CEO
+- 2026-10-18T16:46:09.873Z recap Will Wang (Even Realities)
+- 2026-10-18T16:46:01.520Z debrief Will Wang (Even Realities): he said email him the demo video tonight, they are hiring interns for the Even Hub SDK team this summer and he wants to see the glasses flow end to end
+- 2026-10-18T16:46:01.520Z say Will Wang (Even Realities): he said email him the demo video tonight, they are hiring interns for the Even Hub SDK team this summer and he wants to see the glasses flow end to end
+- 2026-10-18T16:45:39.612Z brief Will Wang (Even Realities) match high
+- 2026-10-18T16:45:37.078Z say Tim Cook (Apple): Will Wang, Even Realities, co-founder and CEO
+- 2026-10-18T16:45:00.206Z follow_up Tim Cook (Apple)
+- 2026-10-18T16:45:00.206Z schedule Tim Cook (Apple)
+- 2026-10-18T16:45:00.205Z recap Tim Cook (Apple)
+- 2026-10-18T16:44:18.780Z brief Will Wang (Even Realities) match high
+- 2026-10-18T16:44:15.736Z say Tim Cook (Apple): Will Wang, Even Realities, co-founder and CEO
+- 2026-10-18T16:39:24.692Z recap Tim Cook (Apple)
+- 2026-10-18T16:39:18.448Z debrief Tim Cook (Apple): he said email him about the Cue demo video, Apple is hiring summer interns on the Apple Intelligence team, he wants to see it running on the glasses
+- 2026-10-18T16:39:18.448Z say Tim Cook (Apple): he said email him about the Cue demo video, Apple is hiring summer interns on the Apple Intelligence team, he wants to see it running on the glasses
+- 2026-10-18T16:39:01.783Z brief Tim Cook (Apple) match high
+- 2026-10-18T16:38:44.254Z say: Tim Cook, Apple, CEO
+- 2026-10-18T16:30:56.044Z recap Tim Cook (Apple)
+- 2026-10-18T16:30:43.150Z debrief Tim Cook (Apple): he said email him about the Cue demo video, Apple is hiring summer interns on the Apple Intelligence team, he wants to see it running on the glasses
+- 2026-10-18T16:30:43.149Z say Tim Cook (Apple): he said email him about the Cue demo video, Apple is hiring summer interns on the Apple Intelligence team, he wants to see it running on the glasses
+- 2026-10-18T16:30:42.589Z brief Tim Cook (Apple) match high
+- 2026-10-18T16:30:39.277Z say: Tim Cook, Apple, CEO
