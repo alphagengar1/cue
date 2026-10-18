@@ -6,12 +6,12 @@ Public professional info only. No camera, no face recognition, no recording with
 
 ## How it works in one minute
 
-- **Before the event**, the CREAO Event Loader builds the org store and seed people from the event's sponsor or employer list (setup page, `POST /api/events`).
+- **Before the event**, the CREAO **Research** agent builds the org store and seed people from the event's sponsor or employer list (setup page, `POST /api/events`).
 - **The live moment** (about 3 s, on our backend): Deepgram STT with the event's names as keyterms, Exa search, the OpenAI Decisions API gate, one Claude Haiku call, three cards on the HUD. If the facts do not match the person, you get "No public info found" instead of cards about a stranger. If they match but offer nothing for your goal, one quiet line.
-- **About 90 s later**, the CREAO Person Researcher and Brief Writer have rewritten the cards from sourced facts (a dim "★ updated" marker on the HUD, Brief v2 then v3).
+- **About two minutes later**, the Research agent has rewritten the cards from sourced facts (a dim "★ updated" marker on the HUD).
 - **Everything you say is spoken, not a menu**: a decision model routes it as a lookup, a correction, a debrief, a goal change, a recap request, a coach question or "never mind".
-- **After a conversation**, your spoken debrief gets an instant Haiku recap by iMessage, then the CREAO Follow-up Writer (email, short message, next steps, optional Gmail draft) and the CREAO Meeting Scheduler (three times, scheduling message, one tentative hold on your own calendar), each texted as it completes.
-- **Over the day**, the CREAO Networking Coach answers "how did I do today?" by voice or text, runs after every third debrief, and remembers earlier days.
+- **After a conversation**, your spoken debrief gets an instant Haiku recap by iMessage, then the CREAO **Follow-up** agent texts the email, a short message, next steps, three proposed times, a tentative hold on your own calendar and a Gmail draft, in one run.
+- **Over the day and the weeks**, the CREAO **Coach** agent reads the Cue Journal, keeps the "Cue Connections" sheet, renders a dashboard, answers "how did I do today?" by voice or text, runs after every third debrief and every night, and remembers earlier days.
 - **Photon (Spectrum iMessage)** delivers all of it to the wearer only. The backend refuses any other number.
 
 ## Repo layout
@@ -24,7 +24,7 @@ cue/
   backend/     Node + Express + TypeScript API: speech-to-text, event store, search and safety filters, decision gate, intent router,
                fast brief writer, CREAO agent transport and apply functions, debrief chain, coach, Google Calendar, Photon recap and replies,
                texting voice, Sentry tracing
-  agents/      paste-only prompts for the six CREAO agents, plus voice.md, fast-brief.md and decision-gate.md
+  agents/      three CREAO agents, each file the exact message for the CREAO chat (research, follow-up, coach), plus voice.md, fast-brief.md and decision-gate.md
   deploy/      AWS Lightsail + Caddy (automatic HTTPS) + systemd
   docs/        Devpost text, video script, table pitch
 ```
@@ -79,33 +79,29 @@ Unverified on hardware as of Oct 18 early: see "What is verified and what is not
 
 ## CREAO agents
 
-Six agents, all built on agent.creao.ai and all started from the backend. Prompts and test inputs are in [agents/](agents/); the backend contract is [design/05-agent-contracts.md](design/05-agent-contracts.md).
+Three agents, split by when they run, all built on agent.creao.ai and all started from the backend. Each file in [agents/](agents/) is the complete message for the CREAO chat (`cat agents/follow-up.md | pbcopy`, paste): it creates the agent, applies every setting, runs a test, creates the API key and replies with the id and key. The backend contract is [design/05-agent-contracts.md](design/05-agent-contracts.md).
 
-| # | Agent | Agent ID | Link (run share link for 1 to 3, agent page for 4 to 6) | Started by | Returns |
+| # | Agent | Agent ID | Link | Started by | Returns |
 |---|---|---|---|---|---|
-| 1 | Event Loader | `7ed5ac12-fb85-4545-9e4e-abbeaa25db1a` | https://agent.creao.ai/share/aa9e8fec817ba50138997a79b610d5cc | `POST /api/events` from the setup page | organizations (one-liner, focus now, hiring, sourced) and seed people; builds the org store |
-| 2 | Person Researcher | `e496e45b-c8eb-4079-9aff-876071501d67` | https://agent.creao.ai/share/21c460878c2ec3e4eed039a5a327e0e6 | the backend after a lookup with a high match or a confirmed pick, once per person | sourced facts, headline, match level; Brief v2 at once |
-| 3 | Brief Writer | `d5ded73b-03b6-407d-be3e-5d332d6e869a` | https://agent.creao.ai/share/5922c0b96ff6085300d95090eeb4bc58 | the backend, chained after the Person Researcher | checked three-card Brief v3 with an `improvesOn` note |
-| 4 | Follow-up Writer | 8df90f76-593a-47e1-bbff-73e53ca45096 | https://agent.creao.ai/apps/8df90f76-593a-47e1-bbff-73e53ca45096 | the backend on a spoken or texted debrief, right after the instant Haiku recap | email, message (300 chars or less), next steps; optional Gmail draft link (never sent); email, subject, next steps and draft link texted by Photon, "text" for the message |
-| 5 | Meeting Scheduler | 7c39b9c9-5241-4d12-97ce-cfda7eea0ea4 | https://agent.creao.ai/apps/d9ea290b-be29-4ad2-9938-7a92cb835991 | the backend, chained after the Follow-up Writer | three half-hour times in the wearer's timezone, invite title and description, scheduling message, one tentative 30-minute hold on the wearer's own calendar with no guests; texted by Photon, "book" for the message, "book 2" to move a backend hold |
-| 6 | Networking Coach | b095ddf1-cccc-42ae-a381-ccc7906b14a4 | https://agent.creao.ai/apps/b095ddf1-cccc-42ae-a381-ccc7906b14a4 | intent `coach` by voice or iMessage, automatically after every third debrief of the day, optional nightly Schedule on the agent | summary, patterns, priorities (name, why, action), coaching, next time; texted as a few bubbles |
+| 1 | Research | [RESEARCH AGENT ID] | [RESEARCH SHARE LINK] | `POST /api/events` from the setup page (EVENT request); the backend after a lookup with a high match or a confirmed pick (PERSON request) | organizations and seed people; or sourced facts, headline, match level and the final three cards with an `improvesOn` note |
+| 2 | Follow-up | [FOLLOW-UP AGENT ID] | [FOLLOW-UP SHARE LINK] | the backend on a spoken or texted debrief, right after the instant Haiku recap | email, message (300 chars or less), next steps, Gmail draft link (never sent), three half-hour times, scheduling message, one tentative 30-minute hold on the wearer's own calendar with no guests; texted by Photon, "book" for the message |
+| 3 | Coach | [COACH AGENT ID] | [COACH SHARE LINK] | intent `coach` by voice or iMessage, automatically after every third debrief, and a nightly Schedule on the agent | summary, patterns, priorities, coaching, next time, 7-day metrics and trend, open loops; syncs the "Cue Connections" sheet and renders a dashboard; texted as a few bubbles |
 
-**Paste-only convention.** `agents/<name>.md` holds only what is pasted into agent.creao.ai, in the order given at the top of each file: block 1 is the first message (plus a test input), block 2 goes into the Create Agent instructions box, block 3 is the `.env` lines, then the test inputs. The backend contract (what is sent, what is read back, what is applied) is [design/05-agent-contracts.md](design/05-agent-contracts.md). The texting voice every agent and every backend text follows is [agents/voice.md](agents/voice.md). [agents/fast-brief.md](agents/fast-brief.md) is the backend Haiku prompt and [agents/decision-gate.md](agents/decision-gate.md) is the OpenAI gate; neither is a CREAO agent.
+The earlier six single-purpose agents (Event Loader `7ed5ac12…`, Person Researcher `e496e45b…`, Brief Writer `d5ded73b…`, Follow-up Writer, Meeting Scheduler, Networking Coach) were merged into these three on Oct 18; the backend still accepts their outputs. [agents/voice.md](agents/voice.md) is the texting voice every agent and every backend text follows. [agents/fast-brief.md](agents/fast-brief.md) is the backend Haiku prompt and [agents/decision-gate.md](agents/decision-gate.md) is the OpenAI gate; neither is a CREAO agent.
 
 ## How CREAO is used
 
-- **Six agents built in the agent.creao.ai UI**, started from the backend over CREAO's per-agent App API: each agent has its own `capi_` key from its API page, kept in `backend/.env` as `CREAO_<AGENT>_KEY`. `backend/src/creao.ts` POSTs the agent's declared inputs to `agent.creao.ai/api/v1/apps/{agentId}/runs`. It registers a **webhook** when `PUBLIC_BASE_URL` is set and **polls** `GET .../runs/{runId}` every 15 s (15 min cap). It then extracts the first JSON block from `result.chatText`, `result.text` or artifacts, validates it with zod and applies it. Keys never leave the server.
-- **Three backend-orchestrated chains**: Person Researcher -> Brief Writer rewrites the cards about 90 s after a lookup (Brief v2 when the facts land, v3 when the Brief Writer finishes); Follow-up Writer -> Meeting Scheduler runs after each spoken debrief, each result texted as it completes; the Networking Coach runs over the day, on request and after every third debrief.
-- **Extended memory** on the Person Researcher, Follow-up Writer, Meeting Scheduler and Networking Coach. The Coach's memory is what makes "compared with yesterday" real.
-- **Google Calendar connector** on the Meeting Scheduler: with Autonomy Auto it reads the wearer's free time and creates one tentative 30-minute hold on the wearer's own calendar, no guests (`calendarEventCreated`, `eventLink`). The backend can also prepend Google Calendar free windows to `wearer.availability`, double-checks the proposed times against free/busy and places the hold itself only if the agent did not.
-- **Gmail connector** on the Follow-up Writer, draft only: the email is saved as a Gmail draft (`draftLink`) and never sent.
-- **Browser Use** (optional) on the Person Researcher so it can read professional LinkedIn sections and pages, not just snippets.
+- **Three agents built from the CREAO chat** (one paste each), started from the backend over CREAO's per-agent App API: each agent has its own `capi_` key, kept in `backend/.env`. `backend/src/creao.ts` POSTs the inputs to `agent.creao.ai/api/v1/apps/{agentId}/runs`, registers a **webhook** (`PUBLIC_BASE_URL`) and **polls** as a fallback, then extracts the first JSON block from the reply or its artifacts, validates it with zod and applies it. Keys never leave the server.
+- **The Cue Journal** (`backend/src/journal.ts`): every stage of every conversation (brief, research, cards, debrief, consented transcript, recap, follow-up, times, coaching, goal) is appended to a persistent journal and served as Markdown at `/journal.md` behind its own `JOURNAL_TOKEN`. The Coach reads it on its own schedule; nothing has to start it.
+- **Long-running, memory-backed agent**: the Coach runs nightly from the Schedule tab with extended memory, compares weeks, keeps the "Cue Connections" Google Sheet (Sheets connector) as a CRM and renders a Dashboard per run. That is the pattern the CREAO team asked for.
+- **Extended memory** on all three agents.
+- **Connectors**: Google Calendar and Gmail on Follow-up (one tentative hold with no guests, one draft that is never sent), Google Sheets on Coach.
+- **Browser Use** on Research, for professional LinkedIn sections and pages, not just snippets.
 - **Autonomy Auto** on every agent; API runs under "Ask first" cannot write to a connector.
-- **Schedule tab**: an optional nightly run of the Networking Coach that reviews the day from memory.
-- **Output format Markdown** on every agent (the Coach can use **Dashboard** for a KPI view per run); the JSON block still ends the chat reply.
-- **Run share links** for each agent (table above) and the **Sessions tab**, which shows the live runs the backend starts during a demo.
+- **Output format** Markdown on Research and Follow-up, Dashboard on Coach; the JSON block still ends every chat reply.
+- **Share links** for each agent (table above) and the **Sessions tab**, which shows the live runs the backend starts during a demo.
 - **CREAO Pro Plus** plan on the team account.
-- **Consented conversation transcript**: when the wearer records a conversation after on-screen consent, the transcript rides into the Follow-up Writer, the Meeting Scheduler and the Coach, and nowhere else.
+- **Consented conversation transcript**: when the wearer records a conversation after on-screen consent, the transcript rides into the Follow-up and Coach agents, and nowhere else.
 - **No agent contacts the other person.** Agents produce drafts and holds for the wearer; the wearer sends them. Photon texts only the wearer.
 - Hand-run JSON pasted into `backend/data/<event>.json` is still supported as a pre-event path and lands in the same store.
 
@@ -132,7 +128,7 @@ Six agents, all built on agent.creao.ai and all started from the backend. Prompt
 4. **App `.env.local`**: `cp app/.env.example app/.env.local`; set `VITE_BACKEND_URL` (your laptop's LAN IP for a phone, or the deployed https URL), `VITE_DEVICE_TOKEN` (same as `DEVICE_TOKEN`), and `VITE_MOCK` (empty = fall back to a sample brief when the backend has no keys, `1` = always mock, `0` = never).
 5. **Even Hub**: `cd app && npm run dev`, then `npx evenhub qr --url http://<your-laptop-ip>:5173` and scan the QR with the Even Realities app while wearing the G2. `npm run simulate` runs the desktop simulator instead.
 6. **Photon**: create a project at app.photon.codes, add the wearer's phone as a user, copy the project ID and secret into `.env`, then send one "hi" text from the wearer's phone to the project's line before the demo so links are clickable and no junk banner appears.
-7. **CREAO agents**: for each file in `agents/` (event-loader, person-researcher, brief-writer, follow-up-writer, meeting-scheduler, networking-coach), follow the paste order at the top of the file on agent.creao.ai: paste block 1 with a test input, check the JSON block, Create Agent, Output format Markdown, paste block 2 into the instructions box, set **Autonomy Auto**, turn on extended memory and the connector the file names, then create the agent's **API key** and add block 3 to `backend/.env`.
+7. **CREAO agents**: for each of `agents/research.md`, `agents/follow-up.md`, `agents/coach.md`: `cat` the file, paste it into a new chat on agent.creao.ai, follow the sign-in prompts for connectors, and put the `AGENT_ID` and `AGENT_KEY` it replies with into `backend/.env` as the two lines named in [agents/README.md](agents/README.md). Set `JOURNAL_TOKEN` in `.env` and replace `JOURNAL_URL` in `coach.md` before pasting it.
 8. **Deploy**: [deploy/README.md](deploy/README.md). One Lightsail instance, `deploy/setup.sh`, Caddy for HTTPS, systemd for the service; copy `backend/.env` to the server; `deploy/check.sh` verifies it from your laptop.
 
 What works with missing keys: the setup page and `/api/briefs/text` always answer (template cards from the sample event); no Deepgram means typed lookups only; no Anthropic key means template cards and texts; no OpenAI key means rules and blocklist only; no CREAO key for an agent means that agent is skipped and the chain continues without it; no Photon means nothing is texted and the HUD says "recap: Photon not set up"; no Google vars means the agent's connector handles the calendar alone.
@@ -140,25 +136,24 @@ What works with missing keys: the setup page and `/api/briefs/text` always answe
 ## Sponsors
 
 - **Even Realities**: the G2 glasses and Even Hub SDK. The app lives in the Even Realities phone app, with push-to-talk on the temple and a 576x288 monochrome HUD.
-- **CREAO**: six agents, per-agent App API, extended memory, connectors, Browser Use, Schedule, Sessions. See "How CREAO is used".
+- **CREAO**: three agents (Research, Follow-up, Coach), per-agent App API, the Cue Journal, extended memory, connectors, Browser Use, Schedule, Dashboard, Sessions. See "How CREAO is used".
 - **Photon**: Spectrum iMessage SDK with a project allowlist. Delivers recaps, follow-ups, times and coaching to the wearer only.
 - **Sentry**: tracing and logs on the live path (spans `stt`, `store lookup` inside `lookup total`, `search`, `llm`; the gate's timing as the attribute `cue.ms.decide`), sizes and timings only, never audio or transcripts.
 - **Hosting**: AWS Lightsail behind Caddy with automatic HTTPS.
 
 ## What is verified and what is not
 
-Verified live from the backend (Oct 18, early):
+Verified live from the backend and on the AWS server (Oct 18, early), with the six single-purpose agents the three merged ones replace:
 
-- Lookup -> Haiku cards in about 3 s -> Person Researcher -> Brief Writer rewrite about 90 s later (Brief v2 then v3 with an `improvesOn` note).
-- Typed or texted debrief -> instant Haiku recap -> Follow-up Writer -> Meeting Scheduler, each texted by Photon as it completes; the Scheduler's connector hold on the wearer's calendar.
+- Lookup -> Haiku cards in about 3 s -> Researcher -> Brief Writer rewrite (v2 at 135 s, v3 at 185 s with an `improvesOn` note), on the server, via webhook.
+- Typed or texted debrief -> instant Haiku recap -> Follow-up Writer -> Meeting Scheduler, each texted by Photon as it completes.
 - Networking Coach on a texted or typed "how did I do today?" and after every third debrief, texted as bubbles.
-- Event Loader started from the setup page.
-- Real Photon sends to the wearer, and the replies "email", "text", "who did I meet", "book", "book 2" and coach questions in the thread.
-- The OpenAI Decisions API intent router and cue gate, Sentry tracing, and the AWS deployment.
+- Real Photon sends to the wearer, and the replies "email", "text", "who did I meet", "book" and coach questions in the thread.
+- The OpenAI Decisions API intent router and cue gate, Sentry tracing, the AWS deployment with HTTPS, the Even Hub package (0.1.1) with speech-to-text working from the hub build.
 
-Unverified on the physical G2 as of Oct 18, early:
+Not yet verified:
 
-- The spoken intents (correction, debrief, goal, recap, coach, never mind) and the goal-gate quiet line, built Oct 17 late; verified from the setup page and the typed path.
-- Record conversation (consent screen, chunked streaming), built Oct 18 early; verified against the backend only.
-- The backend-side Google Calendar OAuth path (`GOOGLE_*`, `npm run google:auth`) is wired and tested with stubs; the agent's own connector hold is the verified path.
-- Known caveats: Brief Writer cards are not loaded from a hand-run event file (only the live chain writes v3); `DECIDE_TIMEOUT_MS` defaults to 1.2 s against the 700 ms design target.
+- The three merged agents (Research, Follow-up, Coach) as such: created Oct 18 from the paste-only specs; the backend accepts their merged outputs (tests) but no live run yet.
+- On the physical G2: the spoken intents (correction, debrief, goal, recap, coach, never mind), the goal-gate quiet line, Record conversation (consent screen, chunked streaming), and the "★ updated" rewrite arriving on the lens. Lookups and the debrief recap have been seen on hardware.
+- The backend-side Google Calendar OAuth path (`GOOGLE_*`) is wired and tested with stubs; the agent's own connector hold is the verified path.
+- Known caveats: `DECIDE_TIMEOUT_MS` defaults to 1.2 s against the 700 ms design target.

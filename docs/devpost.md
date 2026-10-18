@@ -18,7 +18,7 @@ The second half came from watching ourselves after a fair: a pocket full of busi
 
 ## What it does
 
-Cue is an app for Even Realities G2 smart glasses, with a backend that runs six CREAO agents and texts you on iMessage.
+Cue is an app for Even Realities G2 smart glasses, with a backend that runs three CREAO agents and texts you on iMessage.
 
 **The live moment, on the glasses.**
 
@@ -29,7 +29,7 @@ Cue is an app for Even Realities G2 smart glasses, with a backend that runs six 
    - **Context:** their role and what their company is focused on now.
    - **Your angle:** how this person fits your goal for the event (internship, cofounder, learn, teammates and sponsors, mentorship), and one specific thing to ask.
 4. Tap or swipe to flip. After you finish reading, or after 25 seconds, the HUD drops to one dim status line. Nothing pops up while you are talking.
-5. About 90 seconds later, while you talk, the CREAO Person Researcher and Brief Writer have rewritten the cards from sourced research. The HUD shows only a dim "★ updated" marker. You see the better brief the next time you open Last brief.
+5. About 90 seconds later, while you talk, the CREAO Research agent have rewritten the cards from sourced research. The HUD shows only a dim "★ updated" marker. You see the better brief the next time you open Last brief.
 
 **The menu is five items:** Talk, Last brief, Text me a recap, Record conversation, Go quiet. Everything else is spoken. Hold the temple (up to 12 seconds) and say anything. A decision model picks what you meant, and the backend does it:
 
@@ -38,11 +38,11 @@ Cue is an app for Even Realities G2 smart glasses, with a backend that runs six 
 - "he said email him about Seer, they're hiring interns": a debrief. The note is saved on the brief, the recap is texted, and the follow-up chain starts.
 - "I'm looking for a cofounder": a goal change, the angle card is rewritten and the other two stay.
 - "text me the recap": the recap is texted.
-- "how did I do today?" or "who should I follow up with?": the Networking Coach answers on your phone.
+- "how did I do today?" or "who should I follow up with?": the Coach agent answers on your phone.
 - "never mind": back to quiet.
 - Anything else gets one quiet line with a hint.
 
-**Record conversation** is the one thing that needs the other person's permission, so it asks for it first. The lens shows a consent screen: "Ask them: OK if my glasses take notes? Tap once they say yes." Swipe up cancels. After the tap, the header reads "● Recording m:ss" with a running word count, and a tap stops it (15 minute cap). The audio streams to the backend in 20 second chunks and only the transcript is kept, on that one brief. It rides into the Follow-up Writer, the Meeting Scheduler and the Coach. Nothing is stored on the glasses or the phone, and audio is never logged.
+**Record conversation** is the one thing that needs the other person's permission, so it asks for it first. The lens shows a consent screen: "Ask them: OK if my glasses take notes? Tap once they say yes." Swipe up cancels. After the tap, the header reads "● Recording m:ss" with a running word count, and a tap stops it (15 minute cap). The audio streams to the backend in 20 second chunks and only the transcript is kept, on that one brief. It rides into the Follow-up agent, the Follow-up agent and the Coach. Nothing is stored on the glasses or the phone, and audio is never logged.
 
 **After the conversation, on your phone.** You hold the temple and say what happened in your own words. Within seconds Photon texts you a recap, written in a texting voice:
 
@@ -53,9 +53,9 @@ he also wants the cue demo video, put that in the email
 want a draft? just say email ✍️
 ```
 
-Then the CREAO chain runs in the background, and each result is texted as it lands. The Follow-up Writer texts the email draft, its subject line and the first next steps (with a Gmail connector it also saves the email as a draft in your own Gmail, never sent, and texts the draft link); reply "text" for the short message. The Meeting Scheduler texts three proposed half-hour times in your timezone and the link to a tentative 30 minute hold on your own calendar, with no guests; reply "book" for the scheduling message in your voice. You can also reply "email", "who did I meet" or "book 2" in the same thread.
+Then the CREAO chain runs in the background, and each result is texted as it lands. The Follow-up agent texts the email draft, its subject line and the first next steps (with a Gmail connector it also saves the email as a draft in your own Gmail, never sent, and texts the draft link); reply "text" for the short message. The Follow-up agent texts three proposed half-hour times in your timezone and the link to a tentative 30 minute hold on your own calendar, with no guests; reply "book" for the scheduling message in your voice. You can also reply "email", "who did I meet" or "book 2" in the same thread.
 
-**Over the day.** The Networking Coach is the long-run agent: it runs when you ask "how did I do today?" by voice or by text, and on its own after every third debrief of the day. It texts a few bubbles (summary, patterns, who to follow up with first, one line for next time); the full description is under "The long-run analysis" below.
+**Over the day.** The Coach agent is the long-run agent: it runs when you ask "how did I do today?" by voice or by text, and on its own after every third debrief of the day. It texts a few bubbles (summary, patterns, who to follow up with first, one line for next time); the full description is under "The long-run analysis" below.
 
 Cue has no camera, no face recognition, and no always-on listening. Push-to-talk audio is captured only while you hold the press and is discarded after transcription. It uses public professional information only: talks, personal sites, company pages, search snippets and the professional sections of LinkedIn (headline, role, experience, projects, publications). It never takes contact info, connections, activity or anything personal, and a blocklist plus a decision-model check drop family, home, health, religion, politics, age and appearance.
 
@@ -65,32 +65,29 @@ When Cue is not sure who someone is, it says so. If the name could match several
 
 **Even Realities (G2 + Even Hub).** Cue is built as an Even Hub app with the Even Hub SDK and runs on real G2 hardware. We designed for the "quiet by design" rule: one fixed three-container layout (header, body, footer) that is created once and updated in place, no flicker, no rebuilds, and a dim one-line status in place of a black screen. Input is the temple touchpad: long press to talk, tap and swipe to flip cards, double tap for the system exit dialog, and the five-item contextual menu. We use the glasses microphone for push-to-talk and for consented conversation notes, and the SDK background/foreground events so the menu overlay does not disturb state. We tuned the display to measured hardware limits (see Challenges).
 
-**CREAO (AI-First Disruptor).** Cue uses six CREAO agents, all built in the agent.creao.ai UI, and the product breaks without them. Every one is started by our backend over CREAO's per-agent App API: each agent has its own `capi_` key on the server, `backend/src/creao.ts` posts the agent's declared inputs to `agent.creao.ai/api/v1/apps/{agentId}/runs`, polls the run every 15 seconds (15 minute cap) and also registers a webhook when the backend has a public URL. It pulls the first JSON block out of `result.chatText`, `result.text` or the run's artifacts, validates it with zod, and applies it. Keys never leave the server. The agents run in three chains:
+**CREAO (AI-First Disruptor).** Cue uses three CREAO agents, all built in the agent.creao.ai UI, and the product breaks without them. Every one is started by our backend over CREAO's per-agent App API: each agent has its own `capi_` key on the server, `backend/src/creao.ts` posts the agent's declared inputs to `agent.creao.ai/api/v1/apps/{agentId}/runs`, polls the run every 15 seconds (15 minute cap) and also registers a webhook when the backend has a public URL. It pulls the first JSON block out of `result.chatText`, `result.text` or the run's artifacts, validates it with zod, and applies it. Keys never leave the server. The agents run in three chains:
 
-- **Before and during the event.** The **Event Loader** reads the sponsor, employer and speaker list from the setup page and builds the store of organizations and seed people that makes company cards appear in seconds. After a lookup with a high match or a confirmed pick, the **Person Researcher** does multi-step research on that one person (Browser Use can be on, extended memory is on, LinkedIn professional sections allowed) and returns sourced facts. When it completes, the **Brief Writer** turns the research into a checked three-card brief with an `improvesOn` note. Both rewrite the cards on the glasses about 90 seconds after the lookup: Brief v2 when the facts land, v3 when the Brief Writer finishes.
-- **After each conversation.** The wearer speaks a debrief in their own words. Right after the instant recap, the **Follow-up Writer** (extended memory on, optional Gmail connector that saves the email as a draft and never sends) returns an email, a message under 300 characters and next steps. When it completes, the **Meeting Scheduler** (extended memory on, Google Calendar connector, Autonomy Auto) proposes three half-hour times from the wearer's availability, writes an invite title, description and scheduling message, and creates one tentative 30 minute hold on the wearer's own calendar with no guests. The backend double-checks the times against free/busy and places the hold itself only if the agent did not.
-- **Over the whole day.** The **Networking Coach** is the long-run agent, described in the next paragraph.
+- **Before and during the event.** The **Research agent (event request)** reads the sponsor, employer and speaker list from the setup page and builds the store of organizations and seed people that makes company cards appear in seconds. After a lookup with a high match or a confirmed pick, the **Research agent** does multi-step research on that one person (Browser Use can be on, extended memory is on, LinkedIn professional sections allowed) and returns sourced facts. When it completes, the **Research agent** turns the research into a checked three-card brief with an `improvesOn` note. Both rewrite the cards on the glasses about 90 seconds after the lookup: Brief v2 when the facts land, v3 when the Research agent finishes.
+- **After each conversation.** The wearer speaks a debrief in their own words. Right after the instant recap, the **Follow-up agent** (extended memory on, optional Gmail connector that saves the email as a draft and never sends) returns an email, a message under 300 characters and next steps. When it completes, the **Follow-up agent** (extended memory on, Google Calendar connector, Autonomy Auto) proposes three half-hour times from the wearer's availability, writes an invite title, description and scheduling message, and creates one tentative 30 minute hold on the wearer's own calendar with no guests. The backend double-checks the times against free/busy and places the hold itself only if the agent did not.
+- **Over the whole day.** The **Coach agent** is the long-run agent, described in the next paragraph.
 
-The Follow-up Writer, the Scheduler and the Coach also receive the consented conversation transcript when one exists. Photon texts every result to the wearer as it completes. No agent ever contacts the other person. Hand-run agent output pasted into `backend/data/<event>.json` is still supported as a pre-event path and lands in the same store as a live run. Remove the agents and there is no event, no company context, no researched brief, no follow-up, no next meeting and no coaching.
+The Follow-up agent, the Follow-up agent and the Coach also receive the consented conversation transcript when one exists. Photon texts every result to the wearer as it completes. No agent ever contacts the other person. Hand-run agent output pasted into `backend/data/<event>.json` is still supported as a pre-event path and lands in the same store as a live run. Remove the agents and there is no event, no company context, no researched brief, no follow-up, no next meeting and no coaching.
 
-CREAO features in play: six UI-built agents; per-agent App API keys with webhook plus polling; backend orchestration into three chains; extended memory on the Researcher, Follow-up Writer, Scheduler and Coach; connectors (Google Calendar on the Scheduler, Gmail draft-only on the Follow-up Writer); Browser Use (optional) on the Researcher; Autonomy Auto so API runs can write; the Schedule tab for an optional nightly Coach run; Output format Markdown (Dashboard option on the Coach); run share links; the Sessions tab showing live runs; CREAO Pro Plus.
+CREAO features in play: three agents created from the CREAO chat; per-agent App API keys with webhook plus polling; the Cue Journal as the persistent store the Coach reads on its own nightly schedule; extended memory on all three; Google Calendar and Gmail (draft only) connectors on Follow-up, Google Sheets on Coach; Browser Use on Research; Dashboard output on Coach; Autonomy Auto; share links and the Sessions tab.
 
 CREAO agent IDs and run share links:
 
 | # | Agent | ID | Share link |
 |---|---|---|---|
-| 1 | Event Loader | `7ed5ac12-fb85-4545-9e4e-abbeaa25db1a` | https://agent.creao.ai/share/aa9e8fec817ba50138997a79b610d5cc |
-| 2 | Person Researcher | `e496e45b-c8eb-4079-9aff-876071501d67` | https://agent.creao.ai/share/21c460878c2ec3e4eed039a5a327e0e6 |
-| 3 | Brief Writer | `d5ded73b-03b6-407d-be3e-5d332d6e869a` | https://agent.creao.ai/share/5922c0b96ff6085300d95090eeb4bc58 |
-| 4 | Follow-up Writer | 8df90f76-593a-47e1-bbff-73e53ca45096 | https://agent.creao.ai/apps/8df90f76-593a-47e1-bbff-73e53ca45096 |
-| 5 | Meeting Scheduler | 7c39b9c9-5241-4d12-97ce-cfda7eea0ea4 | https://agent.creao.ai/apps/d9ea290b-be29-4ad2-9938-7a92cb835991 |
-| 6 | Networking Coach | b095ddf1-cccc-42ae-a381-ccc7906b14a4 | https://agent.creao.ai/apps/b095ddf1-cccc-42ae-a381-ccc7906b14a4 |
+| 1 | Research (before: event pack, person research, final cards) | [RESEARCH AGENT ID] | [RESEARCH SHARE LINK] |
+| 2 | Follow-up (after: email, message, next steps, times, calendar hold, Gmail draft) | [FOLLOW-UP AGENT ID] | [FOLLOW-UP SHARE LINK] |
+| 3 | Coach (long-running: journal, Connections sheet, dashboard, coaching, nightly with memory) | [COACH AGENT ID] | [COACH SHARE LINK] |
 
 We show the agents running in the CREAO Sessions tab in the demo video.
 
-**The long-run analysis the CREAO team asked for.** Most of Cue is fast: a card in seconds, then quiet. The **Networking Coach** is the opposite, and it is where CREAO's extended memory matters. It sees the wearer's whole day as one input: every brief the glasses showed, every spoken debrief, every consented conversation transcript, and which follow-ups were sent. With extended memory on, it also remembers its earlier runs and earlier days, so "you walked away without a next step twice today" can become "better than yesterday". It returns four things the wearer cannot see in the moment: patterns across conversations (topics that keep coming up, asks that worked, what the wearer keeps forgetting), the two or three people to follow up with first and the concrete action for each, specific coaching for the next conversation, and one line to read before it. It runs when the wearer says or texts "how did I do today?" or "who should I follow up with?", automatically after every third debrief of the day, and optionally on a nightly schedule set on the agent. Photon texts the result as a few short bubbles. It never contacts anyone but the wearer.
+**The long-run analysis the CREAO team asked for.** Most of Cue is fast: a card in seconds, then quiet. The **Coach agent** is the opposite, and it is where CREAO's extended memory matters. It sees the wearer's whole day as one input: every brief the glasses showed, every spoken debrief, every consented conversation transcript, and which follow-ups were sent. With extended memory on, it also remembers its earlier runs and earlier days, so "you walked away without a next step twice today" can become "better than yesterday". It returns four things the wearer cannot see in the moment: patterns across conversations (topics that keep coming up, asks that worked, what the wearer keeps forgetting), the two or three people to follow up with first and the concrete action for each, specific coaching for the next conversation, and one line to read before it. It runs when the wearer says or texts "how did I do today?" or "who should I follow up with?", automatically after every third debrief of the day, and optionally on a nightly schedule set on the agent. Photon texts the result as a few short bubbles. It never contacts anyone but the wearer.
 
-**Photon (iMessage).** Photon (Spectrum) is how everything after the live moment reaches the wearer, so the glasses can stay quiet. It delivers the instant recap, the Follow-up Writer's email and next steps, the Meeting Scheduler's times and calendar link, and the Coach's bubbles, each as it completes. Claude Haiku writes the recap and the free-form answers in the texting voice in `agents/voice.md`, and the backend shapes agent JSON into bubbles (one thought per bubble, lowercase, at most five). Templates are the fallback. The wearer can reply "email", "text", "who did I meet", "book" (returns the scheduling message) or "book 2" (moves a backend-placed hold), or ask the Coach a question, and get an answer in the same thread. Photon only ever messages the wearer, never the person they met: the backend refuses any number but the wearer's, and the Photon project allowlist enforces the same rule. Real end-to-end sends are verified from the deployed backend.
+**Photon (iMessage).** Photon (Spectrum) is how everything after the live moment reaches the wearer, so the glasses can stay quiet. It delivers the instant recap, the Follow-up agent's email and next steps, the Follow-up agent's times and calendar link, and the Coach's bubbles, each as it completes. Claude Haiku writes the recap and the free-form answers in the texting voice in `agents/voice.md`, and the backend shapes agent JSON into bubbles (one thought per bubble, lowercase, at most five). Templates are the fallback. The wearer can reply "email", "text", "who did I meet", "book" (returns the scheduling message) or "book 2" (moves a backend-placed hold), or ask the Coach a question, and get an answer in the same thread. Photon only ever messages the wearer, never the person they met: the backend refuses any number but the wearer's, and the Photon project allowlist enforces the same rule. Real end-to-end sends are verified from the deployed backend.
 
 **Sentry.** The backend is instrumented with Sentry tracing and Sentry logs on the live path, so one lookup shows up as a single trace with spans for speech-to-text (`stt`), the store lookup (`store lookup`, inside `lookup total`), web search (`search`) and the card model (`llm`); the decision gate's timing rides on the same trace as the attribute `cue.ms.decide`. That is how we found where our seconds go. Spans carry sizes and timings only. We never log audio or transcripts. Trace: [SENTRY TRACE LINK].
 
@@ -102,10 +99,10 @@ We show the agents running in the CREAO Sessions tab in the demo video.
 - **Push-to-talk:** the app starts the glasses microphone on long press, buffers raw audio, and stops on release (plus a short tail so the last word is not clipped). Clips under 0.4 seconds are discarded. Record conversation reuses the same mic path but streams 20 second chunks to `POST /api/briefs/:id/transcript`, and only after the on-screen consent tap.
 - **Backend:** Node, Express and TypeScript. Speech-to-text with Deepgram, with the event's company and people passed in as keyterms so names like "Anduril" transcribe correctly. Web search with Exa, filtered so a result counts only if it mentions both the name and the company. One fast Claude call (`claude-haiku-5-5`, effort low, structured outputs) writes the three cards as validated JSON, then a code-side safety filter drops blocked topics. The whole fast path, from release to first card, takes about three seconds.
 - **Decision model, used twice:** both go to the OpenAI Decisions API (`gpt-6-luna`). The intent router (`backend/src/intent.ts`) asks for calibrated probabilities over lookup, correction, debrief, goal, recap, coach, quiet and unknown; a plain "name, company, role" is routed by rules without the call. The cue gate (`backend/src/decide.ts`) makes one call per brief, between the search filter and the card writer. It asks four calibrated questions. Match below 0.6: "No public info found" instead of cards about a stranger. Goal fit below 0.5: one quiet line instead of cards. Lead: which card shows first. Sensitive above 0.5: the fact is dropped. We use a decision model and not the chat model because a generative model is good at writing cards and bad at saying no: its self-reported confidence is prose, not a calibrated number you can threshold. Both uses are optional (`OPENAI_API_KEY`), never throw, time out (`DECIDE_TIMEOUT_MS`, default 1.2 s; the design target was 700 ms), and fall back to the rules classifier and the code filters, which stay on either way.
-- **CREAO orchestration:** `backend/src/creao.ts` holds the transport (per-agent key, run start, 15 second polling, webhook) and one apply function per agent that validates the JSON with zod and writes it into the store. `brief.ts` starts the Researcher after a confident lookup, `say.ts` starts the Follow-up Writer after a debrief and counts debriefs for the Coach, and `coach.ts` builds the day's history for the Coach. Prompts, setup steps and test inputs for all six agents are in `agents/`.
+- **CREAO orchestration:** `backend/src/creao.ts` holds the transport (per-agent key, run start, 15 second polling, webhook) and one apply function per agent that validates the JSON with zod and writes it into the store. `brief.ts` starts the Researcher after a confident lookup, `say.ts` starts the Follow-up agent after a debrief and counts debriefs for the Coach, and `coach.ts` builds the day's history for the Coach. Prompts, setup steps and test inputs for all three agents are in `agents/`.
 - **Texting voice:** `agents/voice.md` is one page of rules (one thought per bubble, under 100 characters, lowercase, no labels, at most five bubbles). Haiku writes the recap in it (`backend/src/compose.ts`), the agents write in it at the source, and `backend/src/voice.ts` shapes and caps their JSON into bubbles.
 - **Laptop and phone mirror:** the phone companion page inside the Even app mirrors the HUD, and the setup page shows the latest brief, so judges can see what the lens shows.
-- **Setup page:** paste your profile, your availability and your starting goal, then load the event (that is the `POST /api/events` that starts the Event Loader). On the glasses, the goal is changed by saying it.
+- **Setup page:** paste your profile, your availability and your starting goal, then load the event (that is the `POST /api/events` that starts the Research agent (event request)). On the glasses, the goal is changed by saying it.
 
 ## Challenges we ran into
 
@@ -125,10 +122,10 @@ We show the agents running in the CREAO Sessions tab in the demo video.
 - It runs on real G2 glasses, not only a simulator, with hold-to-talk that works on a plain long press.
 - Hardware findings written down and fed back into the design: the 27 px line rule, the 5-line body, the brightness floor.
 - A product that is quiet. The most important screen in Cue is the dim one-line status that appears while you talk to a person.
-- Six CREAO agents, all started from the backend over the per-agent App API, chained three ways and verified live: lookup to researched cards, debrief to follow-up to a calendar hold, and a coach that reads the whole day.
+- Three CREAO agents, all started from the backend over the per-agent App API, chained three ways and verified live: lookup to researched cards, debrief to follow-up to a calendar hold, and a coach that reads the whole day.
 - Honest behavior. When nothing is found, Cue says "No public info found" and shows a company card instead of making something up. When the facts match but do not help, it says one line and stays quiet.
 - A privacy position we can say in one breath: no camera, no face recognition, no recording without on-screen consent, public professional information only, and nothing ever sent to the other person.
-- Two first-years shipped a glasses app, a cloud backend, an iMessage line and six agents in one weekend.
+- Two first-years shipped a glasses app, a cloud backend, an iMessage line and three agents in one weekend.
 - Median time from release to first card on venue wifi: [LATENCY SECONDS] s over [LATENCY RUNS] runs.
 
 ## What we learned
@@ -148,19 +145,19 @@ We show the agents running in the CREAO Sessions tab in the demo video.
 - Importing a real attendee list (Luma, speaker lists) with one tap.
 - An offline cache of company cards for venues with poor wifi.
 - Letting the person opt out or correct their card, and an on-lens way to see exactly which sources were used.
-- Loading Brief Writer cards from a hand-run event file, so a pre-event run can also give v3 cards.
+- Loading Research agent cards from a hand-run event file, so a pre-event run can also give v3 cards.
 
 ## What works today and what is wired but untested on hardware
 
 **Verified live tonight (Oct 18 early), from the deployed backend:**
 
 - Lookup on the glasses: hold to talk, Deepgram with event keyterms, Exa search, decision gate, Haiku cards in about three seconds, echo line, "Which Priya?" confirm screen.
-- Person Researcher then Brief Writer, started by the backend after a lookup, rewriting the cards about 90 seconds later (Brief v2, then v3 with an `improvesOn` note).
-- Event Loader started from the setup page (`POST /api/events`).
-- Debrief to instant Haiku recap to Follow-up Writer to Meeting Scheduler, each texted by Photon as it completes, including the Gmail draft link and the Scheduler's own calendar hold with its link.
-- Networking Coach by texted question in iMessage (and the typed path) and after every third debrief, texted as bubbles.
+- Research agent then Research agent, started by the backend after a lookup, rewriting the cards about 90 seconds later (Brief v2, then v3 with an `improvesOn` note).
+- Research agent (event request) started from the setup page (`POST /api/events`).
+- Debrief to instant Haiku recap to the Follow-up agent, each texted by Photon as it completes, including the Gmail draft link and the Follow-up agent's own calendar hold with its link.
+- Coach agent by texted question in iMessage (and the typed path) and after every third debrief, texted as bubbles.
 - Photon real sends to the wearer, and the replies "email", "text", "who did I meet", "book", "book 2" and coach questions answered in the thread.
-- All six agents through per-agent App API keys, with polling and the webhook, from the AWS Lightsail backend behind Caddy.
+- All three agents through per-agent App API keys, with polling and the webhook, from the AWS Lightsail backend behind Caddy.
 - Sentry traces on the live path.
 
 **Built, verified from the setup page or typed path and the backend, but not yet exercised on the physical G2:**
@@ -172,7 +169,7 @@ We show the agents running in the CREAO Sessions tab in the demo video.
 
 **Two small caveats:**
 
-- Brief Writer cards are not loaded from a hand-run event file; only the live chain writes v3.
+- Research agent cards are not loaded from a hand-run event file; only the live chain writes v3.
 - The decision gate timeout defaults to 1.2 s (`DECIDE_TIMEOUT_MS`), above the 700 ms design target.
 
 We do not claim camera features, face recognition, or any recording without consent, because none exist.
