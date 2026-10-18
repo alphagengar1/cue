@@ -62,7 +62,7 @@ describe("briefs", () => {
     brief = ((await res.json()) as { brief: Brief }).brief;
     assert.equal(brief.version, 1);
     assert.equal(brief.match.confidence, "high");
-    assert.deepEqual(brief.query, { name: "Jordan", org: "Sentry", role: "developer advocate" });
+    assert.deepEqual(brief.query, { name: "Jordan Lee", org: "Sentry", role: "developer advocate" }); // resolved from the event list
     brief.cards.forEach(assertValidCard);
   });
   test("GET /api/briefs/:id -> 200, ?since=version -> 304, ?since=0 -> 200", async () => {

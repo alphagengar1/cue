@@ -132,7 +132,7 @@ describe("goal switch and confirm", () => {
     assert.equal(out.brief.version, brief.version + 1);
     assert.equal(out.brief.match.confidence, "low");
     assert.deepEqual(out.brief.cards.map((c) => c.kind), ["context"]);
-    assert.ok(out.brief.cards[0].body.startsWith("Jordan not confirmed."));
+    assert.ok(out.brief.cards[0].body.startsWith("Jordan Lee not confirmed."));
     out.brief.cards.forEach(assertValidCard);
   });
 });
