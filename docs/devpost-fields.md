@@ -98,7 +98,7 @@ https://agent.creao.ai/install/008b7b12-aca9-4969-82fa-a1a937322089?version=2279
 
 - **GitHub repo**: https://github.com/alphagengar1/cue (public)
 - **Track**: pick the one event track that fits best (AI / wearables / consumer, whichever is listed); then every company challenge that applies: CREAO, Even Realities, Sentry, Photon.
-- **Emails / names / schools**: your registered emails, "Swaraj Adhikari, <teammate>", UCLA.
+- **Emails / names / schools**: swaraj.adhikari@ucla.edu and rajpetkar@ucla.edu, "Swaraj Adhikari, Raj Petkar", UCLA.
 - **GoDaddy domains**: none.
 - **Feedback on tech** (paste):
 ```
