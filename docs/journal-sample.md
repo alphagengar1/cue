@@ -54,10 +54,10 @@ Entries: 28. People: 3. Days: 1.
 - 2026-10-18T16:44:15.736Z [Tim Cook, Apple] (heard as lookup 0.85): Will Wang, Even Realities, co-founder and CEO
 - 2026-10-18T16:39:18.448Z [Tim Cook, Apple] (debrief): he said email him about the Cue demo video, Apple is hiring summer interns on the Apple Intelligence team, he wants to see it running on the glasses
 - 2026-10-18T16:39:18.448Z [Tim Cook, Apple] (heard as debrief 0.77): he said email him about the Cue demo video, Apple is hiring summer interns on the Apple Intelligence team, he wants to see it running on the glasses
-- 2026-10-18T16:38:44.254Z (heard as lookup 0.85): Tim Cook, Apple, CEO
+- 2026-10-18T16:38:44.254Z (heard as lookup 0.85): Tim Cook, Apple, chairman
 - 2026-10-18T16:30:43.150Z [Tim Cook, Apple] (debrief): he said email him about the Cue demo video, Apple is hiring summer interns on the Apple Intelligence team, he wants to see it running on the glasses
 - 2026-10-18T16:30:43.149Z [Tim Cook, Apple] (heard as debrief 0.77): he said email him about the Cue demo video, Apple is hiring summer interns on the Apple Intelligence team, he wants to see it running on the glasses
-- 2026-10-18T16:30:39.277Z (heard as lookup 0.85): Tim Cook, Apple, CEO
+- 2026-10-18T16:30:39.277Z (heard as lookup 0.85): Tim Cook, Apple, chairman
 
 ## iMessage (newest first)
 
@@ -92,9 +92,9 @@ Entries: 28. People: 3. Days: 1.
 - 2026-10-18T16:39:18.448Z debrief Tim Cook (Apple): he said email him about the Cue demo video, Apple is hiring summer interns on the Apple Intelligence team, he wants to see it running on the glasses
 - 2026-10-18T16:39:18.448Z say Tim Cook (Apple): he said email him about the Cue demo video, Apple is hiring summer interns on the Apple Intelligence team, he wants to see it running on the glasses
 - 2026-10-18T16:39:01.783Z brief Tim Cook (Apple) match high
-- 2026-10-18T16:38:44.254Z say: Tim Cook, Apple, CEO
+- 2026-10-18T16:38:44.254Z say: Tim Cook, Apple, chairman
 - 2026-10-18T16:30:56.044Z recap Tim Cook (Apple)
 - 2026-10-18T16:30:43.150Z debrief Tim Cook (Apple): he said email him about the Cue demo video, Apple is hiring summer interns on the Apple Intelligence team, he wants to see it running on the glasses
 - 2026-10-18T16:30:43.149Z say Tim Cook (Apple): he said email him about the Cue demo video, Apple is hiring summer interns on the Apple Intelligence team, he wants to see it running on the glasses
 - 2026-10-18T16:30:42.589Z brief Tim Cook (Apple) match high
-- 2026-10-18T16:30:39.277Z say: Tim Cook, Apple, CEO
+- 2026-10-18T16:30:39.277Z say: Tim Cook, Apple, chairman

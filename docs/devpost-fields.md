@@ -27,7 +27,7 @@ At a career fair you meet thirty people in two hours and forget all of them by d
 
 ## What it does
 
-Hold the temple of your Even Realities G2 and say "Tim Cook, Apple, CEO." Three seconds later the lens shows three cards: how to open, who they are, what to ask for given your goal and your own projects. Then it goes quiet. One dim line while you talk. If it can't find anything public about the person, it says so instead of making something up.
+Hold the temple of your Even Realities G2 and say "Tim Cook, Apple, chairman." Three seconds later the lens shows three cards: how to open, who they are, what to ask for given your goal and your own projects. Then it goes quiet. One dim line while you talk. If it can't find anything public about the person, it says so instead of making something up.
 
 When you're done, hold the temple again and say what happened. Your phone gets a three-bubble recap by iMessage. In the background a CREAO agent researches what came up and writes the email, next steps, three times to meet, and a tentative hold on your calendar. Reply "email" or "book" when you want them. Nothing is ever sent to the person you met.
 

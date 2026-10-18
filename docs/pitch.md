@@ -6,7 +6,7 @@ For expo-style table visits. Person A wears the glasses. Person B talks and driv
 
 | Time | Beat | Say / do |
 |---|---|---|
-| 0:00-0:08 | Hook and live lookup | B: "Watch the glasses, not me." A reads the badge, holds the temple, says "Tim Cook, Apple, CEO," lets go. Mirror shows `Listening`, `Heard: Tim Cook | Apple | CEO`, then card 1 in about 3 seconds. |
+| 0:00-0:08 | Hook and live lookup | B: "Watch the glasses, not me." A reads the badge, holds the temple, says "Tim Cook, Apple, chairman," lets go. Mirror shows `Listening`, `Heard: Tim Cook | Apple | chairman`, then card 1 in about 3 seconds. |
 | 0:08-0:22 | The three cards | B: "Three cards, each with a source. Connect is an opener that is not small talk. Context is who they are and what their company is doing now. Your angle is what to ask, given your goal." A taps through them. |
 | 0:22-0:30 | Quiet | A turns to the "rep". B: "And now it is gone. One dim line. Nothing talks to you during the conversation. A little help when you need it, then out of the way." |
 | 0:30-0:45 | Spoken debrief, recap, follow-up | A holds the temple: "He said email him about Seer, they're hiring interns for summer." Quiet line shows `★ note saved, recap texted`; the phone buzzes with the recap in seconds. B: "Ten seconds in your own words. The recap is instant, and in a minute or two the Follow-up agent has the email, three times and a calendar hold ready; you reply email or book when you want them." B scrolls the thread to a follow-up from earlier today while this one runs. |
