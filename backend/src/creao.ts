@@ -369,6 +369,9 @@ const PersonOut = z.object({
   facts: z.array(z.unknown()),
   match: z.enum(["high", "medium", "low"]).catch("low"),
   matchReason: z.string().nullish(),
+  // The merged Research agent (agents/research.md) returns the final cards in the same run.
+  cards: z.array(z.object({ kind: z.enum(["connect", "context", "angle"]), title: z.string(), body: z.string(), source: z.string().nullish() })).optional(),
+  improvesOn: z.string().nullish(),
 });
 const BriefOut = z.object({
   cards: z.array(z.object({
@@ -549,7 +552,7 @@ function setSlowPath(briefId: string, slowPath: Brief["slowPath"], cards?: Card[
 // Applying results
 // ---------------------------------------------------------------------------
 
-async function applyResult(rec: RunRecord, out: unknown): Promise<void> {
+export async function applyResult(rec: RunRecord, out: unknown): Promise<void> {
   const m = meta.get(rec.runId);
   const note = (s: string) => { if (m) m.outcome = s; console.log(`[creao] ${rec.agent} ${rec.runId}: ${s}`); };
   if (rec.agent === "event_loader") note(applyEventLoader(rec, out));
@@ -563,11 +566,20 @@ async function applyResult(rec: RunRecord, out: unknown): Promise<void> {
 // Follow-up Writer (agents/follow-up-writer.md): email + message + next steps from the brief and the
 // wearer's debrief. Stored on the person (same place as the hand-pasted output) and texted to the
 // wearer over Photon as the "full follow-up", after the instant Haiku recap.
+const ScheduleOut = z.object({
+  proposedTimes: z.array(z.string()).max(5),
+  inviteTitle: z.string(),
+  inviteDescription: z.string(),
+  schedulingMessage: z.string(),
+  calendarEventCreated: z.boolean().default(false),
+  eventLink: z.string().nullable().default(null),
+});
 const FollowUpOut = z.object({
   email: z.object({ subject: z.string(), body: z.string() }),
   message: z.string(),
   nextSteps: z.array(z.string()).default([]),
   draftLink: z.string().nullable().optional(), // Gmail draft the agent saved (never sent), when it has the connector
+  schedule: ScheduleOut.optional(),            // the merged Follow-up agent returns the times too (agents/follow-up.md)
 });
 async function applyFollowUpWriter(rec: RunRecord, out: unknown): Promise<string> {
   const parsed = FollowUpOut.safeParse(out);
@@ -588,6 +600,7 @@ async function applyFollowUpWriter(rec: RunRecord, out: unknown): Promise<string
     journal({ type: "follow_up", briefId: rec.briefId, person: b0?.query ?? (person ? { name: person.name, org: person.orgId } : undefined),
       data: { subject, body, message, nextSteps, draftLink: d.draftLink ?? null, runId: rec.runId, texted: r.sent } }); }
   // Orchestration: Follow-up Writer -> Meeting Scheduler (agents/meeting-scheduler.md).
+  if (d.schedule) return `${note}; ${await applySchedule(rec, d.schedule)}`;
   const brief = rec.briefId ? store.briefs.get(rec.briefId) : undefined;
   if (brief && creaoEnabled("meeting_scheduler")) {
     const p = store.profile;
@@ -608,18 +621,12 @@ async function applyFollowUpWriter(rec: RunRecord, out: unknown): Promise<string
 // Meeting Scheduler: three proposed times, a scheduling message, and a tentative calendar hold.
 // The backend checks the times against the wearer's Google Calendar and places the hold itself
 // (calendar.ts); the agent's own hold is kept when it made one. Stored on the person, texted.
-const ScheduleOut = z.object({
-  proposedTimes: z.array(z.string()).max(5),
-  inviteTitle: z.string(),
-  inviteDescription: z.string(),
-  schedulingMessage: z.string(),
-  calendarEventCreated: z.boolean().default(false),
-  eventLink: z.string().nullable().default(null),
-});
 async function applyMeetingScheduler(rec: RunRecord, out: unknown): Promise<string> {
   const parsed = ScheduleOut.safeParse(out);
   if (!parsed.success) return "invalid shape";
-  const d = parsed.data;
+  return applySchedule(rec, parsed.data);
+}
+async function applySchedule(rec: RunRecord, d: z.infer<typeof ScheduleOut>): Promise<string> {
   const { schedule, note: calNote } = await confirmSchedule({
     proposedTimes: d.proposedTimes.map((s) => sanitize(s).trim().slice(0, 40)).filter(Boolean).slice(0, 3),
     inviteTitle: sanitize(d.inviteTitle).trim().slice(0, 80),
@@ -783,6 +790,11 @@ async function applyPersonResearcher(rec: RunRecord, out: unknown): Promise<stri
   } catch (err) {
     setSlowPath(rec.briefId, { status: "done", runId: rec.runId });
     result = `${summary}; fast LLM v2 failed (${String(err)})`;
+  }
+  if (parsed.data.cards?.length) {
+    const allowedHosts = [...updated.facts.map((f) => hostOf(f.sourceUrl)), ...orgHosts(org)];
+    const cards = enforceCards(parsed.data.cards.map((c) => ({ kind: c.kind, title: c.title, body: c.body, source: c.source ?? null })), { allowedHosts });
+    return `${result}; ${applyCardsV2(rec.briefId, cards, rec.runId, `cards from the research agent${parsed.data.improvesOn ? ` (improvesOn: ${parsed.data.improvesOn})` : ""}`, rec.personId)}`;
   }
   if (creaoEnabled("brief_writer")) {
     const runId = await startRun("brief_writer", { ...input, wearer: wearerForAgent() }, { briefId: rec.briefId, personId: person.id });

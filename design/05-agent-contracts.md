@@ -93,3 +93,15 @@ Scopes are `calendar.events` and `calendar.freebusy` only: the backend can see w
 - `GET /api/journal.json`: `{ generatedAt, wearer, people[], entries[] }`. `GET /api/journal/people.json`: the per-person summaries.
 
 Agents on top (specs in `agents/`): **Journal Sync** (hourly, Sheets connector: one row per person in "Cue Connections"), **Network Analyst** (nightly dashboard, trends across periods, open loops), and the **Networking Coach**'s scheduled run can read the same URL. None of them need the backend to start them.
+
+## Three agents, not eight (decision Oct 18, 01:30)
+
+Consolidated by *when they run*. The backend accepts the merged outputs and still accepts the split ones, so the old keys keep working until the new agents exist.
+
+| Agent (spec) | Replaces | Runs when | Env |
+|---|---|---|---|
+| **Research** (`agents/research.md`) | Event Loader, Person Researcher, Brief Writer | EVENT request from the setup page; PERSON request after a lookup (returns facts + the final cards in one run, no Brief Writer chain) | `CREAO_RESEARCH_KEY`, `CREAO_RESEARCH_ID` |
+| **Follow-up** (`agents/follow-up.md`) | Follow-up Writer, Meeting Scheduler | after a spoken debrief (returns email, message, next steps, times, hold, Gmail draft in one run) | `CREAO_FOLLOWUP_KEY`, `CREAO_FOLLOWUP_ID` |
+| **Coach** (`agents/coach.md`) | Networking Coach, Network Analyst, Journal Sync | "how did I do today?", every third debrief, nightly schedule (reads the journal, syncs the sheet, dashboard, coaching) | `CREAO_COACH_KEY`, `CREAO_COACH_ID` |
+
+When `CREAO_RESEARCH_*` is set, the Brief Writer chain is off (the Research agent returns cards); when `CREAO_FOLLOWUP_*` is set, the Scheduler chain is off (the Follow-up agent returns the schedule). The friend's "Connection Research" agent is retired; its sheet becomes the Coach's "Cue Connections".
