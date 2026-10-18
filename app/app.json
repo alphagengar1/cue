@@ -1,0 +1,27 @@
+{
+  "package_id": "com.cuehq.cue",
+  "edition": "202601",
+  "name": "Cue",
+  "version": "0.1.0",
+  "min_app_version": "2.0.0",
+  "min_sdk_version": "0.0.16",
+  "entrypoint": "index.html",
+  "permissions": [
+    {
+      "name": "network",
+      "desc": "Sends your push-to-talk clip and lookups to the Cue backend to build networking cards.",
+      "whitelist": [
+        "https://api.cue.example.com",
+        "http://localhost:8787",
+        "http://172.20.10.2:8787"
+      ]
+    },
+    {
+      "name": "g2-microphone",
+      "desc": "Captures a short push-to-talk clip from the glasses mic only while you hold the temple."
+    }
+  ],
+  "supported_languages": [
+    "en"
+  ]
+}

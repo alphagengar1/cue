@@ -1,0 +1,284 @@
+<html>
+<head><meta charset="utf-8"><title>Cue Design</title></head>
+<body style="font-family:Spectral">
+<h1 style="font-family:Spectral">Cue: Design Overview</h1>
+<p style="font-family:Spectral"><i>Written for the two teammates. About a 10 minute read. Updated Saturday Oct 17 2026 for LA Hacks Fall 2026. Submission deadline is Sunday 12:00 on Devpost. The detailed engineering docs live in the design folder (00-product through 04-build-plan); if two of them disagree, 04-build-plan section 8 says which one wins.</i></p>
+
+<h1 style="font-family:Spectral">1. What we are building</h1>
+<h2 style="font-family:Spectral">The idea in one paragraph</h2>
+<p style="font-family:Spectral">Cue is an app for Even Realities G2 smart glasses that gives quiet networking help at in-person events such as career fairs, mixers, conferences, hackathon sponsor tables and alumni nights. You meet someone, hold the temple touchpad, and quietly say "Priya, Anduril, recruiter". A few seconds later three short cards appear in your line of sight. Then the display goes quiet so you can actually talk to the person.</p>
+
+<h2 style="font-family:Spectral">The live moment</h2>
+<p style="font-family:Spectral">This is the only flow that must work end to end at the demo.</p>
+<ol>
+<li style="font-family:Spectral">You read a name badge or hear an introduction.</li>
+<li style="font-family:Spectral">You hold the temple touchpad (long press) and say the name, the org and the role. Releasing ends the capture.</li>
+<li style="font-family:Spectral">The glasses show "Listening", then "Looking up..." along with a "Heard:" line that echoes what Cue understood, so you can catch a speech mistake and ask again.</li>
+<li style="font-family:Spectral">Card 1 of 3 appears. Tap or swipe to flip through the cards.</li>
+<li style="font-family:Spectral">If Cue is unsure which person you mean, it first asks "Which Priya?" with up to 3 candidates plus "Neither (company only)".</li>
+<li style="font-family:Spectral">After you finish reading (or after 25 seconds with no input) the display drops to one dim status line. The screen is never fully black.</li>
+<li style="font-family:Spectral">Later, if the slow research finds something better, a dim "updated" marker appears. New content never pops over a live conversation.</li>
+<li style="font-family:Spectral">Double tap opens the system exit dialog. This is required by Even review.</li>
+</ol>
+<p style="font-family:Spectral">Speed target: cards on screen in under 5 seconds from release. If the company is already preloaded, its card should show in under 2 seconds while person research continues. These targets are unverified until we measure on the venue wifi.</p>
+
+<h2 style="font-family:Spectral">The three cards</h2>
+<table border="1">
+<tr><td style="font-family:Spectral"><b>Card</b></td><td style="font-family:Spectral"><b>Purpose</b></td><td style="font-family:Spectral"><b>What goes on it</b></td></tr>
+<tr><td style="font-family:Spectral">1 Connect</td><td style="font-family:Spectral">An opening line that is not small talk</td><td style="font-family:Spectral">First that applies: a past conversation (later phase), shared background (school, past employer, club), shared interest, or a question about something they made or said.</td></tr>
+<tr><td style="font-family:Spectral">2 Context</td><td style="font-family:Spectral">Who they are and what they and their org focus on now</td><td style="font-family:Spectral">Their role and team, one or two recent public items, and the org's current focus from the preloaded event data.</td></tr>
+<tr><td style="font-family:Spectral">3 Your angle</td><td style="font-family:Spectral">How this conversation serves your goal</td><td style="font-family:Spectral">One line linking your profile to them, plus one concrete ask, for example "Ask: is the fall SWE intern req still open?"</td></tr>
+</table>
+<p style="font-family:Spectral">When Cue is not sure of the person, it says so rather than guessing. A strong match gets all 3 cards with sources. An uncertain match gets the confirm prompt first. No person match gets the org card only, starting with "No public info found for the name". If even the org is unknown, you get a generic goal-based ask labeled "Low info". Cue never invents a role or history.</p>
+
+<h2 style="font-family:Spectral">Goals</h2>
+<p style="font-family:Spectral">The wearer picks one goal per event on the setup page, or switches it from the glasses menu (for example "Goal: Cofounder"). The goal mostly changes card 3. The goals are internship, cofounder, learn, teammates_sponsors and mentorship.</p>
+<table border="1">
+<tr><td style="font-family:Spectral"><b>Event type</b></td><td style="font-family:Spectral"><b>Typical goal</b></td><td style="font-family:Spectral"><b>Example ask on card 3</b></td></tr>
+<tr><td style="font-family:Spectral">Career fair</td><td style="font-family:Spectral">internship</td><td style="font-family:Spectral">"Which teams are hiring interns for summer?"</td></tr>
+<tr><td style="font-family:Spectral">Mixer</td><td style="font-family:Spectral">cofounder</td><td style="font-family:Spectral">"What are you building next? Looking for a technical partner?"</td></tr>
+<tr><td style="font-family:Spectral">Conference</td><td style="font-family:Spectral">learn</td><td style="font-family:Spectral">"How did you handle X in your talk's system?"</td></tr>
+<tr><td style="font-family:Spectral">Hackathon sponsor tables</td><td style="font-family:Spectral">teammates_sponsors</td><td style="font-family:Spectral">"What would make a submission stand out for your track?"</td></tr>
+<tr><td style="font-family:Spectral">Alumni event</td><td style="font-family:Spectral">mentorship</td><td style="font-family:Spectral">"What would you do differently in your first year at the org?"</td></tr>
+</table>
+<p style="font-family:Spectral">Demo beat: switch from internship to cofounder for the same person. Card 3 changes and cards 1 and 2 stay exactly the same.</p>
+
+<h2 style="font-family:Spectral">Quiet mode</h2>
+<p style="font-family:Spectral">Quiet mode is the default after you have read a brief. The HUD shows a single dim line such as "cue | Priya Raman | hold to ask". It stays calm even if a background update arrives (it only changes to "cue | 1 update | hold to ask"). This protects the conversation and keeps us inside Even's rule against a black screen.</p>
+
+<h2 style="font-family:Spectral">What we do not do</h2>
+<ul>
+<li style="font-family:Spectral">No face recognition. The G2 has no camera, and identity comes only from what the wearer says.</li>
+<li style="font-family:Spectral">No recording of conversations. Audio is captured only while push-to-talk is held, and it is discarded after transcription.</li>
+<li style="font-family:Spectral">No always-on listening.</li>
+<li style="font-family:Spectral">No LinkedIn scraping. Cue never fetches LinkedIn page contents.</li>
+<li style="font-family:Spectral">No meeting prep for scheduled calendar meetings. Cue is for the walk-up moment.</li>
+<li style="font-family:Spectral">No covert use. Cue helps you remember and prepare; it is not a way to pretend you know someone.</li>
+</ul>
+<p style="font-family:Spectral">Later and optional: a follow-up draft via Photon iMessage, memory of past conversations, and an end-of-event summary. None of these are needed for the demo.</p>
+
+<h1 style="font-family:Spectral">2. How it works</h1>
+<h2 style="font-family:Spectral">The components in plain words</h2>
+<ul>
+<li style="font-family:Spectral"><b>Glasses app.</b> A small TypeScript web app (Vite) that runs inside the Even Realities phone app and draws on the G2 through the Even Hub SDK. It records push-to-talk audio, sends it to our backend, and shows the cards. It holds no API keys.</li>
+<li style="font-family:Spectral"><b>Backend.</b> One Node/Express server on Vultr. It owns every secret and does all the work: speech-to-text, store lookup, web search, the brief-writing model call, CREAO runs, and later Photon. It uses SQLite for events, orgs, people, profile and briefs.</li>
+<li style="font-family:Spectral"><b>Setup page.</b> A plain web page served by the backend, used on a laptop to paste the wearer profile, pick the goal, load the event, and run typed lookups as a demo fallback.</li>
+<li style="font-family:Spectral"><b>Third-party services.</b> Deepgram, Exa, Claude Haiku 5.5, CREAO agents and Sentry (details below).</li>
+</ul>
+<p style="font-family:Spectral">The app and backend talk over plain HTTPS requests with polling, not WebSockets, because WebSockets drop when the phone backgrounds the app and polling recovers on its own. The backend is single-tenant for the weekend: one wearer, one profile, one active event.</p>
+
+<h2 style="font-family:Spectral">Two paths</h2>
+<ul>
+<li style="font-family:Spectral"><b>Fast path (seconds).</b> Audio, then speech-to-text, then a store lookup and web search, then one model call that writes the cards. This must work without CREAO.</li>
+<li style="font-family:Spectral"><b>Slow path (minutes).</b> CREAO agents research the person more deeply in the background. When a run finishes, the backend builds an improved brief and the glasses pick it up as "updated".</li>
+</ul>
+<p style="font-family:Spectral">CREAO also does the "load the event" job the night before. That preloaded data is what makes the fast path fast, which is why CREAO is load-bearing and not a side feature.</p>
+
+<h2 style="font-family:Spectral">The live path, step by step</h2>
+<ol>
+<li style="font-family:Spectral">Long press on the touchpad. The app turns on the microphone and shows "Listening".</li>
+<li style="font-family:Spectral">Release. The app stops audio after a short 300 ms tail and shows "Looking up...".</li>
+<li style="font-family:Spectral">The app sends the audio to <b>POST /api/stt</b>. The backend wraps it as a WAV file, sends it to Deepgram with the event's names as hints, and returns the transcript plus a parsed name, org and role.</li>
+<li style="font-family:Spectral">The glasses show "Heard: Priya | Anduril | recruiter".</li>
+<li style="font-family:Spectral">The app sends the transcript to <b>POST /api/briefs/text</b>.</li>
+<li style="font-family:Spectral">The backend matches the org against the event store, and in parallel runs the Exa searches and loads the wearer profile and goal.</li>
+<li style="font-family:Spectral">The backend filters results: a result is kept only if it mentions both the name and the org, and anything from linkedin.com is dropped.</li>
+<li style="font-family:Spectral">One call to Claude Haiku 5.5 writes the 3 cards as JSON. The backend checks the JSON, runs the safety filter, trims to the card limits, and returns Brief version 1.</li>
+<li style="font-family:Spectral">The glasses show card 1.</li>
+<li style="font-family:Spectral">In the background the backend starts a CREAO Person Researcher run (only for a confirmed or strong match). When it finishes, a Brief Writer run merges the findings into Brief version 2, which the app picks up by polling <b>GET /api/briefs/:id?since=</b>.</li>
+</ol>
+
+<h2 style="font-family:Spectral">Rough speed budget</h2>
+<p style="font-family:Spectral">All numbers are unverified guesses until we run the benchmark script on venue wifi.</p>
+<table border="1">
+<tr><td style="font-family:Spectral"><b>Step</b></td><td style="font-family:Spectral"><b>Budget</b></td></tr>
+<tr><td style="font-family:Spectral">Upload the audio clip (about 3 seconds of speech)</td><td style="font-family:Spectral">300 ms</td></tr>
+<tr><td style="font-family:Spectral">Deepgram speech-to-text</td><td style="font-family:Spectral">700 ms</td></tr>
+<tr><td style="font-family:Spectral">Extra round trip so the "Heard:" line shows early</td><td style="font-family:Spectral">150 ms</td></tr>
+<tr><td style="font-family:Spectral">Parse and store lookup</td><td style="font-family:Spectral">50 ms</td></tr>
+<tr><td style="font-family:Spectral">Exa search</td><td style="font-family:Spectral">800 ms</td></tr>
+<tr><td style="font-family:Spectral">Claude Haiku 5.5 writes the cards</td><td style="font-family:Spectral">1500 ms</td></tr>
+<tr><td style="font-family:Spectral">Send to phone and render on the glasses</td><td style="font-family:Spectral">300 ms</td></tr>
+<tr><td style="font-family:Spectral"><b>Total</b></td><td style="font-family:Spectral"><b>about 3.8 s</b></td></tr>
+</table>
+<p style="font-family:Spectral">If we are over budget, show the org card from the store first (it needs no search or model call), then upgrade to the full brief. Sentry tracing is how we measure each step.</p>
+
+<h2 style="font-family:Spectral">Which services and why</h2>
+<table border="1">
+<tr><td style="font-family:Spectral"><b>Service</b></td><td style="font-family:Spectral"><b>Job</b></td><td style="font-family:Spectral"><b>Why it is here</b></td></tr>
+<tr><td style="font-family:Spectral">Deepgram (Nova-3)</td><td style="font-family:Spectral">Speech-to-text</td><td style="font-family:Spectral">Fast, and it accepts "keyterms", so we feed it the event's org and people names to get unusual names right. Fallback: Groq Whisper.</td></tr>
+<tr><td style="font-family:Spectral">Exa</td><td style="font-family:Spectral">Web search for the person</td><td style="font-family:Spectral">Returns page highlights in the same call (no second fetch), supports excluding linkedin.com at search time, and has a fast mode. Fallback: Tavily.</td></tr>
+<tr><td style="font-family:Spectral">Claude Haiku 5.5</td><td style="font-family:Spectral">Writes the 3 cards in one call</td><td style="font-family:Spectral">Model id "claude-haiku-5-5", output_config effort "low", JSON through output_config.format structured outputs. It is the fast model, chosen for latency. Set by the env variable BRIEF_MODEL so it can be swapped without code changes.</td></tr>
+<tr><td style="font-family:Spectral">CREAO</td><td style="font-family:Spectral">Event Loader, Person Researcher, Brief Writer agents</td><td style="font-family:Spectral">Required by the track and load-bearing: the Event Loader builds the org store the fast path depends on, and the other two produce the deeper brief that replaces the first draft. Remove the agents and the product loses its event data and its second-pass quality.</td></tr>
+<tr><td style="font-family:Spectral">Sentry</td><td style="font-family:Spectral">Tracing and logs</td><td style="font-family:Spectral">One span per live-path step (stt, lookup, search, llm) so latency is measured, not guessed, plus logs for CREAO runs and webhooks. Tracing plus logs meets the "two products beyond errors" bar. Never log audio.</td></tr>
+</table>
+
+<h2 style="font-family:Spectral">The three CREAO agents</h2>
+<ul>
+<li style="font-family:Spectral"><b>Event Loader.</b> Runs the night before (or when you click Load event on the setup page, which calls POST /api/events). Input is the event's org list, people and pasted source text. Output is Organization records and seed Person records.</li>
+<li style="font-family:Spectral"><b>Person Researcher.</b> Runs after a strong match or after the wearer picks a person on the confirm screen. Finds sourced professional facts and a match level.</li>
+<li style="font-family:Spectral"><b>Brief Writer.</b> Runs after the Person Researcher and produces Brief version 2.</li>
+</ul>
+<p style="font-family:Spectral">The backend starts runs at developer.creao.ai/v1/runs with a webhook to /webhooks/creao, and also polls every 15 seconds as a backup. A run still pending after 15 minutes is marked failed. To save credits, there is at most one Person Researcher run per person per event, and none for low matches. The backend re-checks everything the agents return; it does not trust them blindly.</p>
+
+<h1 style="font-family:Spectral">3. What the glasses show</h1>
+<h2 style="font-family:Spectral">The display in brief</h2>
+<ul>
+<li style="font-family:Spectral">576 x 288 pixels, monochrome green, one fixed font. No bold, no sizes, no emoji.</li>
+<li style="font-family:Spectral">One layout created once: three stacked text containers named hdr (header), body and foot (footer). Every change after startup is an in-place text update, so there is no flicker.</li>
+<li style="font-family:Spectral">Brightness is a level from 0 to 4. Quiet text uses a low level, but never level 0 for the only visible line.</li>
+<li style="font-family:Spectral">Safe characters are ASCII plus a few box glyphs. Use "|" as a separator.</li>
+<li style="font-family:Spectral">The line budget (about 40 characters per line, about 5 body lines) is unverified until we measure on hardware.</li>
+</ul>
+
+<h2 style="font-family:Spectral">Screen states</h2>
+<table border="1">
+<tr><td style="font-family:Spectral"><b>State</b></td><td style="font-family:Spectral"><b>What the wearer sees</b></td><td style="font-family:Spectral"><b>How it ends</b></td></tr>
+<tr><td style="font-family:Spectral">Ready</td><td style="font-family:Spectral">Header "Cue | LA Hacks | goal: internship", footer "hold to ask | 2x tap to exit". On first launch only, an instruction line: read a badge, hold a temple, say name, company, role.</td><td style="font-family:Spectral">Long press goes to Listening. Tap or swipe reopens the last brief, if one exists.</td></tr>
+<tr><td style="font-family:Spectral">Listening</td><td style="font-family:Spectral">Header "Listening" with a filled dot, body "Say: name, company, role" with a progress bar that fills over 8 seconds, footer "release to send".</td><td style="font-family:Spectral">Release, tap or 8 seconds sends the clip and goes to Thinking. A clip under 0.4 seconds is discarded silently.</td></tr>
+<tr><td style="font-family:Spectral">Thinking</td><td style="font-family:Spectral">Header "Looking up...", body shows progress boxes and then the "Heard: name | org | role" line. After 6 seconds the footer says "still searching...".</td><td style="font-family:Spectral">Strong match goes to Card 1, medium goes to Confirm person, low goes to the single org card. 15 seconds or an empty transcript goes to Error.</td></tr>
+<tr><td style="font-family:Spectral">Card 1, 2, 3</td><td style="font-family:Spectral">Header "1/3 CONNECT | person", "2/3 CONTEXT | org" or "3/3 ANGLE | goal: ..."; body up to 200 characters; footer "src: domain/path" (card 3 shows "tap: quiet   swipe up: back").</td><td style="font-family:Spectral">Tap or swipe down moves forward; tap on the last card goes to Quiet. 25 seconds idle goes to Quiet.</td></tr>
+<tr><td style="font-family:Spectral">Confirm person</td><td style="font-family:Spectral">Header "Which Priya?", body lists up to 3 candidates plus "Neither (company only)" with a ">" cursor, footer "swipe: move | tap: pick".</td><td style="font-family:Spectral">Tap picks. The top candidate goes straight to Card 1. Another candidate re-writes the cards (Thinking). Neither, or 10 seconds idle, gives the org-only card.</td></tr>
+<tr><td style="font-family:Spectral">Quiet</td><td style="font-family:Spectral">Empty header and body, one dim footer line: "cue | Priya Raman | hold to ask".</td><td style="font-family:Spectral">Long press listens. Tap (in hold mode) or swipe reopens card 1 of the last brief.</td></tr>
+<tr><td style="font-family:Spectral">Error or offline</td><td style="font-family:Spectral">Header "Cue | problem" with a plain message: "Didn't catch that. Hold and try again.", "Offline. Company cards still work for this event.", "Lookup timed out. Showing company info only.", "Mic is off. Allow g2-microphone in the Even app, then reopen Cue.", or "No event loaded."</td><td style="font-family:Spectral">Back to Ready after 4 seconds, or to cached org cards if available. Long press retries.</td></tr>
+</table>
+
+<h2 style="font-family:Spectral">What each gesture does</h2>
+<table border="1">
+<tr><td style="font-family:Spectral"><b>Gesture</b></td><td style="font-family:Spectral"><b>Effect</b></td></tr>
+<tr><td style="font-family:Spectral">Long press (hold)</td><td style="font-family:Spectral">Start listening; release sends. In Thinking, it cancels and starts listening again.</td></tr>
+<tr><td style="font-family:Spectral">Tap</td><td style="font-family:Spectral">Next card; on the last card go quiet. In Ready or Quiet, reopen the last brief. In the Confirm screen, pick the highlighted item.</td></tr>
+<tr><td style="font-family:Spectral">Swipe down / swipe up</td><td style="font-family:Spectral">Next card / previous card. In the Confirm screen, move the cursor.</td></tr>
+<tr><td style="font-family:Spectral">Double tap</td><td style="font-family:Spectral">Always opens the system exit dialog, in every state. It is never used for capture.</td></tr>
+<tr><td style="font-family:Spectral">Tap then hold (menu)</td><td style="font-family:Spectral">Contextual menu: Talk, five Goal items (Internship, Cofounder, Learn from experts, Teammates/sponsors, Mentorship), Last brief, Go quiet.</td></tr>
+</table>
+<p style="font-family:Spectral">Push-to-talk has two modes behind one setting called PTT_MODE. "hold" is preferred (long press to start, release to stop). "tapToggle" is the fallback (tap to start, tap again or 8 seconds to stop). We pick one at the first hardware test, because we do not yet know that a plain long press reaches the app. The menu item Talk works in both modes.</p>
+<h2 style="font-family:Spectral">Card writing rules</h2>
+<ul>
+<li style="font-family:Spectral">Hard limits: header and footer 40 characters on one line. Body 200 characters, at most 5 lines of 40 characters. Aim for 90 to 130. The app truncates with "..." if exceeded.</li>
+<li style="font-family:Spectral">ASCII plus the safe glyphs only. Everything else is stripped before sending.</li>
+<li style="font-family:Spectral">At most 2 points per card, and each card ends with something the wearer can say or ask.</li>
+<li style="font-family:Spectral">Lead with the fact ("Both FIRST Robotics alums", not "It looks like you both..."). First names only in the body.</li>
+<li style="font-family:Spectral">Digits for numbers, short months (Sep). Allowed abbreviations: SWE, PM, ML, AI, eng, univ., yrs, intro, Q1 to Q4.</li>
+<li style="font-family:Spectral">No URLs in the body (the source domain goes in the footer), no markdown, no emoji, no hedging such as "might". If unsure, leave it out.</li>
+<li style="font-family:Spectral">Professional, self-published information only. Never family, home, health or politics.</li>
+<li style="font-family:Spectral">Connect: one shared thread plus one question about their work. Context: role and tenure, then the org's focus. Your angle: link your goal to this person, then the specific ask.</li>
+</ul>
+
+<h3 style="font-family:Spectral">Worked example (fictional people)</h3>
+<p style="font-family:Spectral">Wearer: UCLA CS freshman, FIRST Robotics alum, built a drone-mapping app. Goal: internship. Said: "Priya, Northwind, recruiter". Strong match.</p>
+<table border="1">
+<tr><td style="font-family:Spectral"><b>Card</b></td><td style="font-family:Spectral"><b>Header</b></td><td style="font-family:Spectral"><b>Body</b></td><td style="font-family:Spectral"><b>Footer</b></td></tr>
+<tr><td style="font-family:Spectral">1</td><td style="font-family:Spectral">1/3 CONNECT | Priya Raman</td><td style="font-family:Spectral">Both FIRST Robotics alums; she mentors. Ask about her talk on hiring freshmen for field-test tooling.</td><td style="font-family:Spectral">src: northwindrobotics.com/careers</td></tr>
+<tr><td style="font-family:Spectral">2</td><td style="font-family:Spectral">2/3 CONTEXT | Northwind Robotics</td><td style="font-family:Spectral">University recruiter, 3 yrs. Northwind is scaling autonomy field tests; blog says SWE intern hiring opens Nov.</td><td style="font-family:Spectral">src: northwindrobotics.com/blog</td></tr>
+<tr><td style="font-family:Spectral">3</td><td style="font-family:Spectral">3/3 ANGLE | goal: internship</td><td style="font-family:Spectral">Pitch: your drone-map app is field tooling. Ask: do SWE interns include freshmen? Who screens applications?</td><td style="font-family:Spectral">tap: quiet   swipe up: back</td></tr>
+</table>
+<p style="font-family:Spectral">If the goal is switched to cofounder, only card 3 changes, to: "Not a cofounder lead. Ask: which Northwind engineers left to start companies? Any intro to one?" Cards 1 and 2 stay exactly the same, because a goal switch re-runs only the card 3 writing step with no new search.</p>
+<h1 style="font-family:Spectral">4. Research and safety rules</h1>
+<h2 style="font-family:Spectral">Sources</h2>
+<p style="font-family:Spectral">Allowed sources are public, professional and ideally self-published: talks, podcasts and interviews; their own posts, blogs, personal site or GitHub; articles about their work; school, team and company pages; and search result titles and snippets (including a LinkedIn headline shown in a result).</p>
+<p style="font-family:Spectral">The Person Researcher prefers sources in this priority order, and cards prefer the highest available:</p>
+<ol>
+<li style="font-family:Spectral">Talks and podcasts they appeared on</li>
+<li style="font-family:Spectral">Their own posts and blogs</li>
+<li style="font-family:Spectral">Personal site or GitHub</li>
+<li style="font-family:Spectral">Articles about them</li>
+<li style="font-family:Spectral">School or team pages</li>
+</ol>
+<p style="font-family:Spectral">Every person-specific claim must carry a source, and the card footer shows the source domain. A connect or context card with no source is dropped. If sources conflict, prefer the self-published one and lower the match level.</p>
+
+<h2 style="font-family:Spectral">Disambiguation: is this the right person?</h2>
+<p style="font-family:Spectral">A search result is kept only if its title or text mentions both the person's name and the org (or an alias). This is enforced in backend code, not only in the prompt.</p>
+<table border="1">
+<tr><td style="font-family:Spectral"><b>Match level</b></td><td style="font-family:Spectral"><b>When</b></td><td style="font-family:Spectral"><b>What the wearer sees</b></td></tr>
+<tr><td style="font-family:Spectral">high</td><td style="font-family:Spectral">A stored Person matches name and org, or 2 or more kept results are about one person</td><td style="font-family:Spectral">All 3 cards</td></tr>
+<tr><td style="font-family:Spectral">medium</td><td style="font-family:Spectral">Exactly 1 kept result, or results name 2 or more different full names, or the wearer said only a first name that cannot be expanded to one full name</td><td style="font-family:Spectral">The Confirm person picker first, then 3 cards</td></tr>
+<tr><td style="font-family:Spectral">low</td><td style="font-family:Spectral">No kept results</td><td style="font-family:Spectral">One org Context card starting "No public info found for the name"</td></tr>
+</table>
+<p style="font-family:Spectral">Name expansion: if the wearer says only a first name and the store has exactly one person at that org with that first name, Cue uses the full name for search. Otherwise the match is capped at medium.</p>
+
+<h2 style="font-family:Spectral">Privacy</h2>
+<ul>
+<li style="font-family:Spectral">Never use or show family, relationships, home address or location, health, politics, religion, age, appearance, or anything from a login-gated page.</li>
+<li style="font-family:Spectral">LinkedIn: we never fetch or scrape linkedin.com pages. The fast path excludes the domain at search time, and the backend drops any fact whose source is linkedin.com.</li>
+<li style="font-family:Spectral">A code blocklist (words like wife, husband, kids, married, address, diagnosis, church, democrat, republican) drops sensitive facts as a backstop to the model prompt.</li>
+<li style="font-family:Spectral">Audio is held in memory for transcription and then discarded. It is never written to disk, logs or Sentry.</li>
+<li style="font-family:Spectral">The brief (cards, sources, transcript text) is kept on our backend for the event so updates and goal switching work, and on the wearer's device. We delete backend briefs after the event.</li>
+<li style="font-family:Spectral">The privacy policy must cover the microphone and network permissions and list our backend domains. This is required for Even review.</li>
+<li style="font-family:Spectral">Demo consent: we only demo on people who consented and have a public bio.</li>
+<li style="font-family:Spectral">Honesty line for the pitch: "Person lookup is real web search. We preloaded the demo event with people who have public bios."</li>
+</ul>
+
+<h1 style="font-family:Spectral">5. Build plan</h1>
+<h2 style="font-family:Spectral">Who does what</h2>
+<table border="1">
+<tr><td style="font-family:Spectral"><b>Person</b></td><td style="font-family:Spectral"><b>Owns</b></td></tr>
+<tr><td style="font-family:Spectral">Person A</td><td style="font-family:Spectral">The glasses app in app/: the screen render, states, input handling, push-to-talk audio, laptop mirror, and the Even Hub build.</td></tr>
+<tr><td style="font-family:Spectral">Person B</td><td style="font-family:Spectral">The backend and agents in backend/ and agents/: API, store, speech-to-text, search, the Claude Haiku 5.5 brief writer, CREAO agents and webhooks, the setup page, Sentry.</td></tr>
+<tr><td style="font-family:Spectral">Both</td><td style="font-family:Spectral">shared/types.ts (the canonical types), the demo event data, the README and rehearsal.</td></tr>
+</table>
+<p style="font-family:Spectral">Contract first: both people code against shared/types.ts and the endpoints in the architecture doc. Until the backend is live, Person A uses a mock that returns a fixed Brief. Because the glasses and phone are available now, the first checkpoint can happen immediately.</p>
+
+<h2 style="font-family:Spectral">Checkpoints and times</h2>
+<table border="1">
+<tr><td style="font-family:Spectral"><b>Checkpoint</b></td><td style="font-family:Spectral"><b>Target</b></td><td style="font-family:Spectral"><b>Pass test</b></td></tr>
+<tr><td style="font-family:Spectral">CP1 Hello world on G2</td><td style="font-family:Spectral">Sat 5:00 PM</td><td style="font-family:Spectral">Text from our app appears on the physical glasses.</td></tr>
+<tr><td style="font-family:Spectral">CP2 Mocked card end to end</td><td style="font-family:Spectral">Sat 8:00 PM</td><td style="font-family:Spectral">Glasses fetch the mock brief over HTTPS from Vultr and flip 3 cards.</td></tr>
+<tr><td style="font-family:Spectral">CP3 Real speech-to-text</td><td style="font-family:Spectral">Sat 10:00 PM</td><td style="font-family:Spectral">Hold and say "Priya, Anduril, recruiter"; the HUD shows the correct "Heard:" line 4 of 5 times.</td></tr>
+<tr><td style="font-family:Spectral">CP4 Real search and model</td><td style="font-family:Spectral">Sun 1:00 AM</td><td style="font-family:Spectral">5 demo people give correct cards with sources, with a median under 5 seconds.</td></tr>
+<tr><td style="font-family:Spectral">CP5 CREAO in the loop</td><td style="font-family:Spectral">Sun 9:00 AM</td><td style="font-family:Spectral">Event Loader built the store; a Person Researcher run updates a brief on the glasses.</td></tr>
+</table>
+<p style="font-family:Spectral">If a checkpoint fails, use the fallbacks from the tables above: phone hotspot for CP1, a laptop backend with a tunnel for CP2, tapToggle or the typed lookup for CP3, org card first for CP4. Sleep is Sunday 1 to 7 AM while the Event Loader finishes. Code freeze is Sunday 10:30 AM, and we aim to submit by 11:45 AM.</p>
+<h2 style="font-family:Spectral">Cut order</h2>
+<p style="font-family:Spectral">Cut from the top when a checkpoint is more than one hour late. We never cut the G2 app or the CREAO agents.</p>
+<ol>
+<li style="font-family:Spectral">Photon iMessage follow-up (default: not started before CP5)</li>
+<li style="font-family:Spectral">Sentry (if CP4 is later than Sun 2 AM); latency is then measured with logs</li>
+<li style="font-family:Spectral">MLH extras such as the GoDaddy domain (if CP5 is later than Sun 9:30 AM); keep Vultr hosting</li>
+<li style="font-family:Spectral">Fallback providers (Groq, Tavily), offline cached org cards, and the laptop /mirror page</li>
+<li style="font-family:Spectral">Goal switching (if CP5 has not passed by Sun 10:00 AM); instead set the goal on the setup page before the demo</li>
+</ol>
+
+<h2 style="font-family:Spectral">Demo script (2 minutes)</h2>
+<p style="font-family:Spectral">Setup: glasses on Person A, phone mirrored to the laptop facing judges, CREAO console open in a second tab, goal set to internship. The demo person has consented and is in the preloaded event.</p>
+<table border="1">
+<tr><td style="font-family:Spectral"><b>Time</b></td><td style="font-family:Spectral"><b>Beat</b></td><td style="font-family:Spectral"><b>What happens</b></td></tr>
+<tr><td style="font-family:Spectral">0:00 to 0:15</td><td style="font-family:Spectral">Problem</td><td style="font-family:Spectral">B: "At a career fair you meet 30 people in 2 hours. You forget who does what, and small talk wastes the moment."</td></tr>
+<tr><td style="font-family:Spectral">0:15 to 0:25</td><td style="font-family:Spectral">Setup</td><td style="font-family:Spectral">B: a CREAO Event Loader agent loaded every sponsor last night; A's goal today is an internship.</td></tr>
+<tr><td style="font-family:Spectral">0:25 to 0:50</td><td style="font-family:Spectral">Live moment</td><td style="font-family:Spectral">A reads the rep's badge, holds the temple and quietly says name, org, role. Judges see Listening, Thinking, the "Heard:" line, then card 1 with a source.</td></tr>
+<tr><td style="font-family:Spectral">0:50 to 1:10</td><td style="font-family:Spectral">Flip cards</td><td style="font-family:Spectral">A taps through Connect, Context and Your angle.</td></tr>
+<tr><td style="font-family:Spectral">1:10 to 1:20</td><td style="font-family:Spectral">Quiet</td><td style="font-family:Spectral">A keeps talking with the rep; the HUD drops to one dim line.</td></tr>
+<tr><td style="font-family:Spectral">1:20 to 1:35</td><td style="font-family:Spectral">Agents</td><td style="font-family:Spectral">B shows the Person Researcher run this lookup just started, then a completed run from rehearsal and its deeper brief. CREAO runs take minutes, so do not wait for "updated" on stage.</td></tr>
+<tr><td style="font-family:Spectral">1:35 to 1:50</td><td style="font-family:Spectral">Goal switch</td><td style="font-family:Spectral">A picks "Goal: Cofounder" from the menu; card 3 changes and cards 1 and 2 stay.</td></tr>
+<tr><td style="font-family:Spectral">1:50 to 2:00</td><td style="font-family:Spectral">Close</td><td style="font-family:Spectral">B: "Real web search, public professional info only, no camera, no recording. That's Cue."</td></tr>
+</table>
+<p style="font-family:Spectral">Rehearsal: 3 full runs on Sunday 10:30 to 11:15 AM at a real table with noise, timed. Pass means under 2:10, every beat works, no restart. Before the demo, clear the demo person's lastResearchedAt so the once-per-person rule starts a fresh CREAO run.</p>
+<h1 style="font-family:Spectral">6. Open questions</h1>
+<p style="font-family:Spectral">Only the humans can answer these. Already settled: the deadline is Sunday 12:00 on Devpost, and the fast model is Claude Haiku 5.5 (set by BRIEF_MODEL).</p>
+<h2 style="font-family:Spectral">Even Realities (workshop or Discord)</h2>
+<ol>
+<li style="font-family:Spectral">Does the track accept a Private build, or must it be a Beta build? Who sets up our dev portal account and Beta group?</li>
+<li style="font-family:Spectral">Does a plain long press reach the app on our G2? Is the phone's Even app version 2.2.9 or newer, and is it iOS or Android? (This sets PTT_MODE; Android can suspend the WebView.)</li>
+<li style="font-family:Spectral">Does the Even app show our WebView on the phone screen while the glasses app runs? What is the recommended way to mirror the HUD to a laptop for judges? (Decides whether we need /mirror.)</li>
+<li style="font-family:Spectral">Is a dim one-line status acceptable as "never a black screen", and are tap-to-toggle capture and a 25 second auto-quiet acceptable to reviewers?</li>
+<li style="font-family:Spectral">Is a simple privacy-policy page on our backend domain enough for a hackathon build?</li>
+</ol>
+<h2 style="font-family:Spectral">CREAO</h2>
+<ol start="6">
+<li style="font-family:Spectral">What "agent run share link" do judges want in the README: a chat-thread share link, an agent install link, or something else?</li>
+<li style="font-family:Spectral">Are there hackathon credits? Does the free plan allow a Developer API key (cr_sk_)? About how many credits does a typical run use?</li>
+<li style="font-family:Spectral">Are agents created in the agent.creao.ai UI runnable through developer.creao.ai/v1/runs on the same account and credits?</li>
+</ol>
+<h2 style="font-family:Spectral">Organizers</h2>
+<ol start="9">
+<li style="font-family:Spectral">Is judging a live table demo or a stage demo? (Ask on Discord.)</li>
+</ol>
+<h2 style="font-family:Spectral">Team decisions</h2>
+<ol start="10">
+<li style="font-family:Spectral">Who are the 3 to 5 consenting demo people, and who asks them? Due Saturday 9 PM. Pick people with a public professional footprint (a personal site, GitHub, a talk, a club or lab page); otherwise the demo only shows the "no public info" fallback.</li>
+<li style="font-family:Spectral">Backend hostname: GoDaddy domain or a Vultr-IP sslip.io address? It must be final before the Even Hub build, because it goes in the app.json whitelist.</li>
+<li style="font-family:Spectral">Photon (only if time): do we get a dedicated line or credits, and can it send a first message to the wearer without an inbound one?</li>
+<li style="font-family:Spectral">Haiku 5.5 latency: is the measured time for the card-writing call within the 1.5 second budget on venue wifi? If not, we adjust before touching anything else.</li>
+</ol>
+</body>
+</html>

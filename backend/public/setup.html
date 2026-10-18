@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cue Setup</title>
+<style>
+  :root {
+    --bg: #f6f6f3; --panel: #ffffff; --ink: #1b1d1f; --muted: #6a6f75; --line: #e2e2dc;
+    --accent: #1f6feb; --accent-ink: #ffffff; --ok: #1a7f37; --warn: #9a6700; --bad: #cf222e;
+    --hud-bg: #050805; --hud-ink: #6dff8a; --hud-dim: #3fa557;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111315; --panel: #1a1d20; --ink: #e8eaed; --muted: #9aa0a6; --line: #2c3035;
+      --accent: #4c8dff; --accent-ink: #0b0d10; --ok: #3fb950; --warn: #d29922; --bad: #f85149; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { padding: 16px; display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: baseline;
+    border-bottom: 1px solid var(--line); background: var(--panel); }
+  header h1 { margin: 0; font-size: 20px; }
+  header .status { color: var(--muted); font-size: 13px; }
+  main { max-width: 1180px; margin: 0 auto; padding: 16px; display: grid; gap: 16px;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+  @media (max-width: 860px) { main { grid-template-columns: minmax(0, 1fr); } }
+  section { background: var(--panel); border: 1px solid var(--line); border-radius: 10px; padding: 16px; min-width: 0; }
+  section.wide { grid-column: 1 / -1; }
+  h2 { margin: 0 0 12px; font-size: 16px; }
+  label { display: block; font-size: 13px; color: var(--muted); margin: 10px 0 4px; }
+  input, textarea, select { width: 100%; padding: 8px 10px; border: 1px solid var(--line); border-radius: 6px;
+    background: var(--bg); color: var(--ink); font: inherit; }
+  textarea { min-height: 70px; resize: vertical; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .row > input { flex: 1 1 200px; width: auto; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  @media (max-width: 520px) { .grid2 { grid-template-columns: 1fr; } }
+  button { padding: 8px 14px; border-radius: 6px; border: 1px solid var(--line); background: var(--bg);
+    color: var(--ink); font: inherit; cursor: pointer; }
+  button.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  button:disabled { opacity: .5; cursor: default; }
+  .goals { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 8px; }
+  .goals button[aria-pressed="true"] { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+  .msg { font-size: 13px; margin-top: 8px; min-height: 1.2em; color: var(--muted); word-break: break-word; }
+  .msg.ok { color: var(--ok); } .msg.bad { color: var(--bad); }
+  .tabs { display: flex; gap: 6px; margin-bottom: 8px; flex-wrap: wrap; }
+  .tabs button[aria-selected="true"] { border-color: var(--accent); color: var(--accent); }
+  .meta { font: 12px/1.5 ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--muted); word-break: break-word; }
+  .pill { display: inline-block; padding: 1px 8px; border-radius: 99px; font-size: 12px; border: 1px solid var(--line); }
+  .pill.high { color: var(--ok); border-color: var(--ok); }
+  .pill.medium { color: var(--warn); border-color: var(--warn); }
+  .pill.low, .pill.fallback { color: var(--bad); border-color: var(--bad); }
+  .cards { display: grid; gap: 8px; margin-top: 10px; }
+  .card { border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px; }
+  .card .k { font-size: 12px; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .card .t { font-weight: 600; }
+  .card .s { font-size: 12px; color: var(--muted); }
+  table.timing { border-collapse: collapse; font-size: 13px; margin-top: 8px; }
+  table.timing td { padding: 2px 12px 2px 0; }
+  .bar { height: 8px; background: var(--accent); border-radius: 4px; min-width: 2px; }
+  ul.files { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+  ul.files li { display: flex; gap: 8px; align-items: center; justify-content: space-between;
+    border: 1px solid var(--line); border-radius: 6px; padding: 6px 10px; }
+  /* HUD mirror */
+  .hud { background: var(--hud-bg); color: var(--hud-ink); border-radius: 10px; padding: 16px;
+    font: 16px/1.4 ui-monospace, SFMono-Regular, Menlo, monospace; min-height: 180px; }
+  .hud .hcard { border-top: 1px solid var(--hud-dim); padding: 10px 0; white-space: pre-wrap; }
+  .hud .hcard:first-of-type { border-top: 0; }
+  .hud .hhead { color: var(--hud-dim); font-size: 13px; }
+  .hud .hsrc { color: var(--hud-dim); font-size: 13px; }
+  .hud .empty { color: var(--hud-dim); }
+  body.mirror-only header, body.mirror-only main > section:not(#mirror) { display: none; }
+  body.mirror-only main { grid-template-columns: 1fr; max-width: 900px; }
+  body.mirror-only #mirror { background: var(--hud-bg); border-color: var(--hud-bg); }
+  body.mirror-only #mirror h2, body.mirror-only #mirror .meta { color: var(--hud-dim); }
+  body.mirror-only .hud { font-size: 24px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Cue setup</h1>
+  <span class="status" id="status">connecting...</span>
+  <span class="row" style="margin-left:auto">
+    <input id="token" type="password" placeholder="device token (if set)" autocomplete="off" style="width:200px">
+    <button id="saveToken">Save token</button>
+    <a href="?view=mirror" target="_blank">Mirror only</a>
+  </span>
+</header>
+
+<main>
+  <section id="lookup">
+    <h2>Typed lookup</h2>
+    <form id="lookupForm" class="row">
+      <input id="lookupText" placeholder="Maya, Even Realities, devrel" autocomplete="off" maxlength="300">
+      <button class="primary" type="submit" id="lookupBtn">Look up</button>
+    </form>
+    <div class="msg" id="lookupMsg"></div>
+    <div id="lookupOut"></div>
+  </section>
+
+  <section id="mirror">
+    <h2>Latest brief (mirror)</h2>
+    <div class="meta" id="mirrorMeta">waiting for a brief...</div>
+    <div class="hud" id="hud"><div class="empty">No brief yet. Do a lookup here or on the glasses.</div></div>
+  </section>
+
+  <section id="goal" class="wide">
+    <h2>Goal</h2>
+    <div class="goals" id="goals"></div>
+    <label class="row" style="color:var(--ink)"><input type="checkbox" id="regen" checked style="width:auto">
+      Also rewrite card 3 of the latest brief</label>
+    <div class="msg" id="goalMsg"></div>
+  </section>
+
+  <section id="profile">
+    <h2>Wearer profile</h2>
+    <form id="profileForm">
+      <div class="grid2">
+        <div><label for="p_name">Name</label><input id="p_name" required></div>
+        <div><label for="p_school">School</label><input id="p_school"></div>
+        <div><label for="p_major">Major</label><input id="p_major"></div>
+        <div><label for="p_goalNote">Goal note</label><input id="p_goalNote" placeholder="summer 2027 SWE intern"></div>
+      </div>
+      <label for="p_summary">Summary (2-3 lines, sent to the brief writer)</label>
+      <textarea id="p_summary"></textarea>
+      <label for="p_projects">Projects (one per line)</label>
+      <textarea id="p_projects"></textarea>
+      <label for="p_interests">Interests (comma separated)</label>
+      <input id="p_interests">
+      <label for="p_resume">Resume text (stored on the server only, never sent to the fast LLM or Sentry)</label>
+      <textarea id="p_resume" style="min-height:120px"></textarea>
+      <div class="row" style="margin-top:10px"><button class="primary" type="submit">Save profile</button></div>
+      <div class="msg" id="profileMsg"></div>
+    </form>
+  </section>
+
+  <section id="event">
+    <h2>Event</h2>
+    <div class="meta" id="eventMeta">-</div>
+    <div class="tabs" role="tablist">
+      <button type="button" data-tab="bundled" aria-selected="true">Bundled file</button>
+      <button type="button" data-tab="paste" aria-selected="false">Paste list</button>
+      <button type="button" data-tab="json" aria-selected="false">Paste JSON</button>
+    </div>
+    <div data-panel="bundled">
+      <ul class="files" id="files"><li>loading...</li></ul>
+    </div>
+    <form data-panel="paste" id="pasteForm" hidden>
+      <div class="grid2">
+        <div><label for="e_name">Event name</label><input id="e_name" required></div>
+        <div><label for="e_date">Date</label><input id="e_date" type="date" required></div>
+      </div>
+      <label for="e_orgs">Organizations (one per line)</label>
+      <textarea id="e_orgs" placeholder="Anduril&#10;Sentry"></textarea>
+      <label for="e_people">People (one per line: Name, Org, Role)</label>
+      <textarea id="e_people" placeholder="Priya Shah, Anduril, recruiter"></textarea>
+      <div class="row" style="margin-top:10px"><button class="primary" type="submit">Load event</button></div>
+    </form>
+    <form data-panel="json" id="jsonForm" hidden>
+      <label for="e_json">Either a create-event body {name, date, orgs, people, organizations?} or a data/*.json file</label>
+      <textarea id="e_json" style="min-height:160px" spellcheck="false"></textarea>
+      <div class="row" style="margin-top:10px"><button class="primary" type="submit">Load event</button></div>
+    </form>
+    <div class="msg" id="eventMsg"></div>
+  </section>
+</main>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const GOALS = [
+    ["internship", "Internship"], ["cofounder", "Cofounder"], ["learn", "Learn"],
+    ["teammates_sponsors", "Teammates / sponsors"], ["mentorship", "Mentorship"],
+  ];
+  const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+  const store = {
+    get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+    set(k, v) { try { localStorage.setItem(k, v); } catch {} },
+  };
+
+  if (new URLSearchParams(location.search).get("view") === "mirror") document.body.classList.add("mirror-only");
+
+  let token = store.get("cue.token") || "";
+  $("token").value = token;
+  $("saveToken").onclick = () => { token = $("token").value.trim(); store.set("cue.token", token); refreshAll(); };
+
+  async function api(method, path, body) {
+    const headers = {};
+    if (token) headers.authorization = "Bearer " + token;
+    if (body !== undefined) headers["content-type"] = "application/json";
+    const t0 = performance.now();
+    const res = await fetch(path, { method, headers, body: body === undefined ? undefined : JSON.stringify(body) });
+    const ms = Math.round(performance.now() - t0);
+    let data = null;
+    if (res.status !== 204 && res.status !== 304) { try { data = await res.json(); } catch {} }
+    if (!res.ok && res.status !== 304) {
+      const err = new Error(data?.error ? `${data.error.code}: ${data.error.message}` : `HTTP ${res.status}`);
+      err.status = res.status;
+      throw err;
+    }
+    return { data, res, ms };
+  }
+  const say = (el, text, kind) => { el.textContent = text; el.className = "msg" + (kind ? " " + kind : ""); };
+
+  // --- State / header
+  let state = null;
+  async function loadState() {
+    try {
+      const { data } = await api("GET", "/api/state");
+      state = data;
+      const ev = data.event;
+      $("status").textContent = ev
+        ? `event: ${ev.name} (${ev.loadStatus}, ${data.orgs.length} orgs) | goal: ${data.goal} | wearer: ${data.profile.name}`
+        : `no event loaded | goal: ${data.goal}`;
+      renderGoals(data.goal);
+      if (ev) {
+        const { data: d } = await api("GET", "/api/events/" + encodeURIComponent(ev.id));
+        $("eventMeta").textContent = `${ev.name} | ${ev.date} | ${ev.loadStatus}` +
+          (ev.creaoRunId ? ` | CREAO run ${ev.creaoRunId}` : "") + ` | ${d.counts.orgs} orgs, ${d.counts.people} people`;
+      } else {
+        $("eventMeta").textContent = "No active event.";
+      }
+    } catch (e) {
+      $("status").textContent = e.status === 401 ? "unauthorized: paste the device token" : "server unreachable: " + e.message;
+    }
+  }
+
+  // --- Goal
+  function renderGoals(current) {
+    $("goals").innerHTML = GOALS.map(([g, label]) =>
+      `<button type="button" data-goal="${g}" aria-pressed="${g === current}">${esc(label)}</button>`).join("");
+  }
+  $("goals").onclick = async (ev) => {
+    const g = ev.target.closest("button")?.dataset.goal;
+    if (!g) return;
+    const body = { goal: g };
+    if ($("regen").checked && lastBrief) body.briefId = lastBrief.id;
+    say($("goalMsg"), "saving...");
+    try {
+      const { data, res, ms } = await api("PUT", "/api/goal", body);
+      renderGoals(data.goal);
+      say($("goalMsg"), `goal set to ${data.goal}` + (data.brief ? `; card 3 rewritten (v${data.brief.version}, ${ms}ms${res.headers.get("x-cue-fallback") ? ", template" : ""})` : ""), "ok");
+      if (data.brief) showLookup(data.brief, res, ms);
+      loadState();
+    } catch (e) { say($("goalMsg"), e.message, "bad"); }
+  };
+
+  // --- Profile
+  const lines = (s) => s.split("\n").map((x) => x.trim()).filter(Boolean);
+  async function loadProfile() {
+    try {
+      const { data } = await api("GET", "/api/profile");
+      const p = data.profile;
+      $("p_name").value = p.name || ""; $("p_school").value = p.school || ""; $("p_major").value = p.major || "";
+      $("p_goalNote").value = p.goalNote || ""; $("p_summary").value = p.summary || "";
+      $("p_projects").value = (p.projects || []).join("\n"); $("p_interests").value = (p.interests || []).join(", ");
+      $("p_resume").value = p.resumeText || "";
+    } catch {}
+  }
+  $("profileForm").onsubmit = async (ev) => {
+    ev.preventDefault();
+    const opt = (v) => v.trim() || undefined;
+    const body = {
+      name: $("p_name").value.trim(), school: opt($("p_school").value), major: opt($("p_major").value),
+      goalNote: opt($("p_goalNote").value), summary: $("p_summary").value.trim(),
+      projects: lines($("p_projects").value),
+      interests: $("p_interests").value.split(",").map((x) => x.trim()).filter(Boolean),
+      resumeText: $("p_resume").value, goal: state?.goal || "internship",
+    };
+    say($("profileMsg"), "saving...");
+    try { await api("PUT", "/api/profile", body); say($("profileMsg"), "Profile saved.", "ok"); loadState(); }
+    catch (e) { say($("profileMsg"), e.message, "bad"); }
+  };
+
+  // --- Event
+  document.querySelectorAll("[data-tab]").forEach((b) => b.onclick = () => {
+    document.querySelectorAll("[data-tab]").forEach((x) => x.setAttribute("aria-selected", String(x === b)));
+    document.querySelectorAll("[data-panel]").forEach((p) => p.hidden = p.dataset.panel !== b.dataset.tab);
+  });
+  $("e_date").value = new Date().toISOString().slice(0, 10);
+
+  async function loadFiles() {
+    try {
+      const { data } = await api("GET", "/api/events/bundled");
+      $("files").innerHTML = data.files.length ? data.files.map((f) =>
+        `<li><span><b>${esc(f.name)}</b> <span class="meta">${esc(f.file)} | ${f.orgs} orgs, ${f.people} people</span></span>
+         <button type="button" data-file="${esc(f.file)}">Load</button></li>`).join("") : "<li>No files in backend/data</li>";
+    } catch (e) { $("files").innerHTML = `<li>${esc(e.message)}</li>`; }
+  }
+  $("files").onclick = async (ev) => {
+    const file = ev.target.closest("button")?.dataset.file;
+    if (!file) return;
+    say($("eventMsg"), "loading...");
+    try {
+      const { data } = await api("POST", "/api/events/bundled", { file });
+      say($("eventMsg"), `Loaded ${data.event.name} from ${file}. Your profile was kept.`, "ok");
+      loadState();
+    } catch (e) { say($("eventMsg"), e.message, "bad"); }
+  };
+
+  async function createEvent(body) {
+    say($("eventMsg"), "loading...");
+    try {
+      const { data } = await api("POST", "/api/events", body);
+      say($("eventMsg"), `Event ${data.event.name}: ${data.event.loadStatus}` +
+        (data.event.creaoRunId ? ` (CREAO Event Loader run ${data.event.creaoRunId})` : ""), "ok");
+      loadState();
+    } catch (e) { say($("eventMsg"), e.message, "bad"); }
+  }
+  $("pasteForm").onsubmit = (ev) => {
+    ev.preventDefault();
+    const orgs = lines($("e_orgs").value);
+    const people = lines($("e_people").value).map((l) => {
+      const [name, org, ...role] = l.split(",").map((x) => x.trim());
+      return { name, org: org || "", role: role.join(", ") || undefined };
+    }).filter((p) => p.name);
+    for (const p of people) if (p.org && !orgs.includes(p.org)) orgs.push(p.org);
+    createEvent({
+      name: $("e_name").value.trim(), date: $("e_date").value, orgs, people,
+      sourceText: [$("e_orgs").value, $("e_people").value].join("\n").trim(),
+    });
+  };
+  $("jsonForm").onsubmit = (ev) => {
+    ev.preventDefault();
+    let j;
+    try { j = JSON.parse($("e_json").value); } catch (e) { say($("eventMsg"), "Invalid JSON: " + e.message, "bad"); return; }
+    if (j && j.event && Array.isArray(j.organizations)) {
+      // data/*.json shape -> create-event body
+      const byId = Object.fromEntries(j.organizations.map((o) => [o.id, o.name]));
+      j = {
+        name: j.event.name, date: j.event.date,
+        orgs: j.organizations.map((o) => o.name),
+        people: (j.people || []).map((p) => ({ name: p.name, org: byId[p.orgId] || p.orgId, role: p.role })),
+        sourceText: (j.event.sources || []).map((s) => s.raw).join("\n"),
+        organizations: j.organizations,
+      };
+    }
+    createEvent(j);
+  };
+
+  // --- Lookup
+  function cardsHtml(brief) {
+    return `<div class="cards">${brief.cards.map((c) => `
+      <div class="card"><div class="k">${esc(c.kind)}</div><div class="t">${esc(c.title)}</div>
+      <div>${esc(c.body)}</div>${c.source ? `<div class="s">src: ${esc(c.source)}</div>` : ""}</div>`).join("")}</div>`;
+  }
+  function parseTiming(res) {
+    const st = res.headers.get("server-timing");
+    const out = [];
+    if (st) for (const part of st.split(",")) {
+      const m = part.trim().match(/^([\w.-]+).*?dur=([\d.]+)/);
+      if (m) out.push([m[1], Number(m[2])]);
+    }
+    return out;
+  }
+  function showLookup(brief, res, ms) {
+    const fb = res.headers.get("x-cue-fallback");
+    const notes = res.headers.get("x-cue-notes") || "";
+    const timing = parseTiming(res);
+    timing.push(["round trip", ms]);
+    const max = Math.max(...timing.map((t) => t[1]), 1);
+    const cands = brief.match.confidence === "medium" && brief.match.candidates.length
+      ? `<div class="row" style="margin-top:8px">Which one? ${brief.match.candidates.map((c) =>
+          `<button type="button" data-confirm="${esc(c.personId)}">${esc(c.label)}</button>`).join("")}
+          <button type="button" data-confirm="">Neither</button></div>` : "";
+    $("lookupOut").innerHTML = `
+      <div class="row"><span class="pill ${esc(brief.match.confidence)}">${esc(brief.match.confidence)}</span>
+        ${fb ? `<span class="pill fallback">fallback: ${esc(fb)}</span>` : ""}
+        <span class="meta">${esc(brief.id)} v${brief.version} | heard: ${esc(brief.query.name)}${brief.query.org ? ", " + esc(brief.query.org) : ""}${brief.query.role ? ", " + esc(brief.query.role) : ""}</span></div>
+      ${cands}
+      ${cardsHtml(brief)}
+      <table class="timing">${timing.map(([k, v]) => `<tr><td>${esc(k)}</td><td>${v}ms</td>
+        <td style="width:160px"><div class="bar" style="width:${Math.round(v / max * 100)}%"></div></td></tr>`).join("")}</table>
+      <div class="meta" style="margin-top:6px">X-Cue-Notes: ${esc(notes) || "-"}</div>`;
+    $("lookupOut").dataset.brief = brief.id;
+  }
+  $("lookupOut").onclick = async (ev) => {
+    const b = ev.target.closest("button[data-confirm]");
+    if (!b) return;
+    try {
+      const { data, res, ms } = await api("POST", `/api/briefs/${encodeURIComponent($("lookupOut").dataset.brief)}/confirm`,
+        { personId: b.dataset.confirm || null });
+      showLookup(data.brief, res, ms);
+    } catch (e) { say($("lookupMsg"), e.message, "bad"); }
+  };
+  $("lookupForm").onsubmit = async (ev) => {
+    ev.preventDefault();
+    const text = $("lookupText").value.trim();
+    if (!text) return;
+    $("lookupBtn").disabled = true;
+    say($("lookupMsg"), "thinking...");
+    try {
+      const { data, res, ms } = await api("POST", "/api/briefs/text", { text });
+      say($("lookupMsg"), `${ms}ms`, "ok");
+      showLookup(data.brief, res, ms);
+      pollMirror();
+    } catch (e) { say($("lookupMsg"), e.message, "bad"); }
+    finally { $("lookupBtn").disabled = false; }
+  };
+
+  // --- Mirror: polls the latest brief (glasses or laptop lookups)
+  let lastBrief = null;
+  let lastKey = "";
+  async function pollMirror() {
+    try {
+      const { data, res } = await api("GET", "/api/briefs/latest");
+      const b = data?.brief;
+      if (!b || res.status === 204) return;
+      lastBrief = b;
+      const key = b.id + ":" + b.version;
+      if (key === lastKey) return;
+      lastKey = key;
+      const q = b.query;
+      $("mirrorMeta").textContent = `${b.id} v${b.version} | ${b.match.confidence} | slow path: ${b.slowPath.status} | ${new Date(b.updatedAt).toLocaleTimeString()}`;
+      const head = `<div class="hhead">${esc([q.name, q.org, q.role].filter(Boolean).join(" | "))}</div>`;
+      $("hud").innerHTML = head + (b.cards.length ? b.cards.map((c) =>
+        `<div class="hcard"><div class="hhead">${esc(c.title)}</div>${esc(c.body)}${c.source ? `<div class="hsrc">src: ${esc(c.source)}</div>` : ""}</div>`).join("")
+        : `<div class="empty">No cards.</div>`);
+    } catch {}
+  }
+
+  function refreshAll() { loadState(); loadProfile(); loadFiles(); pollMirror(); }
+  refreshAll();
+  setInterval(pollMirror, 1000);
+  setInterval(loadState, 10000);
+})();
+</script>
+</body>
+</html>

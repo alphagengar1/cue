@@ -1,0 +1,71 @@
+{
+  "_note": "Sample data for local testing. Org one-liners are short public descriptions; people are FICTIONAL test names, not real attendees. Replace with the Event Loader output (or real hand-written orgs) before the demo.",
+  "event": {
+    "id": "lahacks-f26",
+    "name": "LA Hacks Fall 2026",
+    "date": "2026-10-17",
+    "sources": [{ "kind": "employers", "raw": "Sponsors: Even Realities, CREAO, Photon, Sentry" }],
+    "loadStatus": "ready"
+  },
+  "organizations": [
+    {
+      "id": "even-realities",
+      "name": "Even Realities",
+      "aliases": ["Even", "Even Realities G2", "EvenRealities"],
+      "oneLiner": "Makes display smart glasses (G1, G2) that look like normal eyewear.",
+      "focusNow": [
+        { "text": "Even Hub lets developers build and ship their own apps for the G2 glasses.", "sourceUrl": "https://www.evenrealities.com", "sourceKind": "org_site" }
+      ],
+      "eventRole": "sponsor: G2 glasses track",
+      "people": ["Maya Chen"]
+    },
+    {
+      "id": "creao",
+      "name": "CREAO",
+      "aliases": ["Creao AI", "CREAO AI"],
+      "oneLiner": "Platform for building AI agents and apps without heavy coding.",
+      "focusNow": [
+        { "text": "Developer API starts agent runs and reports completion by webhook.", "sourceUrl": "https://www.creao.ai", "sourceKind": "org_site" }
+      ],
+      "eventRole": "sponsor: agents track",
+      "people": ["Sam Park"]
+    },
+    {
+      "id": "photon",
+      "name": "Photon",
+      "aliases": [],
+      "oneLiner": "Builds tooling for AI agents that talk to people over iMessage.",
+      "focusNow": [],
+      "eventRole": "sponsor",
+      "people": ["Sam Rivera"]
+    },
+    {
+      "id": "sentry",
+      "name": "Sentry",
+      "aliases": ["Sentry.io", "Getsentry"],
+      "oneLiner": "Application monitoring: error tracking, tracing, logs and session replay.",
+      "focusNow": [
+        { "text": "Sentry offers tracing, logs and replay alongside error monitoring.", "sourceUrl": "https://sentry.io/welcome/", "sourceKind": "org_site" }
+      ],
+      "eventRole": "sponsor: best use of Sentry",
+      "people": ["Jordan Lee"]
+    }
+  ],
+  "people": [
+    { "name": "Maya Chen", "orgId": "even-realities", "role": "developer relations" },
+    { "name": "Sam Park", "orgId": "creao", "role": "engineer" },
+    { "name": "Sam Rivera", "orgId": "photon", "role": "founder" },
+    { "name": "Jordan Lee", "orgId": "sentry", "role": "developer advocate" }
+  ],
+  "profile": {
+    "name": "Demo Wearer",
+    "school": "UCLA",
+    "major": "Computer Science",
+    "resumeText": "",
+    "summary": "UCLA CS freshman building Cue, a G2 glasses app for networking help. Likes TypeScript, hardware hacks and AI agents.",
+    "interests": ["smart glasses", "AI agents", "developer tools"],
+    "projects": ["Cue: networking cards on Even Realities G2"],
+    "goal": "internship",
+    "goalNote": "summer 2027 SWE intern"
+  }
+}

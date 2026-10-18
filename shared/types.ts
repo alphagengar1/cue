@@ -1,0 +1,106 @@
+// Canonical Cue data types. Source of truth: design/01-architecture.md section 5.
+// Used by both app/ and backend/. Types only (no runtime code), so either side can
+// `import type { ... } from "../../shared/types"` without a build step.
+// If you change a type here, change 01 section 5 in the same commit.
+
+export type Goal = "internship" | "cofounder" | "learn" | "teammates_sponsors" | "mentorship";
+export type Confidence = "high" | "medium" | "low";
+export type SourceKind = "talk" | "podcast" | "own_post" | "personal_site" | "github"
+  | "article" | "school_page" | "team_page" | "org_site" | "search_snippet";
+
+export interface Fact {
+  text: string;                                     // one sentence, <= 140 chars, professional only
+  sourceUrl: string;
+  sourceKind: SourceKind;
+  date?: string;                                    // ISO date if known
+}
+
+export interface Event {
+  id: string; name: string; date: string;           // ISO date
+  sources: { kind: "employers" | "speakers" | "luma" | "url"; raw: string }[];
+  loadStatus: "empty" | "loading" | "ready" | "failed";
+  creaoRunId?: string;
+}
+
+export interface Organization {
+  id: string;                                       // lowercase slug, e.g. "anduril"
+  eventId: string;
+  name: string; aliases: string[];                  // "Anduril", "Anduril Industries"
+  oneLiner: string;                                 // <= 120 chars, what they do
+  focusNow: Fact[];                                 // max 5: launches, priorities, hiring areas
+  eventRole?: string;                               // "sponsor table 12", "speaker: 2pm panel"
+  hiring?: string;                                  // roles/programs, if public
+  people: string[];                                 // known attendee names from the event list
+}
+
+export interface Person {
+  id: string; eventId: string; orgId: string;
+  name: string; role?: string;
+  headline?: string;                                // from a search title/snippet; LinkedIn headline allowed
+  facts: Fact[];                                    // max 8, sorted by source priority (03 section 4)
+  match: Confidence; matchReason: string;           // "3 sources mention both name and Anduril"
+  lastResearchedAt?: string;
+}
+
+export interface WearerProfile {
+  id: string; name: string;
+  school?: string; major?: string;
+  resumeText: string;                               // pasted on setup page; not sent to the fast LLM
+  summary: string;                                  // 2-3 lines, typed on setup page; sent to the LLM
+  interests: string[];
+  projects: string[];
+  goal: Goal; goalNote?: string;                    // "summer 2027 SWE intern"
+  pastConversations?: { personName: string; orgId: string; note: string }[];  // later phase
+}
+
+export interface Card {
+  kind: "connect" | "context" | "angle";
+  title: string;                                    // <= 20 chars; laptop mirror only, the HUD header is built by the app (02)
+  body: string;                                     // <= 200 chars, <= 5 lines of <= 40 chars
+  source: string | null;                            // bare domain/path, <= 34 chars, e.g. "anduril.com/blog"; the app adds "src: ". null only on "angle"
+}
+
+export interface Brief {
+  id: string; version: number; eventId: string;
+  transcript: string;
+  query: { name: string; org: string; role?: string };
+  match: { personId: string | null; confidence: Confidence; candidates: { personId: string; label: string }[] };
+  cards: Card[];                                    // high/medium: 3 cards. low or "Neither": only "context" for the org. Org unknown too: only "angle" (generic ask)
+  slowPath: { status: "none" | "running" | "done" | "failed"; runId?: string };
+  createdAt: string; updatedAt: string;
+}
+
+// ---------------------------------------------------------------------------
+// API envelopes (01 section 4.2). Not data models, but shared so the app's
+// api.ts and the backend agree on request/response shapes.
+// ---------------------------------------------------------------------------
+
+export type ErrorCode =
+  | "STT_EMPTY" | "STT_FAILED" | "NO_EVENT" | "SEARCH_FAILED" | "LLM_FAILED" | "UNAUTHORIZED"
+  // backend-only extras (not in 01's list): bad input, unknown id, rate limit, server bug
+  | "BAD_REQUEST" | "NOT_FOUND" | "RATE_LIMITED" | "INTERNAL";
+
+export interface ApiError { error: { code: ErrorCode; message: string } }
+
+export type Query = Brief["query"];
+
+export interface SttResponse { transcript: string; query: Query }
+export interface BriefTextRequest { text: string }
+export interface BriefResponse { brief: Brief }
+export interface ConfirmRequest { personId: string | null }
+export interface GoalRequest { goal: Goal; briefId?: string }
+export interface GoalResponse { goal: Goal; brief?: Brief }
+export interface StateResponse {
+  event: Event | null;
+  goal: Goal;
+  profile: { name: string; school?: string };
+  orgs: Organization[];
+}
+export type ProfileRequest = Omit<WearerProfile, "id">;
+export interface CreateEventRequest {
+  name: string; date: string;
+  orgs: string[];
+  people: { name: string; org: string; role?: string }[];
+  sourceText: string;
+}
+export interface EventResponse { event: Event }

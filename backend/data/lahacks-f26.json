@@ -1,0 +1,306 @@
+{
+  "_note": "Real event pack for LA Hacks AI Hackathon (Oct 17-18 2026, UCLA). ORGANIZATIONS ONLY: no individual people. Add consenting demo people to the top-level people array and each org's people list. eventRole is generic ('sponsor') because per-sponsor prize tracks were not published on lahacks pages we could read (JS-rendered); fill in from the Devpost/Discord before the demo. Facts are public org info with source URLs, researched 2026-10-17.",
+  "event": {
+    "id": "lahacks-f26",
+    "name": "LA Hacks Fall 2026",
+    "date": "2026-10-17",
+    "sources": [{ "kind": "url", "raw": "https://ai.lahacks.com" }],
+    "loadStatus": "ready"
+  },
+  "organizations": [
+    {
+      "id": "lahacks",
+      "name": "LA Hacks",
+      "aliases": ["LA Hacks AI Hackathon", "LAHacks", "AI Hackathon"],
+      "oneLiner": "Student-run nonprofit hackathon at UCLA; the host of this event.",
+      "focusNow": [
+        { "text": "LA Hacks is a free student hackathon run by a 501(c)(3) nonprofit and student volunteers, funded by sponsors.", "sourceUrl": "https://lahacks.com", "sourceKind": "org_site" },
+        { "text": "The flagship 36-hour LA Hacks returns to UCLA's Pauley Pavilion in mid-April 2027.", "sourceUrl": "https://lahacks.com", "sourceKind": "org_site" },
+        { "text": "AI Hackathon 2026 runs Oct 17-18, 2026 at the James West Alumni Center, UCLA.", "sourceUrl": "https://la-ai-hackathon-2026.devpost.com/", "sourceKind": "org_site" }
+      ],
+      "eventRole": "host / organizer",
+      "people": []
+    },
+    {
+      "id": "even-realities",
+      "name": "Even Realities",
+      "aliases": ["Even", "Even G2", "Even Realities G2", "EvenRealities"],
+      "oneLiner": "Makes Even G2 display smart glasses and the Even R1 smart ring.",
+      "focusNow": [
+        { "text": "Even Hub, announced Mar 2026, is an open platform for developers to build and ship apps for the G2.", "sourceUrl": "https://hub.evenrealities.com/docs/get-started/overview", "sourceKind": "org_site", "date": "2026-03-26" },
+        { "text": "G2 apps are web apps (HTML/CSS/TypeScript) using the Even Hub SDK over Bluetooth to a 576x288 display.", "sourceUrl": "https://hub.evenrealities.com/docs/get-started/overview", "sourceKind": "org_site" },
+        { "text": "Even Realities lists the G2 glasses and the R1 ring (controls the G2) as its products.", "sourceUrl": "https://www.evenrealities.com", "sourceKind": "org_site" }
+      ],
+      "eventRole": "sponsor",
+      "people": []
+    },
+    {
+      "id": "creao",
+      "name": "CREAO",
+      "aliases": ["Creao AI", "CREAO AI", "Creao"],
+      "oneLiner": "Builds AI agents that run recurring business work on schedules or triggers.",
+      "focusNow": [
+        { "text": "Users describe a recurring task and CREAO builds an agent that runs on schedules, webhooks or Slack.", "sourceUrl": "https://www.creao.ai", "sourceKind": "org_site" },
+        { "text": "CREAO Lite is an in-house model the company says gives about 95% of frontier quality at about 5% of cost.", "sourceUrl": "https://www.creao.ai", "sourceKind": "org_site" },
+        { "text": "Raised $10M led by Prosperity7 Ventures, about $25M total, per press coverage.", "sourceUrl": "https://pulse2.com/creao-ai-10-million-raised-to-build-autonomous-super-agent-platform-for-ai-workflows/", "sourceKind": "article" }
+      ],
+      "eventRole": "sponsor",
+      "people": []
+    },
+    {
+      "id": "photon",
+      "name": "Photon",
+      "aliases": ["Photon HQ", "photon.codes", "Spectrum", "Photon Spectrum"],
+      "oneLiner": "Open-source Spectrum framework that puts AI agents into iMessage and other chats.",
+      "focusNow": [
+        { "text": "Spectrum is a TypeScript SDK for agents on iMessage, WhatsApp, Telegram, Slack, Discord, SMS/RCS and more.", "sourceUrl": "https://photon.codes", "sourceKind": "org_site" },
+        { "text": "Photon 2.0, a rebuilt platform with a unified API, is in beta.", "sourceUrl": "https://photon.codes", "sourceKind": "org_site" }
+      ],
+      "eventRole": "sponsor",
+      "people": []
+    },
+    {
+      "id": "sentry",
+      "name": "Sentry",
+      "aliases": ["Sentry.io", "Getsentry", "Seer"],
+      "oneLiner": "Application monitoring: errors, tracing, logs and an AI debugging agent (Seer).",
+      "focusNow": [
+        { "text": "Seer, Sentry's AI debugging agent, now covers local development and code review, with flat-rate pricing.", "sourceUrl": "https://sentry.io/about/press-releases/sentry-expands-seer-ai-debugging-agent/", "sourceKind": "org_site", "date": "2026-01-27" },
+        { "text": "Seer uses production telemetry (errors, traces, logs, metrics) to root-cause bugs.", "sourceUrl": "https://sentry.io/about/press-releases/sentry-expands-seer-ai-debugging-agent/", "sourceKind": "org_site", "date": "2026-01-27" }
+      ],
+      "eventRole": "sponsor",
+      "hiring": "Software Engineer Intern (Summer 2027) and New Grad (2027) roles listed; see sentry.io/careers.",
+      "people": []
+    },
+    {
+      "id": "visa",
+      "name": "Visa",
+      "aliases": ["Visa Inc", "Visa Inc.", "VISA"],
+      "oneLiner": "Global payments network connecting consumers, merchants and banks.",
+      "focusNow": [
+        { "text": "Visa posts Software Engineer Intern roles for students graduating Dec 2026 or 2027.", "sourceUrl": "https://www.smartrecruiters.com/Visa/744000103305807", "sourceKind": "org_site" }
+      ],
+      "eventRole": "sponsor",
+      "hiring": "Software Engineer Intern roles (BS/MS, graduating Dec 2026 or 2027); see Visa careers.",
+      "people": []
+    },
+    {
+      "id": "fetch-ai",
+      "name": "Fetch.ai",
+      "aliases": ["Fetch", "Fetch AI", "Fetchai", "ASI Alliance", "Agentverse", "ASI:One"],
+      "oneLiner": "Agent platform: uAgents framework, Agentverse marketplace and ASI:One discovery.",
+      "focusNow": [
+        { "text": "uAgents builds agents, Agentverse hosts them, and ASI:One routes a user's query to the right agent.", "sourceUrl": "https://github.com/fetchAI", "sourceKind": "org_site" },
+        { "text": "At LA Hacks spring 2026 it ran 'Best Use of Fetch.ai' ($5,000 pool) and 'Best OmegaClaw Skill powered by Agentverse'.", "sourceUrl": "https://fetch.ai/events/la-hacks-2026", "sourceKind": "org_site", "date": "2026-04-25" },
+        { "text": "Fetch.ai says over 2 million agents coordinate through Agentverse.", "sourceUrl": "https://www.businesswire.com/news/home/20251119088395/en", "sourceKind": "article", "date": "2025-11-19" }
+      ],
+      "eventRole": "sponsor: likely Agentverse / Best Use of Fetch.ai track (confirm)",
+      "hiring": "Spring 2026 LA Hacks winners got an internship interview opportunity.",
+      "people": []
+    },
+    {
+      "id": "cognition",
+      "name": "Cognition",
+      "aliases": ["Cognition AI", "Devin", "Cognition Labs", "Windsurf", "Devin Desktop"],
+      "oneLiner": "Makes Devin, the AI software engineer, and the Windsurf editor (now Devin Desktop).",
+      "focusNow": [
+        { "text": "Windsurf was renamed Devin Desktop on June 2, 2026; Devin Local is the default local agent.", "sourceUrl": "https://cognition.com/blog/one-year-of-building-together", "sourceKind": "org_site", "date": "2026-06-02" },
+        { "text": "Cognition acquired the Windsurf product and brand in July 2025.", "sourceUrl": "https://cognition.com/blog/one-year-of-building-together", "sourceKind": "org_site" }
+      ],
+      "eventRole": "sponsor",
+      "hiring": "Careers page lists roles in R&D, customer engineering, sales, marketing; no internship listed.",
+      "people": []
+    },
+    {
+      "id": "paper",
+      "name": "Paper",
+      "aliases": ["paper.design", "Paper Design", "Paper Desktop"],
+      "oneLiner": "Design tool with an HTML/CSS canvas that AI agents can read and write via MCP.",
+      "focusNow": [
+        { "text": "Every layer is real HTML/CSS, so designs export as code; any IDE or CLI agent connects over MCP.", "sourceUrl": "https://paper.design", "sourceKind": "org_site" },
+        { "text": "Paper raised a $34M Series A led by Accel and ICONIQ.", "sourceUrl": "https://paper.design", "sourceKind": "org_site" },
+        { "text": "Paper Desktop launched in early 2026; Paper reports ARR grew 25x in one month afterward.", "sourceUrl": "https://www.cmswire.com/ai-news/design-startup-paper-raises-34m-to-take-on-figma-in-the-ai-agent-era/", "sourceKind": "article" }
+      ],
+      "eventRole": "sponsor",
+      "people": []
+    },
+    {
+      "id": "base44",
+      "name": "Base44",
+      "aliases": ["Base 44", "Base44 by Wix"],
+      "oneLiner": "Wix-owned AI platform that builds apps, sites and agents from plain-language prompts.",
+      "focusNow": [
+        { "text": "Apps ship with built-in backend, auth, database and hosting; 'Superagents' automate workflows.", "sourceUrl": "https://base44.com", "sourceKind": "org_site" },
+        { "text": "Reported to have launched Base1, its first in-house model for building web apps, on June 29, 2026.", "sourceUrl": "https://ecosistemastartup.com/base44-lanza-base1-modelo-ia-propio-para-vibe-coding-en-2026/", "sourceKind": "article", "date": "2026-06-29" },
+        { "text": "Wix bought Base44 in June 2025; Wix reported about $100M ARR for it by March 2026.", "sourceUrl": "https://finance.yahoo.com/news/wix-com-q4-earnings-call-165003576.html", "sourceKind": "article" }
+      ],
+      "eventRole": "sponsor",
+      "people": []
+    },
+    {
+      "id": "qnx",
+      "name": "QNX",
+      "aliases": ["BlackBerry QNX", "BlackBerry", "QNX Software Systems"],
+      "oneLiner": "BlackBerry division building real-time OSes for cars, robots and safety-critical systems.",
+      "focusNow": [
+        { "text": "QNX SDP 8.0 is the base for its next-generation products, including QNX Hypervisor.", "sourceUrl": "https://qnx.software/en", "sourceKind": "org_site" },
+        { "text": "Alloy Kore, a foundation layer for software-defined vehicles, was picked by Coretura (Daimler Truck and Volvo Group JV).", "sourceUrl": "https://qnx.software/en", "sourceKind": "org_site", "date": "2026" },
+        { "text": "QNX markets deterministic 'physical AI' workloads and reports deployment in over 275 million vehicles.", "sourceUrl": "https://qnx.software/en", "sourceKind": "org_site" }
+      ],
+      "eventRole": "sponsor",
+      "people": []
+    },
+    {
+      "id": "workday",
+      "name": "Workday",
+      "aliases": ["Workday Inc", "Workday Inc.", "Sana", "Sana from Workday"],
+      "oneLiner": "Cloud software for HR and finance, now pushing AI agents (Sana).",
+      "focusNow": [
+        { "text": "Sana from Workday, an AI interface and self-service agents for HR and finance, became generally available Mar 17, 2026.", "sourceUrl": "https://newsroom.workday.com/2026-03-17-Introducing-Sana-from-Workday-Superintelligence-for-Work-That-Finds-Answers,-Takes-Action,-and-Automates-Workflows?asPDF=1", "sourceKind": "org_site", "date": "2026-03-17" },
+        { "text": "On Oct 13, 2026 Workday said Sana will work inside Claude, Gemini Enterprise, Microsoft Copilot, Slack and Teams.", "sourceUrl": "https://newsroom.workday.com/2026-10-13-Workday-to-Bring-Sana-Everywhere-Employees-Work,-Including-Claude,-Gemini-Enterprise,-Microsoft-Copilot,-Slack,-and-Teams", "sourceKind": "org_site", "date": "2026-10-13" }
+      ],
+      "eventRole": "sponsor",
+      "people": []
+    },
+    {
+      "id": "veri",
+      "name": "Veri",
+      "aliases": ["Veri Studio", "veri.studio"],
+      "oneLiner": "Infrastructure for continually improving AI: training, evals and deployment.",
+      "focusNow": [
+        { "text": "Product covers SFT/DPO/GRPO training on usage data, autoscaling endpoints, LLM-judge monitors and sandboxed agents.", "sourceUrl": "https://veri.studio", "sourceKind": "org_site" },
+        { "text": "A Python SDK defines training jobs and reward functions in code.", "sourceUrl": "https://veri.studio", "sourceKind": "org_site" }
+      ],
+      "eventRole": "sponsor",
+      "people": []
+    },
+    {
+      "id": "intuit-quickbooks",
+      "name": "Intuit QuickBooks",
+      "aliases": ["Intuit", "QuickBooks", "Intuit Assist", "Intuit Intelligence", "TurboTax"],
+      "oneLiner": "Intuit's small-business accounting platform, with AI agents built in.",
+      "focusNow": [
+        { "text": "Intuit Assist is its generative AI assistant across TurboTax, Credit Karma, QuickBooks and Mailchimp.", "sourceUrl": "https://www.cfodive.com/news/intuit-ai-quickbooks-enhancements-ceo-eyes-ai-agents/733832/", "sourceKind": "article" },
+        { "text": "Intuit Intelligence gives a virtual team of AI agents for customers, payments, payroll, accounting and tax.", "sourceUrl": "https://blog.portebrown.com/intuit-intelligence-new-ai-agents-in-intuit-accountant-enterprise-suites", "sourceKind": "article" }
+      ],
+      "eventRole": "sponsor",
+      "people": []
+    },
+    {
+      "id": "espressif",
+      "name": "Espressif",
+      "aliases": ["Espressif Systems", "ESP32", "ESP-IDF"],
+      "oneLiner": "Chipmaker behind the ESP32 family of Wi-Fi/Bluetooth microcontrollers.",
+      "focusNow": [
+        { "text": "Espressif says it has shipped over 1.5 billion IoT SoCs and has 3 million+ ecosystem developers.", "sourceUrl": "https://www.espressif.com/en/company/about-us/who-we-are", "sourceKind": "org_site" },
+        { "text": "ESP-IDF v6.0 gives stable support for ESP32-C5 and C61 and previews ESP32-H21 and H4.", "sourceUrl": "https://www.cnx-software.com/news/firmware/page/4/?amp=1", "sourceKind": "article" },
+        { "text": "Current lines include ESP32-S, P (P4), C, E and H series, plus modules and DevKits.", "sourceUrl": "https://www.espressif.com/en/company/about-us/who-we-are", "sourceKind": "org_site" }
+      ],
+      "eventRole": "sponsor: hardware",
+      "people": []
+    },
+    {
+      "id": "mlh",
+      "name": "Major League Hacking",
+      "aliases": ["MLH", "Major League Hacking (MLH)", "MLH Fellowship"],
+      "oneLiner": "Student hackathon league and developer community (also owns DEV).",
+      "focusNow": [
+        { "text": "MLH reports 5 million+ developers and 1,000+ events a year across 100 countries.", "sourceUrl": "https://www.mlh.com/", "sourceKind": "org_site" },
+        { "text": "The MLH Fellowship is a 12-week remote internship alternative on open source, with a stipend.", "sourceUrl": "https://www.mlh.com/", "sourceKind": "org_site" }
+      ],
+      "eventRole": "partner: official hackathon league",
+      "hiring": "MLH Fellowship (12-week remote; software, production engineering, web3 tracks); careers at careers.mlh.io.",
+      "people": []
+    },
+    {
+      "id": "godaddy-registry",
+      "name": "GoDaddy Registry",
+      "aliases": ["GoDaddy", "GoDaddy Registry Domains", "Neustar Registry"],
+      "oneLiner": "Runs 200+ top-level domains and registry DNS; formerly Neustar's registry.",
+      "focusNow": [
+        { "text": "Supports 200+ TLDs and 8 million+ domains, with DNS on UltraDNS handling 40B+ queries per day.", "sourceUrl": "https://registry.godaddy", "sourceKind": "org_site" },
+        { "text": "GoDaddy Registry has a history of giving free domains to MLH hackathon participants.", "sourceUrl": "https://news.mlh.io/godaddy-registry-domains-are-going-to-apac-hackers-12-01-2020", "sourceKind": "article", "date": "2020-12-01" }
+      ],
+      "eventRole": "sponsor: free domain for your project (confirm)",
+      "people": []
+    },
+    {
+      "id": "vultr",
+      "name": "Vultr",
+      "aliases": ["Vultr Cloud", "Vultr GPU"],
+      "oneLiner": "Independent cloud provider with GPU and CPU compute in 30+ regions.",
+      "focusNow": [
+        { "text": "Vultr Clusters offers on-demand, self-service GPU and CPU clusters (announced April 2026).", "sourceUrl": "https://blogs.vultr.com/category/vultr-news", "sourceKind": "org_site", "date": "2026-04" },
+        { "text": "Vultr added a 33rd cloud region in Milan, Italy in May 2026.", "sourceUrl": "https://blogs.vultr.com/category/vultr-news", "sourceKind": "org_site", "date": "2026-05" },
+        { "text": "Vultr says it is among the first NVIDIA Exemplar Clouds for Blackwell GPUs.", "sourceUrl": "https://www.hpcwire.com/off-the-wire/vultr-named-nvidia-exemplar-cloud-for-achieving-performance-targets-on-nvidia-blackwell-gpus/", "sourceKind": "article" }
+      ],
+      "eventRole": "sponsor: cloud / GPU credits (confirm)",
+      "people": []
+    },
+    {
+      "id": "elevenlabs",
+      "name": "ElevenLabs",
+      "aliases": ["Eleven Labs", "11Labs", "ElevenAgents", "Eleven v3"],
+      "oneLiner": "Voice AI: text-to-speech, speech-to-text and conversational voice agents.",
+      "focusNow": [
+        { "text": "Raised a $500M Series D at an $11B valuation led by Sequoia, announced Feb 2026.", "sourceUrl": "https://elevenlabs.io/blog/series-d", "sourceKind": "org_site", "date": "2026-02" },
+        { "text": "Funds go to ElevenAgents (enterprise voice and chat agents) and research; Eleven v3 supports 70+ languages.", "sourceUrl": "https://www.vktr.com/ai-technology/voice-ai-firm-elevenlabs-raises-500m-in-series-d-led-by-sequoia-capital/", "sourceKind": "article" },
+        { "text": "Reported to have passed $500M annualized revenue in the first four months of 2026.", "sourceUrl": "https://siliconangle.com/2026/05/05/elevenlabs-adds-high-profile-investors-annualized-revenue-tops-500m", "sourceKind": "article", "date": "2026-05-05" }
+      ],
+      "eventRole": "sponsor: voice track (confirm)",
+      "hiring": "Careers page lists ~156 roles (agents, research engineering, revenue); hubs in London, NYC, SF, Warsaw. No internship listed.",
+      "people": []
+    },
+    {
+      "id": "google",
+      "name": "Google",
+      "aliases": ["Google Gemini", "Gemini", "Google DeepMind", "Google AI Studio", "Gemini API"],
+      "oneLiner": "Google's Gemini models and API for building multimodal and agentic apps.",
+      "focusNow": [
+        { "text": "Gemini API docs list Gemini 4 Argon as flagship reasoning model and Gemini 3.8 Flash for agents and coding.", "sourceUrl": "https://ai.google.dev/gemini-api/docs/models", "sourceKind": "org_site" },
+        { "text": "Gemini 3.8 Live is the default Live API model for low-latency voice agents.", "sourceUrl": "https://ai.google.dev/gemini-api/docs/models", "sourceKind": "org_site" },
+        { "text": "Developer offerings include Deep Research agents, Nano Banana image models, Veo video and Lyria music.", "sourceUrl": "https://ai.google.dev/gemini-api/docs/models", "sourceKind": "org_site" }
+      ],
+      "eventRole": "sponsor: best use of Gemini (confirm)",
+      "people": []
+    },
+    {
+      "id": "snowflake",
+      "name": "Snowflake",
+      "aliases": ["Snowflake Inc", "Snowflake Cortex", "Cortex AI", "Snowflake CoWork"],
+      "oneLiner": "AI data cloud for analytics and enterprise AI agents.",
+      "focusNow": [
+        { "text": "At Summit (June 1-4, 2026) Snowflake announced CoWork (formerly Snowflake Intelligence), a personal work agent.", "sourceUrl": "https://atlan.com/know/snowflake/summit-2026-announcements/", "sourceKind": "article", "date": "2026-06" },
+        { "text": "Cortex Code, a Snowflake-native AI coding agent, launched Feb 3, 2026 and was expanded in April.", "sourceUrl": "https://letsdatascience.com/news/snowflake-launches-cortex-code-ai-agent-f47ccaac", "sourceKind": "article", "date": "2026-02-03" }
+      ],
+      "eventRole": "sponsor",
+      "people": []
+    },
+    {
+      "id": "solana",
+      "name": "Solana",
+      "aliases": ["Solana Foundation", "Solana Labs", "SOL"],
+      "oneLiner": "High-throughput layer-1 blockchain; the Foundation funds ecosystem builders.",
+      "focusNow": [
+        { "text": "The Solana Foundation is a Zug-based nonprofit focused on decentralization, adoption and security of Solana.", "sourceUrl": "https://solana.org", "sourceKind": "org_site" },
+        { "text": "Foundation runs a Grants Program and a Validator Delegation Program for builders and operators.", "sourceUrl": "https://solana.org", "sourceKind": "org_site" },
+        { "text": "Alpenglow, a consensus overhaul targeting ~100-150ms finality, was on a community testnet in May 2026; mainnet date unconfirmed.", "sourceUrl": "https://www.dextools.io/news/solana-alpenglow-firedancer-jito-tvl-recovery-may-2026-news", "sourceKind": "article", "date": "2026-05" }
+      ],
+      "eventRole": "sponsor: crypto / Solana track (confirm)",
+      "people": []
+    },
+    {
+      "id": "tiger-data",
+      "name": "Tiger Data",
+      "aliases": ["TigerData", "Timescale", "TimescaleDB", "Tiger Cloud"],
+      "oneLiner": "Postgres platform for time-series and sensor data, from the makers of TimescaleDB.",
+      "focusNow": [
+        { "text": "Offers Postgres with time-based partitioning, row-columnar compression and tiered storage on object storage.", "sourceUrl": "https://www.tigerdata.com", "sourceKind": "org_site" },
+        { "text": "Also pitches hybrid search (keywords, vectors, filters) and Iceberg replication; cites CERN as a customer.", "sourceUrl": "https://www.tigerdata.com", "sourceKind": "org_site" }
+      ],
+      "eventRole": "sponsor: database track (confirm)",
+      "people": []
+    }
+  ],
+  "people": []
+}
