@@ -1,0 +1,346 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Cue Dashboard</title>
+<meta name="color-scheme" content="dark">
+<style>
+  :root {
+    --bg: #0e0f0e; --panel: #141514; --panel-2: #1a1c1a; --line: #262826; --line-2: #333633;
+    --ink: #e6e6e3; --muted: #8f928f; --dim: #5e615e;
+    --accent: #3cfa44; --accent-ink: #062408; --hud: #3cfa44;
+    --warn: #e0b84d; --bad: #e5675f;
+    --r: 6px;
+    --font: -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    --mono: ui-monospace, "SF Mono", SFMono-Regular, Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  html { background: var(--bg); }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 14px/1.5 var(--font); -webkit-font-smoothing: antialiased; min-height: 100vh; }
+  a { color: var(--muted); text-decoration: none; } a:hover { color: var(--ink); }
+  h1, h2 { margin: 0; font-weight: 600; font-size: 14px; }
+  .eyebrow { font-size: 12px; color: var(--muted); text-transform: uppercase; letter-spacing: .04em; }
+  .sub { color: var(--muted); font-size: 13px; }
+  .wrap { max-width: 1120px; margin: 0 auto; padding: 0 28px; }
+  button { padding: 6px 12px; border-radius: var(--r); border: 1px solid var(--line-2); background: var(--panel); color: var(--ink); font: inherit; font-size: 13px; cursor: pointer; }
+  button:hover { background: var(--panel-2); }
+  button.quiet { border-color: transparent; background: transparent; color: var(--muted); }
+  button.quiet:hover { color: var(--ink); }
+  button[aria-pressed="true"] { background: var(--panel-2); color: var(--ink); border-color: var(--line-2); }
+  input { padding: 5px 8px; font-size: 13px; background: var(--panel); color: var(--ink); border: 1px solid var(--line-2); border-radius: var(--r); font: inherit; }
+
+  .top { border-bottom: 1px solid var(--line); }
+  .top .wrap { display: flex; align-items: center; gap: 14px; height: 52px; }
+  .wordmark { font-size: 15px; font-weight: 700; }
+  .tagline { color: var(--muted); font-size: 13px; }
+  .top .right { margin-left: auto; display: flex; align-items: center; gap: 10px; }
+  #status { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; color: var(--muted); }
+  #status .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--dim); }
+  #status.on .dot { background: var(--accent); }
+  #status.off .dot { background: var(--bad); } #status.off { color: var(--bad); }
+  .tokenbox { display: none; align-items: center; gap: 6px; } .tokenbox.show { display: inline-flex; }
+  .tokenbox input { width: 190px; }
+  .range { display: inline-flex; gap: 2px; }
+  .range button { border: 0; background: transparent; padding: 2px 8px; font-size: 12px; color: var(--muted); border-radius: var(--r); }
+
+  main.wrap { padding-top: 28px; padding-bottom: 56px; display: grid; gap: 28px; }
+  .hero { display: grid; grid-template-columns: 576px minmax(0, 1fr); gap: 28px; align-items: start; }
+  @media (max-width: 1060px) { .hero { grid-template-columns: minmax(0, 1fr); } }
+
+  /* HUD: the 576x288 glasses geometry, same as the setup mirror */
+  .hud-wrap { display: grid; gap: 8px; }
+  .hud { position: relative; width: 576px; max-width: 100%; height: 288px; background: #000; color: var(--hud); border: 1px solid var(--line); font: 19px/27px var(--mono); overflow: hidden; }
+  .hud .c { position: absolute; left: 0; width: 576px; margin: 0; padding: 4px; white-space: pre-wrap; overflow-wrap: anywhere; overflow: hidden; color: var(--hud); }
+  .hud .hdr { top: 0; height: 35px; } .hud .body { top: 44px; height: 143px; } .hud .foot { top: 253px; height: 35px; }
+  .hud-foot { display: flex; align-items: center; gap: 2px; font-size: 12px; color: var(--dim); }
+  .hud-foot .meta { margin-left: auto; }
+
+  .kpis { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
+  @media (min-width: 1061px) { .kpis { grid-template-columns: repeat(3, 1fr); } }
+  .kpi { border-radius: var(--r); padding: 12px 14px; background: var(--panel); border: 1px solid var(--line); min-width: 0; }
+  .kpi .k { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); }
+  .kpi .v { font-size: 26px; font-weight: 600; line-height: 1.2; margin-top: 2px; font-variant-numeric: tabular-nums; }
+  .kpi .v small { font-size: 13px; color: var(--muted); font-weight: 500; margin-left: 4px; }
+  .kpi .d { font: 12px/1.5 var(--mono); color: var(--dim); margin-top: 2px; }
+  .kpi .d.up { color: var(--accent); } .kpi .d.down { color: var(--bad); }
+
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 760px) { .grid2 { grid-template-columns: 1fr; } }
+  .panel { display: grid; align-content: start; gap: 10px; padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--r); min-width: 0; }
+  .panel h2 { display: flex; align-items: baseline; gap: 10px; font-weight: 600; font-size: 15px; padding-bottom: 8px; border-bottom: 1px solid var(--line); }
+  .panel h2 .sub { font-weight: 400; }
+  .empty { color: var(--dim); font-size: 13px; padding: 6px 0; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  th { text-align: left; font-weight: 500; font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); padding: 4px 6px; border-bottom: 1px solid var(--line); }
+  td { padding: 6px; border-bottom: 1px solid var(--line); vertical-align: top; }
+  td.n { font-family: var(--mono); font-size: 12px; color: var(--muted); white-space: nowrap; font-variant-numeric: tabular-nums; }
+  td.name b { font-weight: 600; } td.name span { color: var(--muted); }
+  .stage { font-size: 12px; color: var(--muted); } .stage.warn { color: var(--warn); } .stage.bad { color: var(--bad); } .stage.ok { color: var(--accent); }
+
+  svg.chart { width: 100%; height: 150px; display: block; }
+  svg.chart text { font: 11px var(--mono); fill: var(--dim); }
+  svg.chart rect { fill: var(--accent); opacity: .85; } svg.chart rect.zero { fill: var(--line-2); opacity: 1; }
+  svg.chart rect:hover { opacity: 1; }
+  svg.chart polyline { fill: none; stroke: var(--accent); stroke-width: 1.5; }
+  svg.chart .grid { stroke: var(--line); }
+
+  .coach { display: grid; gap: 10px; font-size: 13.5px; }
+  .coach .k { font-size: 11px; text-transform: uppercase; letter-spacing: .04em; color: var(--muted); margin-bottom: 2px; }
+  .coach ul { margin: 0; padding-left: 18px; color: #c9cbc8; } .coach li { margin: 2px 0; }
+  .coach p { margin: 0; color: #c9cbc8; }
+  .coach .when { font: 12px/1.6 var(--mono); color: var(--dim); }
+  .pill { font-size: 12px; color: var(--muted); border: 1px solid var(--line-2); border-radius: 999px; padding: 1px 8px; }
+  #toast { position: fixed; left: 50%; bottom: 24px; transform: translateX(-50%); background: var(--panel-2); border: 1px solid var(--line-2); border-radius: var(--r); padding: 8px 14px; font-size: 13px; color: var(--ink); opacity: 0; transition: opacity .2s; pointer-events: none; }
+  #toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header class="top">
+  <div class="wrap">
+    <h1 class="wordmark">Cue</h1>
+    <span class="tagline">Over the days and weeks</span>
+    <div class="right">
+      <span id="status"><span class="dot"></span><span class="txt">connecting…</span></span>
+      <span class="range" id="range" role="group" aria-label="Period">
+        <button data-days="7" aria-pressed="true">7d</button>
+        <button data-days="14">14d</button>
+        <button data-days="30">30d</button>
+        <button data-days="0">All</button>
+      </span>
+      <span class="tokenbox" id="tokenbox">
+        <input id="token" type="password" placeholder="Journal token" autocomplete="off" aria-label="Journal token">
+        <button id="saveToken">Save</button>
+      </span>
+      <button class="quiet" id="tokenToggle" title="Journal token">Token</button>
+      <a href="/setup" class="sub">Setup</a>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="hero">
+    <div class="hud-wrap">
+      <div class="hud" aria-label="Glasses view of the week">
+        <pre class="c hdr" id="hudHdr"></pre>
+        <pre class="c body" id="hudBody"></pre>
+        <pre class="c foot" id="hudFoot"></pre>
+      </div>
+      <div class="hud-foot"><span>What "how did I do?" would show on the lens</span><span class="meta" id="hudMeta"></span></div>
+    </div>
+    <div class="kpis" id="kpis"></div>
+  </section>
+
+  <section class="grid2">
+    <div class="panel">
+      <h2>People met per day <span class="sub" id="chartSub"></span></h2>
+      <svg class="chart" id="chart" viewBox="0 0 520 150" preserveAspectRatio="none" role="img" aria-label="People met per day"></svg>
+    </div>
+    <div class="panel">
+      <h2>Follow-up rate per day <span class="sub">of people met that day</span></h2>
+      <svg class="chart" id="chart2" viewBox="0 0 520 150" preserveAspectRatio="none" role="img" aria-label="Follow-up rate per day"></svg>
+    </div>
+  </section>
+
+  <section class="grid2">
+    <div class="panel">
+      <h2>Open loops <span class="sub">no reply yet, oldest first</span></h2>
+      <div id="loops"></div>
+    </div>
+    <div class="panel">
+      <h2>Latest coaching <span class="sub" id="coachWhen"></span></h2>
+      <div class="coach" id="coach"></div>
+    </div>
+  </section>
+
+  <section class="panel">
+    <h2>Everyone <span class="sub" id="peopleSub"></span></h2>
+    <div id="people"></div>
+  </section>
+</main>
+<div id="toast" role="status"></div>
+
+<script>
+(() => {
+  const $ = (id) => document.getElementById(id);
+  const ls = { get(k) { try { return localStorage.getItem(k); } catch { return null; } }, set(k, v) { try { localStorage.setItem(k, v); } catch {} } };
+  const esc = (s) => String(s ?? "").replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
+  const day = (iso) => iso.slice(0, 10);
+  const DAY = 86_400_000;
+  const pct = (n, d) => d ? Math.round(100 * n / d) : null;
+  const fmtPct = (p) => p === null ? "–" : p + "%";
+  const toast = (m) => { const t = $("toast"); t.textContent = m; t.classList.add("show"); setTimeout(() => t.classList.remove("show"), 2200); };
+  const setStatus = (cls, txt) => { const s = $("status"); s.className = cls; s.querySelector(".txt").textContent = txt; };
+
+  const url = new URL(location.href);
+  let token = url.searchParams.get("token") || ls.get("cue.journalToken") || "";
+  if (url.searchParams.get("token")) { ls.set("cue.journalToken", token); url.searchParams.delete("token"); history.replaceState(null, "", url); }
+  $("token").value = token;
+  $("saveToken").onclick = () => { token = $("token").value.trim(); ls.set("cue.journalToken", token); $("tokenbox").classList.remove("show"); load(); };
+  $("tokenToggle").onclick = () => { $("tokenbox").classList.toggle("show"); if ($("tokenbox").classList.contains("show")) $("token").focus(); };
+
+  let days = Number(ls.get("cue.dashDays") || 7);
+  for (const b of $("range").querySelectorAll("button")) {
+    b.setAttribute("aria-pressed", String(Number(b.dataset.days) === days));
+    b.onclick = () => { days = Number(b.dataset.days); ls.set("cue.dashDays", String(days)); for (const o of $("range").querySelectorAll("button")) o.setAttribute("aria-pressed", String(o === b)); render(); };
+  }
+
+  let data = null;
+
+  async function load() {
+    try {
+      const res = await fetch("/api/journal.json", { headers: token ? { authorization: "Bearer " + token } : {}, cache: "no-store" });
+      if (!res.ok) { const e = new Error("HTTP " + res.status); e.status = res.status; throw e; }
+      data = await res.json();
+      setStatus("on", `${data.entries.length} journal entries`);
+      render();
+    } catch (e) {
+      setStatus("off", e.status === 401 ? "needs journal token" : e.status === 503 ? "journal not enabled" : "backend offline");
+      if (e.status === 401) { $("tokenbox").classList.add("show"); $("token").focus(); }
+    }
+  }
+
+  // --- the numbers. Same definitions the Coach agent uses (agents/coach.md section 3).
+  function compute(entries, people, from, to) {
+    const inWin = (iso) => { const t = Date.parse(iso); return t >= from && t < to; };
+    const met = people.filter((p) => inWin(p.firstSeen) || p.briefIds.length && entries.some((e) => e.type === "brief" && e.person && `${e.person.name}|${e.person.org}`.toLowerCase() === p.key && inWin(e.at)));
+    const briefAt = new Map(); // person key -> first brief time in window
+    const fuAt = new Map();    // person key -> first follow_up time
+    for (const e of entries) {
+      if (!e.person?.name) continue;
+      const k = `${e.person.name}|${e.person.org}`.toLowerCase();
+      if (e.type === "brief" && inWin(e.at) && !briefAt.has(k)) briefAt.set(k, Date.parse(e.at));
+      if (e.type === "follow_up" && !fuAt.has(k)) fuAt.set(k, Date.parse(e.at));
+    }
+    const withFu = met.filter((p) => p.followUp);
+    const sameDay = met.filter((p) => fuAt.has(p.key) && briefAt.has(p.key) && day(new Date(fuAt.get(p.key)).toISOString()) === day(new Date(briefAt.get(p.key)).toISOString()));
+    const debriefed = met.filter((p) => p.debriefs.length);
+    const replied = met.filter((p) => p.recapsSent > 0);
+    const scheduled = met.filter((p) => p.schedule?.calendarEventCreated || p.schedule?.eventLink);
+    const goals = {};
+    for (const e of entries) if (e.type === "goal" && inWin(e.at) && typeof e.data?.goal === "string") goals[e.data.goal] = (goals[e.data.goal] || 0) + 1;
+    return { met, withFu, sameDay, debriefed, replied, scheduled, goals,
+      followUpRate: pct(withFu.length, met.length), sameDayRate: pct(sameDay.length, met.length),
+      debriefRate: pct(debriefed.length, met.length), replyRate: pct(replied.length, withFu.length) };
+  }
+
+  function delta(now, before, unit) {
+    if (now === null || before === null) return "";
+    const d = now - before;
+    if (!d) return `<div class="d">same as prev</div>`;
+    return `<div class="d ${d > 0 ? "up" : "down"}">${d > 0 ? "+" : ""}${d}${unit} vs prev</div>`;
+  }
+
+  function bars(svg, series, fmt, max) {
+    const W = 520, H = 150, padL = 4, padB = 18, top = 14;
+    const n = series.length; const gap = 3; const bw = Math.max(2, (W - padL * 2) / n - gap);
+    const m = max ?? Math.max(1, ...series.map((s) => s.v || 0));
+    let out = `<line class="grid" x1="0" y1="${H - padB}" x2="${W}" y2="${H - padB}"/>`;
+    series.forEach((s, i) => {
+      const h = s.v ? Math.max(2, (s.v / m) * (H - padB - top)) : 2;
+      const x = padL + i * (bw + gap), y = H - padB - h;
+      out += `<rect class="${s.v ? "" : "zero"}" x="${x}" y="${y}" width="${bw}" height="${h}" rx="1"><title>${esc(s.label)}: ${esc(fmt(s.v))}</title></rect>`;
+      if (s.v) out += `<text x="${x + bw / 2}" y="${y - 3}" text-anchor="middle">${esc(fmt(s.v))}</text>`;
+      if (n <= 14 || i % Math.ceil(n / 10) === 0) out += `<text x="${x + bw / 2}" y="${H - 5}" text-anchor="middle">${esc(s.tick)}</text>`;
+    });
+    svg.innerHTML = out;
+  }
+
+  function render() {
+    if (!data) return;
+    const { entries, people } = data;
+    const now = Date.now();
+    const first = entries.length ? Date.parse(entries[0].at) : now;
+    const span = days ? days * DAY : Math.max(DAY, now - first + DAY);
+    const to = now + 60_000, from = to - span, prevFrom = from - span;
+    const cur = compute(entries, people, from, to);
+    const prev = days ? compute(entries, people, prevFrom, from) : null;
+    const label = days ? `last ${days} days` : "all time";
+
+    // KPIs
+    const kpi = (k, v, sub, d) => `<div class="kpi"><div class="k">${k}</div><div class="v">${v}${sub ? `<small>${sub}</small>` : ""}</div>${d || ""}</div>`;
+    $("kpis").innerHTML =
+      kpi("People met", cur.met.length, label, prev && delta(cur.met.length, prev.met.length, "")) +
+      kpi("Follow-up rate", fmtPct(cur.followUpRate), `${cur.withFu.length} of ${cur.met.length}`, prev && delta(cur.followUpRate, prev.followUpRate, " pts")) +
+      kpi("Same-day follow-up", fmtPct(cur.sameDayRate), `${cur.sameDay.length} of ${cur.met.length}`, prev && delta(cur.sameDayRate, prev.sameDayRate, " pts")) +
+      kpi("Debrief rate", fmtPct(cur.debriefRate), `${cur.debriefed.length} of ${cur.met.length}`, prev && delta(cur.debriefRate, prev.debriefRate, " pts")) +
+      kpi("Recap texted", fmtPct(cur.replyRate), `${cur.replied.length} of ${cur.withFu.length} follow-ups`, prev && delta(cur.replyRate, prev.replyRate, " pts")) +
+      kpi("Times booked", cur.scheduled.length, "calendar holds", prev && delta(cur.scheduled.length, prev.scheduled.length, ""));
+
+    // per-day series
+    const nDays = days || Math.min(60, Math.ceil(span / DAY));
+    const series = [], series2 = [];
+    for (let i = nDays - 1; i >= 0; i--) {
+      const d0 = new Date(now - i * DAY); const key = day(d0.toISOString());
+      const metKeys = new Set(entries.filter((e) => e.type === "brief" && e.person?.name && day(e.at) === key).map((e) => `${e.person.name}|${e.person.org}`.toLowerCase()));
+      const fu = [...metKeys].filter((k) => people.find((p) => p.key === k)?.followUp).length;
+      const tick = nDays <= 14 ? d0.toLocaleDateString(undefined, { weekday: "short" }) : d0.toLocaleDateString(undefined, { month: "numeric", day: "numeric" });
+      series.push({ label: key, tick, v: metKeys.size });
+      series2.push({ label: key, tick, v: metKeys.size ? Math.round(100 * fu / metKeys.size) : 0 });
+    }
+    bars($("chart"), series, (v) => String(v));
+    bars($("chart2"), series2, (v) => v + "%", 100);
+    $("chartSub").textContent = label;
+
+    // open loops: follow-up drafted but no recap texted and no hold on the calendar; oldest first
+    const loops = people.filter((p) => p.followUp && !p.recapsSent && !(p.schedule?.calendarEventCreated))
+      .map((p) => ({ p, since: Math.floor((now - Date.parse(p.lastSeen)) / DAY) })).sort((a, b) => b.since - a.since);
+    $("loops").innerHTML = loops.length ? `<table><tr><th>Who</th><th>Since</th><th>Next</th></tr>${loops.map(({ p, since }) => {
+      const stage = since >= 7 ? "bad" : since >= 3 ? "warn" : "";
+      const next = p.followUp.nextSteps?.[0] || (p.followUp.draftLink ? "send the draft" : p.schedule?.proposedTimes?.length ? "confirm a time" : "send the follow-up");
+      return `<tr><td class="name"><b>${esc(p.name)}</b> <span>${esc(p.org)}</span></td><td class="n"><span class="stage ${stage}">${since}d</span></td><td>${esc(next)}</td></tr>`;
+    }).join("")}</table>` : `<div class="empty">No open loops. Every follow-up has a reply or a hold.</div>`;
+
+    // latest coaching entry
+    const c = [...entries].reverse().find((e) => e.type === "coaching");
+    if (c) {
+      const d = c.data;
+      const list = (arr) => Array.isArray(arr) && arr.length ? `<ul>${arr.map((x) => `<li>${esc(typeof x === "string" ? x : x.text || x.name || JSON.stringify(x))}</li>`).join("")}</ul>` : "";
+      $("coachWhen").textContent = new Date(c.at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+      $("coach").innerHTML =
+        (d.summary ? `<div><div class="k">Summary</div><p>${esc(d.summary)}</p></div>` : "") +
+        (list(d.priorities) ? `<div><div class="k">Priorities</div>${list(d.priorities)}</div>` : "") +
+        (list(d.patterns) ? `<div><div class="k">Patterns</div>${list(d.patterns)}</div>` : "") +
+        (d.coaching ? `<div><div class="k">Coaching</div><p>${esc(Array.isArray(d.coaching) ? d.coaching.join(" ") : d.coaching)}</p></div>` : "") +
+        (d.nextTime ? `<div><div class="k">Next time</div><p>${esc(Array.isArray(d.nextTime) ? d.nextTime.join(" ") : d.nextTime)}</p></div>` : "") +
+        `<div class="when">${d.texted ? "texted to the wearer" : "stored, not texted"}${d.runId ? " · run " + esc(String(d.runId).slice(0, 8)) : ""}</div>`;
+    } else {
+      $("coachWhen").textContent = "";
+      $("coach").innerHTML = `<div class="empty">No Coach run recorded yet. Ask "how did I do today?" or wait for the nightly run.</div>`;
+    }
+
+    // everyone
+    const all = people.slice().sort((a, b) => b.lastSeen.localeCompare(a.lastSeen));
+    $("peopleSub").textContent = `${all.length} people, ${entries.filter((e) => e.type === "brief").length} conversations`;
+    $("people").innerHTML = all.length ? `<table><tr><th>Who</th><th>Last</th><th>Talks</th><th>Debrief</th><th>Follow-up</th><th>Recap</th><th>Time</th></tr>${all.map((p) => {
+      const st = (ok, txt) => `<span class="stage ${ok ? "ok" : ""}">${ok ? txt : "–"}</span>`;
+      return `<tr><td class="name"><b>${esc(p.name)}</b> <span>${esc(p.org)}${p.role ? " · " + esc(p.role) : ""}</span></td>
+        <td class="n">${day(p.lastSeen)}</td><td class="n">${p.conversations}</td>
+        <td>${st(p.debriefs.length, p.debriefs.length + " note" + (p.debriefs.length > 1 ? "s" : ""))}</td>
+        <td>${st(p.followUp, p.followUp?.draftLink ? "drafted" : "written")}</td>
+        <td>${st(p.recapsSent, "texted")}</td>
+        <td>${st(p.schedule, p.schedule?.calendarEventCreated ? "booked" : "proposed")}</td></tr>`;
+    }).join("")}</table>` : `<div class="empty">Nothing in the journal yet.</div>`;
+
+    // HUD: the lens-sized summary, 576 px of monospace at 19 px is about 50 columns, 5 body lines
+    const w = data.wearer?.name ? data.wearer.name.split(" ")[0] : "you";
+    $("hudHdr").textContent = `Cue  ·  ${label}`;
+    const lines = [
+      `${cur.met.length} met · ${cur.withFu.length} followed up · ${cur.sameDay.length} same day`,
+      loops.length ? `${loops.length} open loop${loops.length > 1 ? "s" : ""}: ${loops.slice(0, 2).map((l) => l.p.name.split(" ")[0]).join(", ")}${loops.length > 2 ? "…" : ""}` : "no open loops",
+    ];
+    if (c?.data?.priorities?.[0]) lines.push(`→ ${typeof c.data.priorities[0] === "string" ? c.data.priorities[0] : c.data.priorities[0].text || ""}`);
+    else if (loops[0]) lines.push(`→ chase ${loops[0].p.name} first (${loops[0].since}d)`);
+    if (c?.data?.nextTime) lines.push(`next: ${Array.isArray(c.data.nextTime) ? c.data.nextTime[0] : c.data.nextTime}`);
+    $("hudBody").textContent = lines.map((l) => l.length > 48 ? l.slice(0, 47) + "…" : l).slice(0, 5).join("\n");
+    $("hudFoot").textContent = `${w} · ${data.wearer?.goal || ""}`.replace(/ · $/, "");
+    $("hudMeta").textContent = new Date(data.generatedAt).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  }
+
+  load();
+  setInterval(load, 60_000);
+})();
+</script>
+</body>
+</html>

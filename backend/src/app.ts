@@ -381,6 +381,11 @@ app.get("/setup", (_req, res) => {
   res.type("html").setHeader("Cache-Control", "no-store");
   res.send(fs.readFileSync(path.join(BACKEND_DIR, "public", "setup.html"), "utf8"));
 });
+// Dashboard over the journal (the long-term view): same page pattern; the page itself asks for the journal token.
+app.get("/dashboard", (_req, res) => {
+  res.type("html").setHeader("Cache-Control", "no-store");
+  res.send(fs.readFileSync(path.join(BACKEND_DIR, "public", "dashboard.html"), "utf8"));
+});
 app.get("/", (_req, res) => { res.redirect("/setup"); });
 
 // --- Errors
