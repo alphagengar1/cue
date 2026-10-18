@@ -120,6 +120,7 @@
         <div><label for="p_school">School</label><input id="p_school"></div>
         <div><label for="p_major">Major</label><input id="p_major"></div>
         <div><label for="p_goalNote">Goal note</label><input id="p_goalNote" placeholder="summer 2027 SWE intern"></div>
+        <div><label for="p_availability">Availability (for meeting proposals)</label><input id="p_availability" placeholder="weekday afternoons, not Tuesdays"></div>
       </div>
       <label for="p_summary">Summary (2-3 lines, sent to the brief writer)</label>
       <textarea id="p_summary"></textarea>
@@ -254,7 +255,7 @@
       const { data } = await api("GET", "/api/profile");
       const p = data.profile;
       $("p_name").value = p.name || ""; $("p_school").value = p.school || ""; $("p_major").value = p.major || "";
-      $("p_goalNote").value = p.goalNote || ""; $("p_summary").value = p.summary || "";
+      $("p_goalNote").value = p.goalNote || ""; $("p_summary").value = p.summary || ""; $("p_availability").value = p.availability || "";
       $("p_projects").value = (p.projects || []).join("\n"); $("p_interests").value = (p.interests || []).join(", ");
       $("p_resume").value = p.resumeText || "";
     } catch {}
@@ -282,7 +283,7 @@
     const opt = (v) => v.trim() || undefined;
     const body = {
       name: $("p_name").value.trim(), school: opt($("p_school").value), major: opt($("p_major").value),
-      goalNote: opt($("p_goalNote").value), summary: $("p_summary").value.trim(),
+      goalNote: opt($("p_goalNote").value), availability: opt($("p_availability").value), summary: $("p_summary").value.trim(),
       projects: lines($("p_projects").value),
       interests: $("p_interests").value.split(",").map((x) => x.trim()).filter(Boolean),
       resumeText: $("p_resume").value, goal: state?.goal || "internship",

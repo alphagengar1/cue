@@ -46,6 +46,8 @@ export interface Person {
   followUp?: {
     agent?: string; agentId?: string; runLink?: string; debrief?: string;
     email?: { subject: string; body: string }; message?: string; nextSteps?: string[];
+    // Meeting Scheduler output (agents/meeting-scheduler.md), chained after the Follow-up Writer.
+    schedule?: { proposedTimes: string[]; inviteTitle: string; inviteDescription: string; schedulingMessage: string; calendarEventCreated: boolean; eventLink: string | null };
   };
 }
 
@@ -57,6 +59,7 @@ export interface WearerProfile {
   interests: string[];
   projects: string[];
   goal: Goal; goalNote?: string;                    // "summer 2027 SWE intern"
+  availability?: string;                            // for the Meeting Scheduler: "weekday afternoons, not Tuesdays"
   pastConversations?: { personName: string; orgId: string; note: string }[];  // later phase
 }
 
@@ -75,6 +78,7 @@ export interface Brief {
   cards: Card[];                                    // high/medium: 3 cards. low or "Neither": only "context" for the org. Org unknown too: only "angle" (generic ask)
   slowPath: { status: "none" | "running" | "done" | "failed"; runId?: string };
   debrief?: string;                                 // the wearer's own spoken note after the conversation (Photon follow-up)
+  conversation?: string;                            // transcript recorded with the other person's consent (HUD asks first); never logged
   decision?: { match: number; goalFit: number; lead: Card["kind"] };  // decision gate (agents/decision-gate.md); absent when the gate is off
   createdAt: string; updatedAt: string;
 }
@@ -115,7 +119,7 @@ export interface CreateEventRequest {
 }
 export interface EventResponse { event: Event }
 /** POST /api/say: hold the temple and say anything; the backend decides what it was (say.ts). */
-export type SayIntent = "lookup" | "debrief" | "correction" | "goal" | "recap" | "quiet" | "unknown";
+export type SayIntent = "lookup" | "debrief" | "correction" | "goal" | "recap" | "coach" | "quiet" | "unknown";
 export interface SayRequest { text: string; briefId?: string }
 export interface SayResponse {
   intent: SayIntent;
@@ -125,6 +129,7 @@ export interface SayResponse {
   goal?: Goal;
   recap?: { sent: true; chars: number } | { sent: false; reason: string };
   say?: string;                                     // one HUD line when nothing else applies (<= 2 lines of 40)
+  creaoRunId?: string;                              // debrief: the live CREAO Follow-up Writer run, if started
 }
 /** POST /api/briefs/:id/recap (Photon add-on). sent=false is a normal answer, not an error. */
 export type RecapResponse =

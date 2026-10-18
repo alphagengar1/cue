@@ -93,6 +93,14 @@ export const postSay = (text: string, briefId: string | undefined, signal?: Abor
 export const postDebrief = (id: string, text: string) =>
   call<BriefResponse>(`/api/briefs/${encodeURIComponent(id)}/debrief`, jsonInit('POST', { text }), 10000)
 
+/** POST /api/briefs/:id/transcript with a raw PCM chunk (consented conversation) -> { chars, added }. */
+export const postTranscript = (id: string, pcm: Uint8Array<ArrayBuffer>) =>
+  call<{ chars: number; added: number }>(`/api/briefs/${encodeURIComponent(id)}/transcript`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/octet-stream', 'X-Audio-Format': 'pcm_s16le;rate=16000;channels=1' },
+    body: pcm,
+  }, 25000)
+
 /** PUT /api/goal { goal, briefId? } -> { goal, brief? } (card 3 regenerated). */
 export const putGoal = (goal: Goal, briefId?: string) =>
   call<GoalResponse>('/api/goal', jsonInit('PUT', { goal, briefId } satisfies GoalRequest), 10000)

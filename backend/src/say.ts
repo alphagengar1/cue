@@ -6,6 +6,8 @@ import { z } from "zod";
 import type { Brief, Query, SayResponse } from "../../shared/types.js";
 import { buildBrief, regenerateAngle, type BriefOutcome } from "./brief.js";
 import { composeRecap } from "./compose.js";
+import { debriefsToday, startCoach } from "./coach.js";
+import { creaoEnabled, startRun } from "./creao.js";
 import { CueError } from "./errors.js";
 import { classifyIntent } from "./intent.js";
 import { LlmUnavailable, parseWithModel } from "./llm.js";
@@ -60,7 +62,26 @@ export async function handleSay(text: string, briefId?: string): Promise<SayOutc
     if (!current) return done({ intent: "unknown", say: "No one to debrief yet.\nSay a name, company, role first." });
     const brief: Brief = { ...current, debrief: text.trim().slice(0, 600), version: current.version + 1, updatedAt: new Date().toISOString() };
     store.briefs.set(brief.id, brief);
-    return done({ intent: "debrief", brief, recap: await recapFor(brief) });
+    const recap = await recapFor(brief);
+    // CREAO Follow-up Writer, live when its app key is set: the full email + message + next steps,
+    // texted when the run completes (about a minute). The Haiku recap above is the instant part.
+    let creaoRunId: string | undefined;
+    if (creaoEnabled("follow_up_writer")) {
+      const p = store.profile;
+      const runId = await startRun("follow_up_writer", {
+        brief: { person: { name: brief.query.name, role: brief.query.role ?? "", org: brief.query.org }, cards: brief.cards },
+        // The consented transcript rides inside the debrief field (the agent's inputs are pinned).
+        debrief: [brief.debrief, brief.conversation ? `Conversation transcript: ${brief.conversation.slice(0, 6000)}` : ""].filter(Boolean).join("\n\n"),
+        goal: store.goal,
+        wearer: { name: p.name, school: p.school ?? "", major: p.major ?? "", summary: p.summary, interests: p.interests, projects: p.projects, goalNote: p.goalNote ?? "" },
+        eventName: store.events.get(brief.eventId)?.name ?? "",
+      }, { briefId: brief.id, personId: brief.match.personId ?? undefined });
+      notes.push(runId ? `follow_up_writer run ${runId}` : "follow_up_writer start failed");
+      creaoRunId = runId ?? undefined;
+    }
+    // Long-run agent: after every third debrief of the day, the Networking Coach reviews the day.
+    if (debriefsToday() % 3 === 0) { const id = await startCoach("", "third debrief"); if (id) notes.push(`networking_coach run ${id}`); }
+    return done({ intent: "debrief", brief, recap, ...(creaoRunId ? { creaoRunId } : {}) });
   };
   const lookup = async (q: string, as: "lookup" | "correction" = "lookup"): Promise<SayOutcome> => {
     let out: BriefOutcome;
@@ -90,6 +111,7 @@ export async function handleSay(text: string, briefId?: string): Promise<SayOutc
       const goal = intent.goal;
       if (!goal) return done({ intent: "unknown", say: "Which goal? Internship, cofounder,\nmentorship, learning, or teammates." });
       store.goal = goal;
+      store.saveLocal();
       if (!current) return done({ intent: "goal", goal });
       const out = await regenerateAngle(current.id);
       notes.push(...out.notes);
@@ -98,6 +120,11 @@ export async function handleSay(text: string, briefId?: string): Promise<SayOutc
     case "recap":
       if (!current) return done({ intent: "unknown", say: "No brief to send yet." });
       return done({ intent: "recap", recap: await recapFor(current) });
+    case "coach": {
+      const runId = await startCoach(text, "say");
+      notes.push(runId ? `networking_coach run ${runId}` : "networking_coach not configured");
+      return done({ intent: "coach", say: runId ? "coach is on it,\ntext coming in a minute" : "coach not set up yet", ...(runId ? { creaoRunId: runId } : {}) });
+    }
     case "quiet":
       return done({ intent: "quiet" });
     default:

@@ -8,7 +8,7 @@ import { DECISIONS_MODEL, DECISIONS_URL } from "./decide.js";
 import { parseTranscript } from "./parse.js";
 
 export type Intent = SayIntent;
-export const INTENTS: Intent[] = ["lookup", "debrief", "correction", "goal", "recap", "quiet", "unknown"];
+export const INTENTS: Intent[] = ["lookup", "debrief", "correction", "goal", "recap", "coach", "quiet", "unknown"];
 
 export interface IntentContext {
   hasBrief: boolean;
@@ -37,6 +37,7 @@ const GOAL_TRIGGER = /\b(looking for|my goal|i want|i'm (here|looking)|i am (her
 const CORRECTION = /\b(with an? [a-z]\b|spell(ed|ing)?|not [A-Z][a-z]+|i meant|i said|no,? it's|it's actually|correction|wrong (name|company|org))\b/i;
 const RECAP = /\b(text me|send (me )?(the |a )?(recap|summary)|recap|summar(y|ize)|message me)\b/i;
 const QUIET = /^\s*(never ?mind|cancel|stop|forget it|go quiet|quiet|nothing)\b/i;
+const COACH = /\b(how (did|am|was) i (do|doing|today)|how did (today|it) go|who should i (follow up|talk|email)|coach( me)?|what (patterns|did i learn)|rate my (day|networking)|how.{0,12}networking)\b/i;
 const DEBRIEF = /\b(he|she|they|we)\s+(said|told|wants?|mentioned|asked|suggested|offered|liked|is|are|was|were)\b|\b(talked|spoke|chatted|met)\b|\b(email (him|her|them)|follow ?up|send (him|her|them))\b/i;
 
 export function goalFromText(text: string): Goal | undefined {
@@ -50,6 +51,7 @@ export function rulesIntent(text: string, ctx: IntentContext): IntentResult {
   const r = (intent: Intent, confidence: number, goal?: Goal): IntentResult => ({ intent, confidence, goal, source: "rules" });
   if (!t) return r("unknown", 1);
   if (QUIET.test(t)) return r("quiet", 0.9);
+  if (COACH.test(t)) return r("coach", 0.85);
   if (RECAP.test(t) && !DEBRIEF.test(t)) return r("recap", 0.8);
   if (ctx.hasBrief && CORRECTION.test(t)) return r("correction", 0.8);
   const goal = goalFromText(t);
@@ -72,7 +74,8 @@ const INTENT_CHOICES: { value: Intent; description: string }[] = [
   { value: "debrief", description: "Notes about a conversation that already happened: what the person said, wants, offered, or what to send them, e.g. 'he said email him about Seer, they're hiring interns'." },
   { value: "correction", description: "Fixes how the last name or company was heard, e.g. 'Cramer with a C', 'no, it's Priya not Maya', 'I meant Anduril'." },
   { value: "goal", description: "States what the wearer is looking for at the event: an internship or job, a cofounder, mentorship, learning from experts, or teammates and sponsors." },
-  { value: "recap", description: "Asks to text or send the recap or summary to their phone." },
+  { value: "recap", description: "Asks to text or send the recap or summary of the last person to their phone." },
+  { value: "coach", description: "Asks for reflection or advice across the day: how did I do, who should I follow up with first, what patterns, coach me." },
   { value: "quiet", description: "Cancel, never mind, stop, go quiet, nothing." },
   { value: "unknown", description: "None of the above, or too garbled to tell." },
 ];

@@ -28,6 +28,26 @@ const SAMPLES: Record<AgentKind, unknown> = {
   person_researcher: {
     name: "David Cramer", org: "Sentry", role: "co-founder", orgAliases: ["Sentry.io", "Getsentry"],
   },
+  follow_up_writer: {
+    brief: { person: { name: "David Cramer", role: "co-founder", org: "Sentry" }, cards: [{ kind: "connect", title: "Ask about Seer", body: "Seer debugs from errors and traces.", source: "blog.sentry.io" }] },
+    debrief: "he said email him about Seer, they are hiring summer interns",
+    goal: "internship",
+    wearer: { name: "Test Student", school: "UCLA", major: "CS", summary: "CS student building a smart-glasses networking app.", interests: ["observability"], projects: ["Cue"], goalNote: "summer 2027 SWE intern" },
+    eventName: "LA Hacks Fall 2026",
+  },
+  meeting_scheduler: {
+    person: { name: "David Cramer", role: "co-founder", org: "Sentry" },
+    followUp: { email: { subject: "Following up on Seer", body: "Hi David,\n\nThanks for the chat.\n\nSam" }, message: "Hi David, great meeting you. Sam", nextSteps: ["Email David about Seer"] },
+    debrief: "he said email him about seer", conversation: "",
+    wearer: { name: "Sam Lee", school: "UCLA", availability: "weekday afternoons", timezone: "America/Los_Angeles" },
+    eventName: "LA Hacks Fall 2026",
+  },
+  networking_coach: {
+    wearer: { name: "Sam Lee", school: "UCLA", goal: "internship", goalNote: "summer 2027 SWE intern", summary: "CS student building Cue." },
+    today: "2026-10-17",
+    history: [{ date: "2026-10-17", person: { name: "David Cramer", role: "co-founder", org: "Sentry" }, cards: [{ kind: "connect", title: "Ask about Seer", body: "Seer debugs from traces." }], debrief: "he said email him about seer", conversation: "", followUpSent: true, goal: "internship" }],
+    question: "how did I do today?",
+  },
   brief_writer: {
     person: {
       name: "David Cramer", role: "co-founder", match: "high",
@@ -44,9 +64,11 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
 const NAMES: Record<AgentKind, string> = {
   event_loader: "Cue Event Loader", person_researcher: "Cue Person Researcher", brief_writer: "Cue Brief Writer",
+  follow_up_writer: "Cue Follow-up Writer", meeting_scheduler: "Cue Meeting Scheduler", networking_coach: "Cue Networking Coach",
 };
 const ENV_VARS: Record<AgentKind, string> = {
   event_loader: "CREAO_EVENT_LOADER_ID", person_researcher: "CREAO_PERSON_RESEARCHER_ID", brief_writer: "CREAO_BRIEF_WRITER_ID",
+  follow_up_writer: "CREAO_FOLLOW_UP_WRITER_ID", meeting_scheduler: "CREAO_MEETING_SCHEDULER_ID", networking_coach: "CREAO_NETWORKING_COACH_ID",
 };
 
 /** The ```text block under "## Instructions (paste this)" in agents/<kind>.md. */

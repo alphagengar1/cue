@@ -40,7 +40,7 @@ log "apt packages"
 apt-get update -qq
 apt-get install -y -qq git curl ca-certificates gnupg debian-keyring debian-archive-keyring apt-transport-https >/dev/null
 
-# --- swap (the $5 Lightsail box has 1 GB RAM; tsx + SDKs are comfortable with a little headroom)
+# --- swap (the $7 Lightsail box has 1 GB RAM; tsx + SDKs are comfortable with a little headroom)
 if ! swapon --show | grep -q '^/swapfile'; then
   log "1 GB swapfile"
   fallocate -l 1G /swapfile && chmod 600 /swapfile && mkswap /swapfile >/dev/null && swapon /swapfile

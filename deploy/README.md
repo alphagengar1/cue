@@ -1,6 +1,6 @@
 # Deploying the Cue backend to AWS
 
-One Lightsail instance (Ubuntu 24.04, $5/month plan: 1 GB RAM, 2 vCPU, 40 GB) running the
+One Lightsail instance (Ubuntu 24.04, $7/month plan: 1 GB RAM, 2 vCPU, 40 GB) running the
 backend under systemd behind Caddy, which gives us automatic HTTPS on
 `https://<static-ip>.sslip.io`. Lightsail over EC2 because it has a flat price, a one-click
 static IP and firewall, and is covered by the same AWS credits. About 20 minutes end to end.
@@ -37,7 +37,8 @@ Nothing here reads or stores secrets. The server gets its keys from the `backend
 
 1. **Create the instance.** AWS console, Lightsail, *Create instance*. Region: `us-west-2`
    (Oregon) is the closest to LA. Platform *Linux/Unix*, blueprint *OS Only*, *Ubuntu 24.04 LTS*.
-   Plan: the $5/month one (1 GB RAM). Name it `cue-backend`. Create.
+   Plan type *General purpose*, network *Dual-stack*, size **$7/month (1 GB RAM)**. The $5 one has
+   only 512 MB, which is tight for tsx plus the Sentry and Spectrum SDKs. Name it `cue-backend`. Create.
 2. **Attach a static IP.** Lightsail, *Networking*, *Create static IP*, attach it to
    `cue-backend`. This is required: the hostname encodes the IP, so a changing IP would mean a
    new hostname and a new Even Hub build. Note the IP, call it `IP` below.
@@ -124,6 +125,6 @@ Nothing here reads or stores secrets. The server gets its keys from the `backend
 
 ## Cost and cleanup
 
-The $5 plan is billed hourly against the credits. After the event: rotate `DEVICE_TOKEN`
+The $7 plan is billed hourly against the credits. After the event: rotate `DEVICE_TOKEN`
 (or stop the instance), and when the backend is no longer needed, delete the instance and
 release the static IP (an unattached static IP is billed).

@@ -30,12 +30,27 @@ export const config = {
   anthropicKey: env("ANTHROPIC_API_KEY"),
   anthropicWorkspaceId: env("ANTHROPIC_WORKSPACE_ID"),
   briefModel: env("BRIEF_MODEL") ?? "claude-haiku-5-5",
-  creaoKey: env("CREAO_API_KEY"),
+  creaoKey: env("CREAO_API_KEY"), // developer /v2 project key (cr_sk_), hosted agents only
+  // Agent ids: the Cue agents built on agent.creao.ai (README.md). Used by both transports.
   creaoAgents: {
-    eventLoader: env("CREAO_EVENT_LOADER_ID"),
-    personResearcher: env("CREAO_PERSON_RESEARCHER_ID"),
-    briefWriter: env("CREAO_BRIEF_WRITER_ID"),
+    eventLoader: env("CREAO_EVENT_LOADER_ID") ?? "7ed5ac12-fb85-4545-9e4e-abbeaa25db1a",
+    personResearcher: env("CREAO_PERSON_RESEARCHER_ID") ?? "e496e45b-c8eb-4079-9aff-876071501d67",
+    briefWriter: env("CREAO_BRIEF_WRITER_ID") ?? "d5ded73b-03b6-407d-be3e-5d332d6e869a",
+    followUpWriter: env("CREAO_FOLLOW_UP_WRITER_ID"),
+    meetingScheduler: env("CREAO_MEETING_SCHEDULER_ID"),
+    networkingCoach: env("CREAO_NETWORKING_COACH_ID"),
   },
+  // Per-agent app keys (capi_, agent detail page -> API): run UI-built agents live through
+  // agent.creao.ai/api/v1/apps/{agentId}/runs. Bills CREAO credits. See design/creao-api-notes.md.
+  creaoAppKeys: {
+    eventLoader: env("CREAO_EVENT_LOADER_KEY"),
+    personResearcher: env("CREAO_PERSON_RESEARCHER_KEY"),
+    briefWriter: env("CREAO_BRIEF_WRITER_KEY"),
+    followUpWriter: env("CREAO_FOLLOW_UP_WRITER_KEY"),
+    meetingScheduler: env("CREAO_MEETING_SCHEDULER_KEY"),
+    networkingCoach: env("CREAO_NETWORKING_COACH_KEY"),
+  },
+  wearerTimezone: env("WEARER_TIMEZONE") ?? "America/Los_Angeles",
   publicBaseUrl: env("PUBLIC_BASE_URL"),
   sentryDsn: env("SENTRY_DSN"),
   // Relative to backend/ (systemd and nohup start elsewhere). Demo default: the CREAO sponsors event.

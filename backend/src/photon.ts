@@ -185,6 +185,30 @@ export async function sendRecap(
   }
 }
 
+/** Text the wearer any bubbles (e.g. the CREAO follow-up). Wearer only; never the person met. */
+export async function sendText(bubbles: string[]): Promise<SendResult> {
+  if (!photonConfigured()) return skip("set PHOTON_PROJECT_ID, PHOTON_PROJECT_SECRET, WEARER_PHONE");
+  const clean = bubbles.map((b) => clipText(b, 1500)).filter(Boolean);
+  if (!clean.length) return { sent: false, reason: "nothing to send" };
+  const c = await client();
+  if (!c) return skip("Spectrum SDK not installed or init failed");
+  try {
+    wearerSpace ??= await c.im.space.create(await c.im.user(photonConfig.wearerPhone!));
+    for (const [i, b] of clean.entries()) {
+      if (i) await new Promise((r) => setTimeout(r, 600));
+      await wearerSpace.send(b);
+    }
+    lastSentAt = Date.now();
+    console.log(`[photon] text sent (${clean.length} bubbles)`);
+    return { sent: true, text: clean.join("\n\n") };
+  } catch (err) {
+    wearerSpace = null;
+    const msg = err instanceof Error ? err.message : String(err);
+    console.warn(`[photon] send failed: ${msg}`);
+    return { sent: false, reason: msg };
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Replies (optional): long-lived stream, wearer only
 // ---------------------------------------------------------------------------

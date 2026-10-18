@@ -2,15 +2,16 @@
 // Single tenant (01 section 4): one wearer, one profile, one active event.
 // Swap for SQLite later if restarts losing briefs becomes a problem; the API stays the same.
 import fs from "node:fs";
+import path from "node:path";
 import type {
   Brief, Event, Goal, Organization, Person, WearerProfile,
 } from "../../shared/types.js";
-import { config } from "./config.js";
+import { BACKEND_DIR, config } from "./config.js";
 import { cleanFacts, factAboutPerson, hostOf, sanitize, sortFacts } from "./safety.js";
 
 export interface RunRecord {
   runId: string;
-  agent: "event_loader" | "person_researcher" | "brief_writer";
+  agent: "event_loader" | "person_researcher" | "brief_writer" | "follow_up_writer" | "meeting_scheduler" | "networking_coach";
   briefId?: string;
   personId?: string;
   eventId?: string;
@@ -116,6 +117,30 @@ class Store {
   }
 
   /** Most recently created or updated brief (setup page mirror). */
+  // Wearer profile and goal survive restarts (data/profile.local.json, gitignored). Everything else
+  // is in memory on purpose: briefs and transcripts are for the day.
+  saveLocal(): void {
+    try {
+      fs.mkdirSync(path.dirname(LOCAL_STATE_FILE), { recursive: true });
+      fs.writeFileSync(LOCAL_STATE_FILE, JSON.stringify({ profile: this.profile, goal: this.goal }, null, 2));
+    } catch (err) {
+      console.warn(`[store] could not save local state: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+  loadLocal(): boolean {
+    try {
+      if (!fs.existsSync(LOCAL_STATE_FILE)) return false;
+      const j = JSON.parse(fs.readFileSync(LOCAL_STATE_FILE, "utf8")) as { profile?: Partial<WearerProfile>; goal?: Goal };
+      if (j.profile?.name) this.profile = { ...DEFAULT_PROFILE, ...j.profile, id: "me" };
+      if (j.goal) this.goal = j.goal;
+      console.log(`[store] local state loaded (${this.profile.name}, goal ${this.goal})`);
+      return true;
+    } catch (err) {
+      console.warn(`[store] could not load local state: ${err instanceof Error ? err.message : String(err)}`);
+      return false;
+    }
+  }
+
   latestBrief(): Brief | null {
     let best: Brief | null = null;
     for (const b of this.briefs.values()) if (!best || b.updatedAt >= best.updatedAt) best = b;
@@ -161,5 +186,7 @@ class Store {
     return ev;
   }
 }
+
+const LOCAL_STATE_FILE = path.resolve(BACKEND_DIR, process.env.LOCAL_STATE_FILE?.trim() || "data/profile.local.json");
 
 export const store = new Store();

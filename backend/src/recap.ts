@@ -2,6 +2,7 @@
 // conversational parts (compose.ts); the functions here are the plain templates it falls back to,
 // plus the pure "who did I meet" list. Only ever addressed to the wearer.
 import type { Brief } from "../../shared/types.js";
+import { startCoach } from "./coach.js";
 import { composeAnswer, composeEmail } from "./compose.js";
 import { suggestFollowUp } from "./photon.js";
 import { store } from "./store.js";
@@ -81,6 +82,15 @@ export async function handleReply(text: string, lastBriefId: string | null, now 
       return `${who}${c ? ` (${LABEL[c.kind] ?? c.kind}: ${c.title})` : ""}`;
     });
     return `Today (${briefs.length}):\n${lines.join("\n")}`;
+  }
+  if (/\b(how (did|am|was) i|who should i|coach|patterns|how did today)\b/.test(t)) {
+    const id = await startCoach(text, "text");
+    return id ? "on it 🧠 looking at your whole day, give me about a minute" : "the coach isn't set up yet";
+  }
+  if (/^\s*book\b/.test(t)) {
+    const sched = (last?.match.personId ? store.people.get(last.match.personId) : undefined)?.followUp?.schedule;
+    if (!sched) return "nothing to book yet. meet someone and debrief first";
+    return [`copy this to ${last!.query.name.split(/\s+/)[0]}:`, sched.schedulingMessage, ...(sched.eventLink ? [`your hold: ${sched.eventLink}`] : [])];
   }
   if (/\b(email|mail|draft)\b/.test(t)) {
     if (!last) return "No recap yet, so nothing to draft. Meet someone first.";

@@ -309,7 +309,7 @@ Input and output schemas are in 03. All three are started with `POST https://dev
 
 Status: decided Sat Oct 17 2026. Replaces "Vultr" wherever it appears above.
 
-The backend runs on one AWS Lightsail instance (Ubuntu 24.04, $5/month plan, 1 GB RAM) paid from
+The backend runs on one AWS Lightsail instance (Ubuntu 24.04, $7/month plan, 1 GB RAM) paid from
 the team's AWS credits. Caddy terminates HTTPS on `https://<static-ip>.sslip.io` with an automatic
 Let's Encrypt certificate and proxies to the backend on `127.0.0.1:8787`. The backend is a systemd
 service (`cue-backend`) that starts on boot and restarts on any exit after 3 s with no start limit,

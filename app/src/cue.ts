@@ -9,7 +9,7 @@ import { measureTextWrap, pxTruncate } from '@evenrealities/pretext'
 import { BODY_LINES, INNER_W, render, serial, type Level, type Screen } from './layout'
 import { label, type Gesture } from './input'
 import { BYTES_PER_SEC, MAX_CLIP_MS, MIN_CLIP_MS, Mic, peak, type Clip } from './audio'
-import { BACKEND_URL, getBrief, getState, postConfirm, postRecap, postSay, postStt, putGoal, type ApiResult } from './api'
+import { BACKEND_URL, getBrief, getState, postConfirm, postRecap, postSay, postStt, postTranscript, putGoal, type ApiResult } from './api'
 import { MOCK, MOCK_TRANSCRIPT, mockBrief, mockConfirm, mockGoal, mockSlowPath } from './mock'
 
 // Measured on hardware: long press = sysEvent 9, release = 10. See 02 "Measured on hardware".
@@ -19,6 +19,7 @@ export const MENU = [
   { id: 1, name: 'Talk' },
   { id: 7, name: 'Last brief' },
   { id: 10, name: 'Text me a recap' },   // Photon: iMessage to the wearer, never to the person met
+  { id: 12, name: 'Record conversation' },// consent line first, then 20 s chunks -> transcript on the brief
   { id: 8, name: 'Go quiet' },
   // Dev only (?dev=1): judges should not see it. The phone page button still opens it.
   ...(new URLSearchParams(location.search).has('dev') ? [{ id: 9, name: 'Hardware test' }] : []),
@@ -33,6 +34,8 @@ const GOAL_LABEL: Record<Goal, string> = {
 
 const CARD_IDLE_MS = 25000
 const FLASH_MS = 5000                     // quiet-line note, e.g. "★ recap texted"
+const REC_CHUNK_MS = 20000                // conversation recording: upload a chunk every 20 s
+const REC_MAX_MS = 15 * 60000             // and stop by itself after 15 min
 const CONFIRM_IDLE_MS = 10000
 const THINK_SLOW_MS = 6000
 const THINK_TIMEOUT_MS = 15000
@@ -41,7 +44,7 @@ const POLL_MS = 5000
 const POLL_MAX_AGE_MS = 5 * 60_000
 const MOCK_SLOW_PATH_MS = 15000
 
-export type StateName = 'ready' | 'listening' | 'thinking' | 'card' | 'confirm' | 'quiet' | 'error'
+export type StateName = 'ready' | 'listening' | 'thinking' | 'card' | 'confirm' | 'quiet' | 'error' | 'consent' | 'recording'
 type ErrorKind = 'stt_empty' | 'offline' | 'timeout' | 'mic' | 'failed'
 
 export interface LogLine { t: string; text: string }
@@ -71,6 +74,7 @@ const st = {
   bridgeStatus: 'waiting for bridge...',
   lastNote: '',                         // why the last brief came from where it did
   flash: '',                            // short note in the quiet line, e.g. "recap texted"; clears itself
+  recStart: 0, recChars: 0, recChunks: 0, // conversation recording (consented)
   log: [] as LogLine[],
 }
 
@@ -211,6 +215,13 @@ export function currentScreen(): Screen {
       const who = st.flash || (st.quietUpdates ? `${st.quietUpdates} update${st.quietUpdates > 1 ? 's' : ''}` : b ? personName(b) : '')
       return scr('', 2, '', 2, who ? `cue | ${who} | hold to ask` : 'cue | hold to ask', 2)
     }
+    case 'consent':
+      return scr('Before recording', 4, 'Ask them:\n"OK if my glasses take notes?"\n\nTap once they say yes.', 4, 'tap: start | swipe up: cancel', 2)
+    case 'recording': {
+      const s = Math.floor((Date.now() - st.recStart) / 1000)
+      const t = `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
+      return scr(`● Recording ${t}`, 4, `Taking notes, with consent.\n~${Math.round(st.recChars / 6)} words saved so far\n\ntap to stop`, 3, b ? `cue | ${personName(b)}` : 'cue', 2)
+    }
     case 'error':
       return scr('Cue | problem', 3, ERRORS[st.errorKind], 4, 'hold to retry | 2x tap to exit', 2)
   }
@@ -256,6 +267,7 @@ function go(next: StateName) {
   if (next !== 'card') clearTimer('cardIdle')
   if (next !== 'confirm') clearTimer('confirmIdle')
   if (next !== 'error') clearTimer('errorBack')
+  if (next !== 'recording') { clearTimer('recChunk'); clearTimer('recTick') }
   if (next !== 'quiet' && next !== 'listening') st.quietUpdates = 0
   st.state = next
   if (next === 'card') armCardIdle()
@@ -608,6 +620,7 @@ function act(g: Gesture) {
       void serial('shutDownPageContainer(1)', () => bridge!.shutDownPageContainer(1))
       return
     case 'long_press':
+      if (st.state === 'recording' || st.state === 'consent') return   // recording owns the mic
       if (PTT_MODE === 'hold') void startListening('long press')
       return
     case 'long_press_release':
@@ -645,6 +658,10 @@ function onTap() {
       return void finishListening('tap')
     case 'thinking':
       return
+    case 'consent':
+      return void startRecording()
+    case 'recording':
+      return void stopRecording('tap')
     case 'card': {
       const n = st.brief?.cards.length ?? 0
       if (st.cardIndex + 1 >= n) return go('quiet')
@@ -661,6 +678,10 @@ function onTap() {
 
 function onSwipe(dir: 1 | -1) {
   switch (st.state) {
+    case 'consent':
+      return go(st.brief ? 'quiet' : 'ready')
+    case 'recording':
+      return
     case 'ready': case 'quiet':
       if (st.brief) openBrief(0)
       return
@@ -698,7 +719,60 @@ function onMenu(id: number) {
       return onTestMode?.()
     case 10:
       return void sendRecap()
+    case 12:
+      if (st.state === 'recording') return void stopRecording('menu')
+      if (!st.brief) return flash('look someone up first')
+      if (st.briefIsMock) return flash('sample brief: no recording')
+      return go('consent')
   }
+}
+
+// ---- conversation recording (consented) ------------------------------------------
+// The HUD shows the consent line first; a tap starts. Audio goes to the backend in 20 s chunks and
+// comes back as a running transcript on the brief (feeds the CREAO follow-up and coach agents).
+// Nothing is kept on the glasses or the phone.
+
+async function startRecording() {
+  const b = st.brief
+  if (!mic || !b) return flash('no mic or brief')
+  cancelLookup()
+  st.recStart = Date.now(); st.recChars = 0; st.recChunks = 0
+  go('recording')
+  await mic.start()
+  if (mic.stats.openResult !== true || (st.state as StateName) !== 'recording') {
+    await mic.stop({ tail: false, discard: true })
+    if ((st.state as StateName) === 'recording') fail('mic', `audioControl(true) returned ${mic.stats.openResult}`)
+    return
+  }
+  timers.recTick = window.setInterval(() => { if (st.state === 'recording') show() }, 1000)
+  setTimer('recChunk', REC_CHUNK_MS, recChunkTick)
+  log('recording started (consent given on the HUD)')
+}
+
+function recChunkTick() {
+  if (st.state !== 'recording' || !mic) return
+  const clip = mic.drain()
+  if (clip.length >= BYTES_PER_SEC) void uploadChunk(clip)
+  if (Date.now() - st.recStart >= REC_MAX_MS) return void stopRecording('15 min cap')
+  setTimer('recChunk', REC_CHUNK_MS, recChunkTick)
+}
+
+async function uploadChunk(clip: Clip) {
+  const b = st.brief
+  if (!b) return
+  st.recChunks++
+  const r = await postTranscript(b.id, clip)
+  log(`POST transcript chunk ${clip.length} B -> ${r.ok ? `${r.status} +${r.data?.added ?? 0} chars (${r.ms} ms)` : apiWhy(r)}`)
+  if (r.ok && r.data) { st.recChars = r.data.chars; if (st.state === 'recording') show() }
+}
+
+async function stopRecording(reason: string) {
+  if (st.state !== 'recording' || !mic) return
+  log(`recording stop (${reason})`)
+  clearTimer('recChunk'); clearTimer('recTick')
+  const rest = await mic.stop({ tail: false })
+  if (rest && rest.length >= BYTES_PER_SEC / 2) await uploadChunk(rest)
+  flash(st.recChars ? `notes saved (~${Math.round(st.recChars / 6)} words)` : 'no speech heard')
 }
 
 /** Menu Talk: start only after the FOREGROUND_EXIT that follows the click (menu closing), 1.5 s fallback. */
@@ -744,8 +818,9 @@ export function handleAudio(pcm: Uint8Array) {
 export function suspend() {
   active = false
   void cancelListening('hardware test mode')
+  if (st.state === 'recording') { clearTimer('recChunk'); clearTimer('recTick'); void mic?.stop({ tail: false, discard: true }) }
   cancelLookup()
-  if (['thinking', 'listening', 'card', 'confirm'].includes(st.state)) st.state = st.brief ? 'quiet' : 'ready'
+  if (['thinking', 'listening', 'card', 'confirm', 'consent', 'recording'].includes(st.state)) st.state = st.brief ? 'quiet' : 'ready'
   ;['cardIdle', 'confirmIdle', 'thinkSlow', 'thinkTimeout', 'errorBack', 'bar', 'autoStop', 'noFrame', 'flash'].forEach(clearTimer)
 }
 export function resume() { active = true; show() }

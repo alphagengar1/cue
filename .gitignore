@@ -5,3 +5,6 @@ dist/
 *.ehpk
 .DS_Store
 *.log
+
+# wearer profile saved by the backend (personal)
+backend/data/profile.local.json

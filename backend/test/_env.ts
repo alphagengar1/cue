@@ -4,10 +4,13 @@
 for (const k of [
   "DEEPGRAM_API_KEY", "EXA_API_KEY", "ANTHROPIC_API_KEY", "ANTHROPIC_WORKSPACE_ID",
   "CREAO_API_KEY", "CREAO_EVENT_LOADER_ID", "CREAO_PERSON_RESEARCHER_ID", "CREAO_BRIEF_WRITER_ID",
+  "CREAO_EVENT_LOADER_KEY", "CREAO_PERSON_RESEARCHER_KEY", "CREAO_BRIEF_WRITER_KEY", "CREAO_FOLLOW_UP_WRITER_KEY", "CREAO_FOLLOW_UP_WRITER_ID",
+  "CREAO_MEETING_SCHEDULER_KEY", "CREAO_MEETING_SCHEDULER_ID", "CREAO_NETWORKING_COACH_KEY", "CREAO_NETWORKING_COACH_ID",
   "SENTRY_DSN", "DEVICE_TOKEN", "PUBLIC_BASE_URL", "SAMPLE_EVENT_FILE", "PORT",
   "PHOTON_PROJECT_ID", "PHOTON_PROJECT_SECRET", "SPECTRUM_PROJECT_ID", "SPECTRUM_PROJECT_SECRET", "WEARER_PHONE", "OPENAI_API_KEY",
 ]) process.env[k] = "";
 process.env.LOOKUPS_PER_MINUTE = "10000";
+process.env.LOCAL_STATE_FILE = `/tmp/cue-test-local-${process.pid}.json`; // never the real profile file
 process.env.SAMPLE_EVENT_FILE = "data/sample-event.json"; // the demo default is the CREAO file
 
 // Backstop: any network call that is not to this machine fails loudly instead of costing money.

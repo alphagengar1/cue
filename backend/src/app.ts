@@ -22,6 +22,7 @@ import { newId, slug, store } from "./store.js";
 import { transcribe } from "./stt.js";
 
 store.loadSample();
+store.loadLocal(); // the wearer's saved profile and goal win over the sample file's
 
 const app = express();
 app.disable("x-powered-by");
@@ -108,6 +109,7 @@ const ProfileSchema = z.object({
   projects: z.array(z.string()).default([]),
   goal: GoalEnum,
   goalNote: z.string().optional(),
+  availability: z.string().max(200).optional(),
   pastConversations: z.array(z.object({ personName: z.string(), orgId: z.string(), note: z.string() })).optional(),
 });
 const EventSchema = z.object({
@@ -219,6 +221,30 @@ app.post("/api/briefs/:id/debrief", json, asyncRoute(async (req, res) => {
   res.json(body);
 }));
 
+// Conversation transcript, recorded only after the HUD consent line ("ok if my glasses take notes?")
+// and a tap: 20 s PCM chunks, transcribed and appended to brief.conversation. Never logged, never
+// sent to Sentry; it reaches only the CREAO agents that write the follow-up and the coaching.
+app.post(
+  "/api/briefs/:id/transcript",
+  express.raw({ type: "application/octet-stream", limit: config.maxAudioBytes }),
+  asyncRoute(async (req, res) => {
+    const cur = store.briefs.get(String(req.params.id));
+    if (!cur) throw new CueError("NOT_FOUND", `No brief ${req.params.id}`, 404);
+    if (!Buffer.isBuffer(req.body) || req.body.length === 0) throw new CueError("BAD_REQUEST", "Send raw PCM with Content-Type: application/octet-stream");
+    let text = "";
+    try {
+      text = (await transcribe(req.body, req.header("x-audio-format"))).trim();
+    } catch (err) {
+      if (!(err instanceof CueError && err.code === "STT_EMPTY")) throw err;
+    }
+    const conversation = [cur.conversation ?? "", text].filter(Boolean).join(" ").slice(-12_000);
+    const brief: Brief = { ...cur, conversation, version: cur.version + 1, updatedAt: new Date().toISOString() };
+    store.briefs.set(brief.id, brief);
+    log.info("transcript chunk", { "cue.brief": brief.id, "cue.audio_bytes": req.body.length, "cue.added_chars": text.length });
+    res.json({ chars: conversation.length, added: text.length });
+  }),
+);
+
 // Photon add-on: text the WEARER a recap of this brief (never the person they met).
 // 200 { sent: false, reason } when Photon is not configured, so the app can show "not set up".
 app.post("/api/briefs/:id/recap", json, asyncRoute(async (req, res) => {
@@ -238,6 +264,7 @@ app.post("/api/briefs/:id/recap", json, asyncRoute(async (req, res) => {
 const goalHandler = asyncRoute(async (req, res) => {
   const { goal, briefId } = parseBody(z.object({ goal: GoalEnum, briefId: z.string().optional() }), req.body);
   store.goal = goal;
+  store.saveLocal();
   const body: GoalResponse = { goal };
   if (briefId) {
     const out = await regenerateAngle(briefId);
@@ -253,6 +280,7 @@ const profileHandler = (req: Request, res: Response) => {
   const p = parseBody(ProfileSchema, req.body);
   const profile: WearerProfile = { ...p, id: "me" };
   store.profile = profile;
+  store.saveLocal();
   res.json({ profile });
 };
 app.get("/api/profile", (_req, res) => { res.json({ profile: store.profile }); });

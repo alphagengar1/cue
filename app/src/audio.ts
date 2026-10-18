@@ -68,6 +68,13 @@ export class Mic {
     this.stats.lastFrameAt = now
   }
 
+  /** Hand over what has been captured so far and keep recording (conversation chunks). */
+  drain(): Clip {
+    const clip = concat(this.chunks)
+    this.chunks = []
+    return clip
+  }
+
   /** Stop after the tail; returns the clip (or null if discarded). */
   async stop(opts: { tail?: boolean; discard?: boolean } = {}): Promise<Clip | null> {
     if (!this.stats.recording) return null

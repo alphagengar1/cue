@@ -12,6 +12,7 @@ import type { Brief, Card, Organization, Person } from "../../shared/types.js";
 import { config } from "./config.js";
 import { writeCards, type BriefInput } from "./llm.js";
 import { cleanFacts, enforceCards, factAboutPerson, hostOf, sanitize, sortFacts } from "./safety.js";
+import { sendText } from "./photon.js";
 import { newId, norm, slug, store, type RunRecord } from "./store.js";
 
 export type AgentKind = RunRecord["agent"];
@@ -96,12 +97,56 @@ export class CreaoHttpError extends Error {
 export function agentIdFor(agent: AgentKind): string | undefined {
   const ids = config.creaoAgents;
   return agent === "event_loader" ? ids.eventLoader
-    : agent === "person_researcher" ? ids.personResearcher : ids.briefWriter;
+    : agent === "person_researcher" ? ids.personResearcher
+    : agent === "follow_up_writer" ? ids.followUpWriter
+    : agent === "meeting_scheduler" ? ids.meetingScheduler
+    : agent === "networking_coach" ? ids.networkingCoach : ids.briefWriter;
+}
+
+/** Per-agent app key (capi_). With one, the agent runs through agent.creao.ai's app API. */
+export function appKeyFor(agent: AgentKind): string | undefined {
+  const k = config.creaoAppKeys;
+  return agent === "event_loader" ? k.eventLoader
+    : agent === "person_researcher" ? k.personResearcher
+    : agent === "follow_up_writer" ? k.followUpWriter
+    : agent === "meeting_scheduler" ? k.meetingScheduler
+    : agent === "networking_coach" ? k.networkingCoach : k.briefWriter;
 }
 
 export function creaoEnabled(agent: AgentKind): boolean {
-  return !!(config.creaoKey && agentIdFor(agent));
+  return !!agentIdFor(agent) && !!(appKeyFor(agent) || config.creaoKey);
 }
+
+// ---- App API (per-agent capi_ keys): POST/GET agent.creao.ai/api/v1/apps/{appId}/runs[/{runId}].
+// Runs started here are remembered so getRun() knows which transport (and key) to use.
+const APP_BASE = (process.env.CREAO_APP_BASE_URL?.trim() || "https://agent.creao.ai").replace(/\/$/, "");
+const appRuns = new Map<string, { appId: string; key: string }>();
+interface AppRun {
+  id: string; status: CreaoRun["status"]; appId?: string; appName?: string; threadId?: string | null;
+  result?: { text?: string; chatText?: string; artifacts?: CreaoRun["result"] extends infer R ? R extends { artifacts?: infer A } ? A : never : never };
+  errorCode?: string | null;
+}
+async function appApi<T>(method: "GET" | "POST", key: string, path: string, body?: unknown): Promise<T> {
+  const res = await fetch(`${APP_BASE}${path}`, {
+    method,
+    headers: { authorization: `Bearer ${key}`, ...(body !== undefined ? { "content-type": "application/json" } : {}) },
+    body: body !== undefined ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(HTTP_TIMEOUT_MS),
+  });
+  const text = await res.text();
+  if (!res.ok) {
+    let code = "HTTP_ERROR";
+    try { code = String((JSON.parse(text) as { error?: string; message?: string }).error ?? code); } catch { /* not JSON */ }
+    const ra = Number(res.headers.get("retry-after"));
+    throw new CreaoHttpError(res.status, code, Number.isFinite(ra) && ra > 0 ? ra : undefined);
+  }
+  return JSON.parse(text) as T;
+}
+const fromAppRun = (r: AppRun, appId: string): CreaoRun => ({
+  run_id: r.id, status: r.status, agent_id: appId, conversation_id: r.threadId ?? null,
+  result: r.result ? { text: r.result.text, chat_text: r.result.chatText, artifacts: r.result.artifacts } : undefined,
+  error: r.errorCode ? { code: r.errorCode } : undefined,
+});
 
 async function api<T>(method: "GET" | "POST" | "PATCH", path: string, body?: unknown): Promise<T> {
   if (!config.creaoKey) throw new CreaoHttpError(0, "NO_KEY");
@@ -125,7 +170,14 @@ async function api<T>(method: "GET" | "POST" | "PATCH", path: string, body?: unk
 }
 
 /** POST /v2/runs (202). Throws CreaoHttpError on non-2xx. Body is closed: only documented fields. */
-export async function createRun(agentId: string, input: unknown, webhookUrl?: string): Promise<CreaoRun> {
+export async function createRun(agentId: string, input: unknown, webhookUrl?: string, agent?: AgentKind): Promise<CreaoRun> {
+  const appKey = agent ? appKeyFor(agent) : undefined;
+  if (appKey) {
+    const inputs = input && typeof input === "object" ? input : { input };
+    const r = await appApi<AppRun>("POST", appKey, `/api/v1/apps/${encodeURIComponent(agentId)}/runs`, { inputs, ...(webhookUrl ? { webhookUrl } : {}) });
+    appRuns.set(r.id, { appId: agentId, key: appKey });
+    return fromAppRun(r, agentId);
+  }
   const body: Record<string, unknown> = { agent_id: agentId, input };
   if (webhookUrl) body.webhook_url = webhookUrl;
   if (MODEL) body.model = MODEL;
@@ -134,6 +186,8 @@ export async function createRun(agentId: string, input: unknown, webhookUrl?: st
 
 /** GET /v2/runs/{id}. rawOutput=true prefers the full assistant transcript in result. */
 export async function getRun(runId: string, rawOutput = false): Promise<CreaoRun> {
+  const app = appRuns.get(runId);
+  if (app) return fromAppRun(await appApi<AppRun>("GET", app.key, `/api/v1/apps/${encodeURIComponent(app.appId)}/runs/${encodeURIComponent(runId)}`), app.appId);
   return api<CreaoRun>("GET", `/v2/runs/${encodeURIComponent(runId)}${rawOutput ? "?raw_output=true" : ""}`);
 }
 
@@ -176,6 +230,9 @@ export const SHAPES: Record<AgentKind, Shape> = {
   event_loader: (v) => isObj(v) && Array.isArray(v.organizations),
   person_researcher: (v) => isObj(v) && Array.isArray(v.facts) && typeof v.name === "string",
   brief_writer: (v) => isObj(v) && Array.isArray(v.cards),
+  follow_up_writer: (v) => isObj(v) && isObj(v.email) && typeof v.message === "string",
+  meeting_scheduler: (v) => isObj(v) && Array.isArray(v.proposedTimes) && typeof v.schedulingMessage === "string",
+  networking_coach: (v) => isObj(v) && typeof v.summary === "string" && Array.isArray(v.priorities),
 };
 
 /** All top-level {...} substrings with balanced braces (string-aware). */
@@ -232,13 +289,13 @@ function textsOf(run: CreaoRun): string[] {
   return [r.text, r.chat_text, ...blocks].filter((s): s is string => typeof s === "string" && s.length > 0);
 }
 
-async function downloadArtifact(url: string): Promise<string | null> {
+async function downloadArtifact(url: string, auth: { origin: string; key: string | undefined }): Promise<string | null> {
   try {
-    // GET /v2/runs hydrates artifact URLs (signed). Send our key only to the CREAO origin itself,
-    // and never to a redirect target.
-    const sameOrigin = new URL(url).origin === new URL(BASE).origin;
+    // Artifact URLs need the key of the transport that ran the agent (the /v2 project key, or the
+    // per-agent app key). Send it only to that origin itself, and never to a redirect target.
+    const sameOrigin = new URL(url).origin === new URL(auth.origin).origin;
     const first = await fetch(url, {
-      headers: sameOrigin ? { authorization: `Bearer ${config.creaoKey}` } : {},
+      headers: sameOrigin && auth.key ? { authorization: `Bearer ${auth.key}` } : {},
       redirect: "manual",
       signal: AbortSignal.timeout(HTTP_TIMEOUT_MS),
     });
@@ -266,7 +323,8 @@ export async function extractResult(run: CreaoRun, agent: AgentKind): Promise<un
   for (const a of arts) {
     const kind = `${a.type ?? ""} ${a.title ?? ""} ${a.id ?? ""}`.toLowerCase();
     if (!a.url || !/json|markdown|text|\.md|\.txt/.test(kind)) continue;
-    const body = await downloadArtifact(a.url);
+    const app = appRuns.get(run.run_id);
+    const body = await downloadArtifact(a.url, app ? { origin: APP_BASE, key: app.key } : { origin: BASE, key: config.creaoKey });
     const r = body ? findInText(body, shape) : null;
     if (r) return r;
   }
@@ -347,13 +405,13 @@ export async function startRun(
   link: Pick<RunRecord, "briefId" | "personId" | "eventId"> = {},
 ): Promise<string | null> {
   const agentId = agentIdFor(agent);
-  if (!config.creaoKey || !agentId) return null;
+  if (!agentId || !(appKeyFor(agent) || config.creaoKey)) return null;
   if (Date.now() < pausedUntil) {
     console.warn(`[creao] start ${agent} skipped: rate limited for ${Math.ceil((pausedUntil - Date.now()) / 1000)}s more`);
     return null;
   }
   try {
-    const run = await createRun(agentId, input, webhookUrl());
+    const run = await createRun(agentId, input, webhookUrl(), agent);
     const runId = run.run_id ?? newId("run");
     store.runs.set(runId, { runId, agent, ...link, status: "pending", startedAt: new Date().toISOString() });
     meta.set(runId, { conversationId: run.conversation_id ?? null, lastStatus: run.status ?? "pending", lastPolledAt: Date.now() });
@@ -429,7 +487,13 @@ export async function finalize(runId: string, via: "webhook" | "poll"): Promise<
 
     if (run.status !== "completed") { markFailed(rec, run.error?.code ?? run.status.toUpperCase()); return; }
     const out = await extractResult(run, rec.agent);
-    if (!out) { markFailed(rec, "NO_JSON_IN_RESULT"); return; }
+    if (!out) {
+      // The wearer-facing agents sometimes answer in prose instead of the JSON block. The prose is
+      // still worth texting; it just cannot be stored as structured output.
+      if (await proseFallback(rec, run)) { rec.status = "completed"; return; }
+      markFailed(rec, "NO_JSON_IN_RESULT");
+      return;
+    }
     rec.status = "completed";
     console.log(`[creao] run ${runId} (${rec.agent}) completed via ${via}, tokens=${m.tokens ? `${m.tokens.in}/${m.tokens.out}` : "?"} usd~${m.usd?.toFixed(4) ?? "?"}`);
     await applyResult(rec, out);
@@ -439,6 +503,20 @@ export async function finalize(runId: string, via: "webhook" | "poll"): Promise<
   } finally {
     finalizing.delete(runId);
   }
+}
+
+const PROSE_LABEL: Partial<Record<AgentKind, string>> = {
+  networking_coach: "coach 🧠", follow_up_writer: "follow-up from CREAO ✍️", meeting_scheduler: "scheduler 📅",
+};
+async function proseFallback(rec: RunRecord, run: CreaoRun): Promise<boolean> {
+  const label = PROSE_LABEL[rec.agent];
+  const prose = (run.result?.chat_text ?? "").replace(/\n{3,}/g, "\n\n").trim();
+  if (!label || prose.length < 40) return false;
+  const r = await sendText([`${label} (no structured output this run)`, prose.slice(0, 1500)]);
+  const m = meta.get(rec.runId);
+  if (m) m.outcome = `prose only; text ${r.sent ? "sent" : `not sent (${r.reason})`}`;
+  console.log(`[creao] ${rec.agent} ${rec.runId}: no JSON block, texted the prose (${prose.length} chars)`);
+  return true;
 }
 
 function markFailed(rec: RunRecord, code: string): void {
@@ -473,7 +551,119 @@ async function applyResult(rec: RunRecord, out: unknown): Promise<void> {
   const note = (s: string) => { if (m) m.outcome = s; console.log(`[creao] ${rec.agent} ${rec.runId}: ${s}`); };
   if (rec.agent === "event_loader") note(applyEventLoader(rec, out));
   else if (rec.agent === "person_researcher") note(await applyPersonResearcher(rec, out));
+  else if (rec.agent === "follow_up_writer") note(await applyFollowUpWriter(rec, out));
+  else if (rec.agent === "meeting_scheduler") note(await applyMeetingScheduler(rec, out));
+  else if (rec.agent === "networking_coach") note(await applyNetworkingCoach(rec, out));
   else note(applyBriefWriter(rec, out));
+}
+
+// Follow-up Writer (agents/follow-up-writer.md): email + message + next steps from the brief and the
+// wearer's debrief. Stored on the person (same place as the hand-pasted output) and texted to the
+// wearer over Photon as the "full follow-up", after the instant Haiku recap.
+const FollowUpOut = z.object({
+  email: z.object({ subject: z.string(), body: z.string() }),
+  message: z.string(),
+  nextSteps: z.array(z.string()).default([]),
+});
+async function applyFollowUpWriter(rec: RunRecord, out: unknown): Promise<string> {
+  const parsed = FollowUpOut.safeParse(out);
+  if (!parsed.success) return "invalid shape";
+  const d = parsed.data;
+  const subject = sanitize(d.email.subject).trim().slice(0, 120);
+  const body = d.email.body.trim().slice(0, 2500);
+  const message = sanitize(d.message).trim().slice(0, 400);
+  const nextSteps = d.nextSteps.map((s) => sanitize(s).trim().slice(0, 160)).filter(Boolean).slice(0, 3);
+  const person = rec.personId ? store.people.get(rec.personId) : undefined;
+  if (person) {
+    store.putPerson({ ...person, followUp: { ...(person.followUp ?? {}), agent: "creao-follow-up-writer", agentId: agentIdFor("follow_up_writer"), email: { subject, body }, message, nextSteps } });
+  }
+  const r = await sendText([
+    "full follow-up from CREAO is ready ✍️",
+    `Subject: ${subject}`,
+    body,
+    ...(nextSteps.length ? [`next steps:\n${nextSteps.map((s) => `- ${s}`).join("\n")}`] : []),
+  ]);
+  let note = `follow-up stored${person ? ` on ${person.name}` : ""}; text ${r.sent ? "sent" : `not sent (${r.reason})`}`;
+  // Orchestration: Follow-up Writer -> Meeting Scheduler (agents/meeting-scheduler.md).
+  const brief = rec.briefId ? store.briefs.get(rec.briefId) : undefined;
+  if (brief && creaoEnabled("meeting_scheduler")) {
+    const p = store.profile;
+    const runId = await startRun("meeting_scheduler", {
+      person: { name: brief.query.name, role: brief.query.role ?? "", org: brief.query.org },
+      followUp: { email: { subject, body }, message, nextSteps },
+      debrief: brief.debrief ?? "",
+      conversation: (brief.conversation ?? "").slice(0, 6000),
+      wearer: { name: p.name, school: p.school ?? "", availability: p.availability ?? "weekday afternoons", timezone: config.wearerTimezone },
+      eventName: store.events.get(brief.eventId)?.name ?? "",
+    }, { briefId: brief.id, personId: rec.personId });
+    note += runId ? `; started meeting_scheduler ${runId}` : "; meeting_scheduler start failed";
+  }
+  return note;
+}
+
+// Meeting Scheduler: three proposed times, a scheduling message, optionally a tentative calendar
+// hold (when the agent has a calendar connector). Stored on the person, texted to the wearer.
+const ScheduleOut = z.object({
+  proposedTimes: z.array(z.string()).max(5),
+  inviteTitle: z.string(),
+  inviteDescription: z.string(),
+  schedulingMessage: z.string(),
+  calendarEventCreated: z.boolean().default(false),
+  eventLink: z.string().nullable().default(null),
+});
+async function applyMeetingScheduler(rec: RunRecord, out: unknown): Promise<string> {
+  const parsed = ScheduleOut.safeParse(out);
+  if (!parsed.success) return "invalid shape";
+  const d = parsed.data;
+  const schedule = {
+    proposedTimes: d.proposedTimes.map((s) => sanitize(s).trim().slice(0, 40)).filter(Boolean).slice(0, 3),
+    inviteTitle: sanitize(d.inviteTitle).trim().slice(0, 80),
+    inviteDescription: sanitize(d.inviteDescription).trim().slice(0, 500),
+    schedulingMessage: sanitize(d.schedulingMessage).trim().slice(0, 400),
+    calendarEventCreated: d.calendarEventCreated,
+    eventLink: d.eventLink && /^https?:\/\//.test(d.eventLink) ? d.eventLink.slice(0, 300) : null,
+  };
+  const person = rec.personId ? store.people.get(rec.personId) : undefined;
+  if (person) store.putPerson({ ...person, followUp: { ...(person.followUp ?? {}), schedule } });
+  const first = person?.name.split(/\s+/)[0] ?? "them";
+  const r = await sendText([
+    `times that fit you for ${first} 📅`,
+    schedule.proposedTimes.join("\n"),
+    schedule.schedulingMessage,
+    ...(schedule.eventLink ? [`tentative hold on your calendar: ${schedule.eventLink}`] : []),
+    "reply book and I'll give you the message to send",
+  ]);
+  return `schedule stored${person ? ` on ${person.name}` : ""}, hold ${schedule.calendarEventCreated ? "created" : "not created"}; text ${r.sent ? "sent" : `not sent (${r.reason})`}`;
+}
+
+// Networking Coach: the long-run agent (agents/networking-coach.md). Texted as a few bubbles.
+const CoachOut = z.object({
+  summary: z.string(),
+  patterns: z.array(z.string()).default([]),
+  priorities: z.array(z.object({ name: z.string(), why: z.string().default(""), action: z.string().default("") })).default([]),
+  coaching: z.array(z.string()).default([]),
+  nextTime: z.string().default(""),
+});
+export let lastCoaching: (z.infer<typeof CoachOut> & { at: string }) | null = null;
+async function applyNetworkingCoach(rec: RunRecord, out: unknown): Promise<string> {
+  const parsed = CoachOut.safeParse(out);
+  if (!parsed.success) return "invalid shape";
+  const d = parsed.data;
+  const s = (x: string, n: number) => sanitize(x).trim().slice(0, n);
+  lastCoaching = {
+    summary: s(d.summary, 500), patterns: d.patterns.map((x) => s(x, 160)).filter(Boolean).slice(0, 4),
+    priorities: d.priorities.slice(0, 3).map((p) => ({ name: s(p.name, 60), why: s(p.why, 140), action: s(p.action, 140) })),
+    coaching: d.coaching.map((x) => s(x, 180)).filter(Boolean).slice(0, 3), nextTime: s(d.nextTime, 180), at: new Date().toISOString(),
+  };
+  const c = lastCoaching;
+  const r = await sendText([
+    `coach 🧠 ${c.summary}`,
+    ...(c.patterns.length ? [`patterns:\n${c.patterns.map((x) => `- ${x}`).join("\n")}`] : []),
+    ...(c.priorities.length ? [`follow up first:\n${c.priorities.map((p, i) => `${i + 1}. ${p.name}: ${p.action}${p.why ? ` (${p.why})` : ""}`).join("\n")}`] : []),
+    ...(c.coaching.length ? [`next conversation:\n${c.coaching.map((x) => `- ${x}`).join("\n")}`] : []),
+    ...(c.nextTime ? [c.nextTime] : []),
+  ]);
+  return `coaching stored (${c.priorities.length} priorities); text ${r.sent ? "sent" : `not sent (${r.reason})`}`;
 }
 
 function resolveOrgId(eventId: string, ref: string | null | undefined): string | null {
@@ -585,23 +775,25 @@ async function applyPersonResearcher(rec: RunRecord, out: unknown): Promise<stri
     eventName: store.events.get(person.eventId)?.name ?? "",
   };
 
-  // Chain: Brief Writer on CREAO if configured.
+  // Brief v2 lands now with the fast LLM (seconds), so the wearer sees "updated" as soon as the
+  // research arrives. The CREAO Brief Writer, if configured, runs after and overwrites with v3.
+  let result: string;
+  try {
+    const cards = enforceCards(await writeCards(input));
+    result = applyCardsV2(rec.briefId, cards, rec.runId, `${summary}; v2 via fast LLM`, rec.personId);
+  } catch (err) {
+    setSlowPath(rec.briefId, { status: "done", runId: rec.runId });
+    result = `${summary}; fast LLM v2 failed (${String(err)})`;
+  }
   if (creaoEnabled("brief_writer")) {
     const runId = await startRun("brief_writer", { ...input, wearer: wearerForAgent() }, { briefId: rec.briefId, personId: person.id });
     if (runId) {
       const b = store.briefs.get(rec.briefId);
       if (b) store.briefs.set(b.id, { ...b, slowPath: { status: "running", runId } });
-      return `${summary}; started brief_writer ${runId}`;
+      result += `; started brief_writer ${runId}`;
     }
   }
-  // Fallback (01 section 8): write Brief v2 with the fast LLM from the researched Person.
-  try {
-    const cards = enforceCards(await writeCards(input));
-    return applyCardsV2(rec.briefId, cards, rec.runId, `${summary}; v2 via fast LLM`, rec.personId);
-  } catch (err) {
-    setSlowPath(rec.briefId, { status: "done", runId: rec.runId });
-    return `${summary}; fast LLM fallback failed (${String(err)})`;
-  }
+  return result;
 }
 
 function applyBriefWriter(rec: RunRecord, out: unknown): string {
