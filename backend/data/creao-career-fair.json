@@ -1,0 +1,138 @@
+{
+  "_note": "Output of the CREAO Event Loader agent (agent.creao.ai), run 2026-10-17. Agent ID: 7ed5ac12-fb85-4545-9e4e-abbeaa25db1a. Run link: https://agent.creao.ai/share/aa9e8fec817ba50138997a79b610d5cc. Org facts are real public sources; people are the names given in the agent's input.",
+  "event": {
+    "id": "career-fair-demo",
+    "name": "Career Fair (demo)",
+    "date": "2026-10-17",
+    "sources": [
+      {
+        "kind": "employers",
+        "raw": "Anduril table 12 (Priya Shah, recruiter); Cloudflare table 4 (Alex Kim, 2pm edge panel); Vercel table 9"
+      }
+    ],
+    "loadStatus": "ready"
+  },
+  "organizations": [
+    {
+      "id": "anduril",
+      "name": "Anduril",
+      "aliases": [
+        "Anduril Industries"
+      ],
+      "oneLiner": "Defense technology company building autonomous systems and the Lattice software platform.",
+      "focusNow": [
+        {
+          "text": "In June 2026 the U.S. Army selected Anduril to lead the common data baseline for NGC2.",
+          "sourceUrl": "https://www.anduril.com/news/anduril-continues-to-scale-next-generation-command-and-control-across-the-army",
+          "sourceKind": "org_site",
+          "date": "2026-06"
+        },
+        {
+          "text": "Won an Air Force production contract for its Fury (YFQ-44A) collaborative combat aircraft in June 2026.",
+          "sourceUrl": "https://www.ohiotechnews.com/first-ohio-built-fury-rolls-off-andurils-arsenal-1-line-in-pickaway-county/",
+          "sourceKind": "article",
+          "date": "2026-06"
+        },
+        {
+          "text": "The first Ohio-built Fury rolled off the Arsenal-1 production line in Pickaway County on July 27, 2026.",
+          "sourceUrl": "https://www.jobsohio.com/newsroom/news-press/first-ohio-built-fury-rolls-off-andurils-arsenal-1-production-line",
+          "sourceKind": "article",
+          "date": "2026-07"
+        },
+        {
+          "text": "The Army awarded it a contract worth up to $1.8 billion over five years to expand NGC2 to more units.",
+          "sourceUrl": "https://defensescoop.com/2026/10/06/army-awards-anduril-1-8b-contract-expand-ngc2/",
+          "sourceKind": "article",
+          "date": "2026-10"
+        }
+      ],
+      "eventRole": "table 12; hiring SWE interns",
+      "hiring": "Paid engineering, software and manufacturing internships plus new-grad roles; see anduril.com/early-careers.",
+      "people": [
+        "Priya Shah"
+      ]
+    },
+    {
+      "id": "cloudflare",
+      "name": "Cloudflare",
+      "aliases": [],
+      "oneLiner": "Connectivity cloud company offering CDN, security and a serverless developer platform.",
+      "focusNow": [
+        {
+          "text": "Marked its 16th birthday with 46 announcements across open source, security, AI agents and its developer platform.",
+          "sourceUrl": "https://blog.cloudflare.com/birthday-week-2026-wrap-up/",
+          "sourceKind": "org_site",
+          "date": "2026-10"
+        },
+        {
+          "text": "Launched Cloudflare Basin, a data analytics platform for developers, now generally available.",
+          "sourceUrl": "https://www.cloudflare.com/press/press-releases/2026/cloudflare-launches-basin-a-more-open-and-accessible-data-platform-for-developers/",
+          "sourceKind": "org_site",
+          "date": "2026-10"
+        },
+        {
+          "text": "Introduced K2, a durable serverless event stream.",
+          "sourceUrl": "https://blog.cloudflare.com/birthday-week-2026-wrap-up/",
+          "sourceKind": "org_site",
+          "date": "2026-10"
+        },
+        {
+          "text": "Introduced an Agent Development Lifecycle for taking agentic software from prototype to production.",
+          "sourceUrl": "https://blog.cloudflare.com/agents-week-review-august-2026/",
+          "sourceKind": "org_site",
+          "date": "2026-08"
+        }
+      ],
+      "eventRole": "table 4; speaker: 2pm panel on edge computing",
+      "hiring": "Aims to hire 1,111 interns in 2026; its Early Talent program covers interns and new graduates.",
+      "people": [
+        "Alex Kim"
+      ]
+    },
+    {
+      "id": "vercel",
+      "name": "Vercel",
+      "aliases": [],
+      "oneLiner": "Frontend cloud platform for building, deploying and scaling web apps and AI products.",
+      "focusNow": [
+        {
+          "text": "Announced AI SDK 7 at its Ship 2026 conference in Berlin.",
+          "sourceUrl": "https://vercel.com/blog/vercel-ship-2026-recap",
+          "sourceKind": "org_site",
+          "date": "2026-10"
+        },
+        {
+          "text": "Its 2026 AI Accelerator cohort includes 39 early-stage teams and over $8M in partner credits.",
+          "sourceUrl": "https://vercel.com/blog/2026-vercel-ai-accelerator-cohort",
+          "sourceKind": "org_site",
+          "date": "2026-03"
+        },
+        {
+          "text": "AI Gateway provides access to hundreds of AI models through a single API key.",
+          "sourceUrl": "https://vercel.com/ai-gateway",
+          "sourceKind": "org_site"
+        },
+        {
+          "text": "Publishes a monthly AI Gateway production index on how developers use AI models.",
+          "sourceUrl": "https://vercel.com/blog/ai-gateway-production-index-october-2026",
+          "sourceKind": "org_site",
+          "date": "2026-10"
+        }
+      ],
+      "eventRole": "table 9",
+      "people": []
+    }
+  ],
+  "people": [
+    {
+      "name": "Priya Shah",
+      "orgId": "anduril",
+      "role": "recruiter"
+    },
+    {
+      "name": "Alex Kim",
+      "orgId": "cloudflare",
+      "role": "speaker, 2pm panel on edge computing"
+    }
+  ]
+}

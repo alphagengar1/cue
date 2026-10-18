@@ -49,4 +49,4 @@ The app talks only to the backend (`VITE_BACKEND_URL`, `VITE_DEVICE_TOKEN` in `a
 
 ## Sponsors
 
-- CREAO agents: agent ids and run share link go here (see design/03 section 7).
+- CREAO Event Loader agent (agent.creao.ai): ID `7ed5ac12-fb85-4545-9e4e-abbeaa25db1a`, run share link https://agent.creao.ai/share/aa9e8fec817ba50138997a79b610d5cc. Its output is `backend/data/creao-career-fair.json` and `backend/data/creao-lahacks-sponsors.json`.

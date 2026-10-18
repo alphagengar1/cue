@@ -1,0 +1,127 @@
+{
+  "_note": "Output of the CREAO Event Loader agent (agent.creao.ai), run 2026-10-17. Agent ID: 7ed5ac12-fb85-4545-9e4e-abbeaa25db1a. Run link: https://agent.creao.ai/share/aa9e8fec817ba50138997a79b610d5cc. Org facts are real public sources; people are the names given in the agent's input.",
+  "event": {
+    "id": "lahacks-f26-creao",
+    "name": "LA Hacks Fall 2026 (CREAO)",
+    "date": "2026-10-17",
+    "sources": [
+      {
+        "kind": "employers",
+        "raw": "Sponsors: Even Realities, CREAO, Sentry"
+      }
+    ],
+    "loadStatus": "ready"
+  },
+  "organizations": [
+    {
+      "id": "even-realities",
+      "name": "Even Realities",
+      "aliases": [
+        "Even"
+      ],
+      "oneLiner": "Maker of G2 display smart glasses with AI cues, teleprompt and translate features.",
+      "focusNow": [
+        {
+          "text": "Its Even G2 display smart glasses offer AI Cues, Prep Notes, teleprompt and translate features.",
+          "sourceUrl": "https://www.evenrealities.com/smart-glasses",
+          "sourceKind": "org_site",
+          "date": "2026-02"
+        },
+        {
+          "text": "Launched Even Hub, an app store and developer ecosystem for G2 smart glasses, on April 3, 2026.",
+          "sourceUrl": "https://www.digitaltrends.com/wearables/even-realities-launches-even-hub-to-turn-g2-smart-glasses-into-a-full-app-ecosystem/",
+          "sourceKind": "article",
+          "date": "2026-04"
+        },
+        {
+          "text": "Raised $150 million in a pre-Series B led by Meituan and Tencent, valuing the company at $1 billion.",
+          "sourceUrl": "https://techcrunch.com/2026/07/06/smart-glasses-maker-even-realities-hits-1b-valuation-with-150m-funding-led-by-meituan-tencent/",
+          "sourceKind": "article",
+          "date": "2026-07"
+        },
+        {
+          "text": "Its Even G2 glasses and R1 companion ring won a CES 2026 Innovation Award.",
+          "sourceUrl": "https://www.ces.tech/ces-innovation-awards/2026/even-realities-g2-display-smart-glasses-and-r1-companion-ring/",
+          "sourceKind": "article",
+          "date": "2026"
+        }
+      ],
+      "eventRole": "sponsor: G2 smart glasses track",
+      "people": []
+    },
+    {
+      "id": "creao",
+      "name": "CREAO",
+      "aliases": [
+        "Creao AI"
+      ],
+      "oneLiner": "No-code AI super agent platform that builds and runs autonomous agent apps around the clock.",
+      "focusNow": [
+        {
+          "text": "Launched its Super Agent platform, turning one-off AI workflows into scheduled apps that run continuously.",
+          "sourceUrl": "https://www.testingcatalog.com/creao-launches-super-agent-for-ai-powered-workflow-apps/",
+          "sourceKind": "article",
+          "date": "2026-03"
+        },
+        {
+          "text": "Raised $10 million to build a platform where AI both builds tools and runs them.",
+          "sourceUrl": "https://www.businesswire.com/news/home/20260417851882/en/Creao-AI-Raises-$10M-to-Build-the-Platform-Where-One-Person-Does-the-Work-of-a-Team",
+          "sourceKind": "article",
+          "date": "2026-04"
+        },
+        {
+          "text": "Consolidated its product onto agent.creao.ai, sunsetting app.creao.ai on May 20, 2026.",
+          "sourceUrl": "https://agent.creao.ai/",
+          "sourceKind": "org_site",
+          "date": "2026-05"
+        },
+        {
+          "text": "Publishes field notes from running its own platform on itself.",
+          "sourceUrl": "https://creao.ai/",
+          "sourceKind": "org_site",
+          "date": "2026-05"
+        }
+      ],
+      "eventRole": "sponsor: best use of CREAO agents",
+      "people": []
+    },
+    {
+      "id": "sentry",
+      "name": "Sentry",
+      "aliases": [
+        "Sentry.io",
+        "Getsentry"
+      ],
+      "oneLiner": "Developer platform for error tracking, tracing, logs and session replay.",
+      "focusNow": [
+        {
+          "text": "Launched Seer, an AI debugging agent that uses errors, traces and commits to root-cause issues.",
+          "sourceUrl": "https://blog.sentry.io/seer-debug-with-ai-at-every-stage-of-development/",
+          "sourceKind": "org_site",
+          "date": "2026-01"
+        },
+        {
+          "text": "Expanded Seer to local development and code review with flat pricing and unlimited usage.",
+          "sourceUrl": "https://sentry.io/about/press-releases/sentry-expands-seer-ai-debugging-agent/",
+          "sourceKind": "org_site",
+          "date": "2026-04"
+        },
+        {
+          "text": "Launched Seer Agent, a natural-language tool to investigate production issues across the stack.",
+          "sourceUrl": "https://thenewstack.io/sentrys-seer-agent-debug/",
+          "sourceKind": "article",
+          "date": "2026-04"
+        },
+        {
+          "text": "Added AI agent observability to trace agent runs, tool calls, model interactions and token usage.",
+          "sourceUrl": "https://docs.sentry.io/ai/monitoring/agents/",
+          "sourceKind": "org_site"
+        }
+      ],
+      "eventRole": "sponsor: best use of Sentry",
+      "hiring": "Offers a 12+ week hybrid technical internship and new-grad engineering roles; see sentry.io/careers/internships.",
+      "people": []
+    }
+  ],
+  "people": []
+}
