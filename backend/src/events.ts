@@ -1,10 +1,12 @@
 // Creating an event: the setup page (POST /api/events) and iMessage ("hey, I'm going to LA Hacks
 // tomorrow") share this path. It stores the event and any orgs/people given, then starts the CREAO
 // Research agent (EVENT request) to build the pack: sponsors, employers, speakers, what each org is
-// focused on, who is hiring. The agent searches the web for the event when no orgs were given.
+// focused on, who is hiring. With no orgs given, one Exa search for "<event> sponsors" is passed along
+// as sourceText, and the agent searches the web for the event itself on top of that.
 import type { Event, Organization } from "../../shared/types.js";
 import { startRun } from "./creao.js";
 import { journal } from "./journal.js";
+import { searchEventSponsors } from "./search.js";
 import { newId, slug, store } from "./store.js";
 
 export interface CreateEventInput {
@@ -36,6 +38,18 @@ export async function createEvent(b: CreateEventInput, opts: { via?: "setup" | "
     }
   }
   for (const o of orgs) store.putOrg(o);
+
+  // No sponsor list ("I'm going to LA Hacks tomorrow"): one web search for the event's sponsors rides
+  // along as sourceText, so the Research agent starts from real pages instead of only the event's name.
+  let sourceText = b.sourceText ?? "";
+  if (!orgs.length) {
+    const found = await searchEventSponsors(b.name);
+    if (found) {
+      sourceText = `${sourceText}\n\nWeb search results for "${b.name} sponsors":\n${found}`.trim();
+      event.sources.push({ kind: "url", raw: found.slice(0, 4000) });
+    }
+  }
+
   for (const p of b.people ?? []) {
     store.upsertPerson(id, slug(p.org), p.name, { role: p.role, match: "high", matchReason: "on the event list", fromEventList: true });
   }
@@ -45,7 +59,7 @@ export async function createEvent(b: CreateEventInput, opts: { via?: "setup" | "
   journal({ type: "event", data: { id, name: b.name, date: b.date, via: opts.via ?? "setup", orgs: b.orgs ?? [], people: (b.people ?? []).length } });
 
   const runId = await startRun("event_loader", {
-    eventId: id, eventName: b.name, orgs: b.orgs ?? [], people: b.people ?? [], sourceText: b.sourceText ?? "",
+    eventId: id, eventName: b.name, orgs: b.orgs ?? [], people: b.people ?? [], sourceText,
   }, { eventId: id });
   if (runId) { event.loadStatus = "loading"; event.creaoRunId = runId; }
   return event;

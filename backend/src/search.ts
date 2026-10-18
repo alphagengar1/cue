@@ -43,6 +43,27 @@ async function exaSearch(query: string, category?: string): Promise<SearchResult
 }
 
 /**
+ * One Exa search for "<event> sponsors", for an event that arrives with no org list ("I'm going to
+ * LA Hacks tomorrow"). Returns the results as text for the Research agent's sourceText, or "" when
+ * there is no key, nothing came back or Exa failed: the agent then finds the event on its own.
+ */
+export async function searchEventSponsors(eventName: string): Promise<string> {
+  const name = eventName.replace(/\s+/g, " ").trim();
+  if (!config.exaKey || !name) return "";
+  try {
+    const results = await exaSearch(`${name} sponsors`);
+    return results
+      .filter((r) => r.title.trim() || r.text.trim())
+      .slice(0, 6)
+      .map((r) => [r.title || r.url, r.url, r.text].filter(Boolean).join("\n"))
+      .join("\n\n");
+  } catch (err) {
+    console.warn(`[search] "${name} sponsors" search failed: ${err instanceof Error ? err.message : String(err)}`);
+    return "";
+  }
+}
+
+/**
  * Run search A (query, usually "<name> <org>") and search B (same, category "personal site")
  * in parallel. Throws SearchUnavailable if there is no key or both calls fail.
  */
