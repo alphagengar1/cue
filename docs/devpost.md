@@ -125,7 +125,7 @@ We show the agents running in the CREAO Sessions tab in the demo video.
 - Honest behavior. When nothing is found, Cue says "No public info found" and shows a company card instead of making something up. When the facts match but do not help, it says one line and stays quiet.
 - A privacy position we can say in one breath: no camera, no face recognition, no recording without on-screen consent, public professional information only, and nothing ever sent to the other person.
 - Two first-years shipped a glasses app, a cloud backend, an iMessage line and three agents in one weekend.
-- Median time from release to first card on venue wifi: [LATENCY SECONDS] s over [LATENCY RUNS] runs.
+- Release to first card on the deployed backend: about 3 seconds (2.4 to 4.0 s over tonight's server runs).
 
 ## What we learned
 
@@ -178,8 +178,8 @@ Even Realities G2, Even Hub SDK, @evenrealities/pretext, TypeScript, Vite, Node.
 
 ## Links
 
-- GitHub: [REPO URL]
+- GitHub: https://github.com/alphagengar1/cue
 - Demo video: [VIDEO URL]
 - CREAO agent IDs and run share links: table above, and in the README
 - Backend: https://35.164.205.54.sslip.io
-- Try it: the Even Hub build [LINK OR QR IF PUBLIC]
+- Try it: Cue 0.1.1 on Even Hub (private build; ask us for tester access)
