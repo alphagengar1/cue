@@ -609,7 +609,7 @@ async function applyFollowUpWriter(rec: RunRecord, out: unknown): Promise<string
     // Merged agent: email + times in ONE wave of at most 4 bubbles (voice.ts followUpWave).
     const s = await applySchedule(rec, d.schedule, { quiet: true });
     scheduleNote = `; ${s.note}`;
-    r = await sendText(followUpWave({ email: { subject, body }, message, nextSteps }, s.schedule, firstName(person?.name)).concat(draftLine));
+    r = await sendText(followUpWave({ email: { subject, body }, message, nextSteps }, s.schedule, firstName(person?.name), d.draftLink)); // draft link rides inside the last bubble
   } else {
     r = await sendText(followUpBubbles({ email: { subject, body }, message, nextSteps }, firstName(person?.name)).concat(draftLine));
   }

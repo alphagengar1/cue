@@ -80,13 +80,14 @@ export function followUpBubbles(followUp: FollowUpVoiceInput, first: string): st
  * whole, next steps on one line, the times and the hold on one line. At most 3 bubbles, so a
  * conversation costs the wearer 4 texts in total (one Haiku recap + these), not 17.
  */
-export function followUpWave(followUp: FollowUpVoiceInput, schedule: ScheduleVoiceInput | undefined, first: string): string[] {
+export function followUpWave(followUp: FollowUpVoiceInput, schedule: ScheduleVoiceInput | undefined, first: string, draftLink?: string | null): string[] {
   const who = first ? first.toLowerCase() : "them";
   const steps = (followUp.nextSteps ?? []).map((s) => s.trim()).filter(Boolean).slice(0, 2);
   const times = (schedule?.proposedTimes ?? []).map((t) => t.trim()).filter(Boolean).slice(0, 3);
-  const timesLine = times.length
+  const draft = draftLink && /^https?:\/\//.test(draftLink) ? `\nsaved as a gmail draft too: ${draftLink}` : "";
+  const timesLine = (times.length
     ? `times for ${who}: ${times.map(friendlyTime).join(", ")}${schedule?.eventLink ? " · hold's on your calendar" : ""} · say book for the message`
-    : (followUp.message?.trim() ? "say text for the short version" : "");
+    : (followUp.message?.trim() ? "say text for the short version" : "")) + draft;
   return cap([
     { whole: followUp.email.body },
     ...(steps.length ? [{ line: `next: ${steps.join("; ")}` }] : []),
