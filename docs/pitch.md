@@ -59,6 +59,9 @@ Live: the push-to-talk audio, the speech-to-text, the Exa web search, the decisi
 **10. Why three agents?**
 We started with six single-purpose agents and merged them by *when they run*: Research before the conversation (event pack, person research, the final cards), Follow-up right after (email, message, next steps, times, calendar hold, Gmail draft, one run), and Coach over the long run. Fewer handoffs, fewer JSON contracts, and each agent sees the whole context for its moment. The Coach is the long-running one the CREAO team asked for: it reads the Cue Journal on a nightly schedule with extended memory, keeps the Connections sheet, renders a dashboard, and texts patterns, priorities and coaching.
 
+**11. How is this different from Jarvis, InSight, Recall, the other glasses projects?**
+Every one of them points a camera at the other person: face recognition, or recording the whole conversation. Cue has no camera and never records anyone without a consent screen they watch you tap; you say a name, it reads public sources and cites them, and it says "no public info found" instead of guessing. And none of them finish the job: no project we found sends the follow-up to your phone, puts a hold on your calendar, or coaches you across the day with memory. See docs/prior-art.md.
+
 ## If something fails
 
 - **A spoken intent misfires** (the lens shows the hint line or the wrong action): use the Talk menu item for a plain lookup, set the goal on the setup page, and send the debrief from the laptop with the curl line below. Say that this is the part built last night.
