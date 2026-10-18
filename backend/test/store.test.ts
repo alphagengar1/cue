@@ -6,7 +6,7 @@ import { findOrg } from "../src/parse.js";
 import { norm, slug, store } from "../src/store.js";
 import { DATA_DIR, dataFile } from "./_helpers.js";
 
-const files = fs.readdirSync(DATA_DIR).filter((f) => f.endsWith(".json"));
+const files = fs.readdirSync(DATA_DIR).filter((f) => f.endsWith(".json") && !f.endsWith(".local.json"));
 
 describe("bundled event files", () => {
   test("data/ has event files", () => { assert.ok(files.length >= 1); });

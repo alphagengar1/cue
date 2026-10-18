@@ -82,9 +82,9 @@ CREAO agent IDs and run share links:
 | 1 | Event Loader | `7ed5ac12-fb85-4545-9e4e-abbeaa25db1a` | https://agent.creao.ai/share/aa9e8fec817ba50138997a79b610d5cc |
 | 2 | Person Researcher | `e496e45b-c8eb-4079-9aff-876071501d67` | https://agent.creao.ai/share/21c460878c2ec3e4eed039a5a327e0e6 |
 | 3 | Brief Writer | `d5ded73b-03b6-407d-be3e-5d332d6e869a` | https://agent.creao.ai/share/5922c0b96ff6085300d95090eeb4bc58 |
-| 4 | Follow-up Writer | [FOLLOW-UP WRITER AGENT ID] | [FOLLOW-UP WRITER SHARE LINK] |
-| 5 | Meeting Scheduler | [MEETING SCHEDULER AGENT ID] | [MEETING SCHEDULER SHARE LINK] |
-| 6 | Networking Coach | [NETWORKING COACH AGENT ID] | [NETWORKING COACH SHARE LINK] |
+| 4 | Follow-up Writer | 8df90f76-593a-47e1-bbff-73e53ca45096 | [FOLLOW-UP WRITER SHARE LINK] |
+| 5 | Meeting Scheduler | 7c39b9c9-5241-4d12-97ce-cfda7eea0ea4 | [MEETING SCHEDULER SHARE LINK] |
+| 6 | Networking Coach | b095ddf1-cccc-42ae-a381-ccc7906b14a4 | [NETWORKING COACH SHARE LINK] |
 
 We show the agents running in the CREAO Sessions tab in the demo video.
 

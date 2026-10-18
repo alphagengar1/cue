@@ -33,7 +33,7 @@ const GOAL_LABEL: Record<Goal, string> = {
 }
 
 const CARD_IDLE_MS = 25000
-const FLASH_MS = 5000                     // quiet-line note, e.g. "★ recap texted"
+const FLASH_MS = 6000                     // confirmation screen after a spoken command, e.g. "★ recap texted"
 const REC_CHUNK_MS = 20000                // conversation recording: upload a chunk every 20 s
 const REC_MAX_MS = 15 * 60000             // and stop by itself after 15 min
 const CONFIRM_IDLE_MS = 10000
@@ -212,7 +212,10 @@ export function currentScreen(): Screen {
       return scr(`Which ${b.query.name}?`, 4, body, 4, 'swipe: move | tap: pick', 2)
     }
     case 'quiet': {
-      const who = st.flash || (st.quietUpdates ? `${st.quietUpdates} update${st.quietUpdates > 1 ? 's' : ''}` : b ? personName(b) : '')
+      // A flash ("★ note saved, recap texted", "coach is on it") is a readable two-line body for a
+      // few seconds; the dim footer alone was invisible on hardware.
+      if (st.flash) return scr('', 2, st.flash, 4, b ? `cue | ${personName(b)} | hold to ask` : 'cue | hold to ask', 2)
+      const who = st.quietUpdates ? `${st.quietUpdates} update${st.quietUpdates > 1 ? 's' : ''}` : b ? personName(b) : ''
       return scr('', 2, '', 2, who ? `cue | ${who} | hold to ask` : 'cue | hold to ask', 2)
     }
     case 'consent':
@@ -484,7 +487,7 @@ export async function lookup(src: { clip?: Clip; text?: string }) {
         case 'quiet':
           return go(st.brief ? 'quiet' : 'ready')
         default:
-          return flash(d.say?.split('\n')[0] ?? "didn't catch that")
+          return flash(d.say ?? "didn't catch that")
       }
     }
     if (MOCK === 'auto' && (r.status === 0 || r.status >= 500 || r.error === 'NO_EVENT')) {

@@ -178,7 +178,9 @@ class Store {
           : "on the event list",
         fromEventList: true,
         // Hand-run research present: don't start a paid Person Researcher run for them again.
-        ...(p.research && facts.length ? { lastResearchedAt: p.research.date ?? new Date().toISOString() } : {}),
+        // Hand-loaded research is the "night before" pack. The live Person Researcher still runs once per
+        // person (the demo moment is the cards updating); RESEARCH_LOADED_PEOPLE=0 keeps the old skip.
+        ...(p.research && facts.length && process.env.RESEARCH_LOADED_PEOPLE === "0" ? { lastResearchedAt: p.research.date ?? new Date().toISOString() } : {}),
         ...(p.followUp ? { followUp: cleanFollowUp(p.followUp) } : {}),
       });
     }

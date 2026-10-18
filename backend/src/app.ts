@@ -347,7 +347,8 @@ app.post("/api/events", json, asyncRoute(async (req, res) => {
 const DATA_DIR = path.join(BACKEND_DIR, "data");
 function bundledFiles(): { file: string; name: string; orgs: number; people: number }[] {
   let names: string[] = [];
-  try { names = fs.readdirSync(DATA_DIR).filter((f) => f.endsWith(".json")); } catch { return []; }
+  // *.local.json is private state (the wearer profile), never an event file.
+  try { names = fs.readdirSync(DATA_DIR).filter((f) => f.endsWith(".json") && !f.endsWith(".local.json")); } catch { return []; }
   return names.flatMap((file) => {
     try {
       const j = JSON.parse(fs.readFileSync(path.join(DATA_DIR, file), "utf8"));
