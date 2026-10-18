@@ -29,7 +29,7 @@ At a career fair you meet thirty people in two hours and forget all of them by d
 
 Hold the temple of your Even Realities G2 and say "Tim Cook, Apple, CEO." Three seconds later the lens shows three cards: how to open, who they are, what to ask for given your goal and your own projects. Then it goes quiet. One dim line while you talk. If it can't find anything public about the person, it says so instead of making something up.
 
-When you're done, hold the temple again and say what happened. Your phone gets a four-line recap by iMessage. In the background a CREAO agent researches what came up and writes the email, next steps, three times to meet, and a tentative hold on your calendar. Reply "email" or "book" when you want them. Nothing is ever sent to the person you met.
+When you're done, hold the temple again and say what happened. Your phone gets a three-bubble recap by iMessage. In the background a CREAO agent researches what came up and writes the email, next steps, three times to meet, and a tentative hold on your calendar. Reply "email" or "book" when you want them. Nothing is ever sent to the person you met.
 
 Text the line "I'm going to LA Hacks tomorrow" the night before and a Research agent builds a pack of who's there and who's hiring. Ask "how did I do today?" and a Coach agent that has read every conversation, with memory of earlier days, tells you who to chase first and one thing to do differently. Two more scheduled agents read the same journal: a Speech Coach that scores your verbatim debriefs for filler words and pacing, and a Relationships agent that flags stale follow-ups each week.
 
@@ -44,19 +44,19 @@ Research `5283bd7f-cc11-4b29-902b-2debe558b46f`,
 Follow-up `7a639acb-b15a-4d88-b66d-c76831b92ddf`,
 Coach `b095ddf1-cccc-42ae-a381-ccc7906b14a4`.
 Install links are in the Try it out section; run share links:
-https://agent.creao.ai/share/4bfe8cec5e35f2b116e00947a4049909
-https://agent.creao.ai/share/b23765406116daad02fef43cb845acab
-https://agent.creao.ai/share/255bb913f81f39b0cff9a4103706a61f
-https://agent.creao.ai/share/c2b9ed57edc1cc407c0d387488f02a24
-https://agent.creao.ai/share/28e20c6bfe45d020b53b92bc4e5660d5
-Pull the CREAO keys and Cue is just three cards and nothing after.
+Research run: https://agent.creao.ai/share/4bfe8cec5e35f2b116e00947a4049909
+Follow-up run: https://agent.creao.ai/share/b23765406116daad02fef43cb845acab
+Coach run: https://agent.creao.ai/share/255bb913f81f39b0cff9a4103706a61f
+Speech Coach run: https://agent.creao.ai/share/c2b9ed57edc1cc407c0d387488f02a24
+Relationships run: https://agent.creao.ai/share/28e20c6bfe45d020b53b92bc4e5660d5
+Pull the CREAO keys and Cue is three cards and a recap: no event pack, no email, no times or hold, no coaching.
 
 ## Challenges we ran into
 
 - The lens cut lines in half until we found the firmware's fixed 27 px line height and rebuilt the layout as exact multiples of it.
 - Deepgram can mishear names, so we boost terms, use name-and-org filtering, and snap to the attendee list within two letters.
 - An agent started over the API can't touch your calendar unless its autonomy is set to Auto. It silently skips instead; this took us an hour to find.
-- The first agent texts read like consultant reports. One page of voice rules and a hard cap of four texts per conversation fixed it.
+- The first agent texts read like consultant reports. One page of voice rules and a hard cap of three bubbles per text fixed it.
 - The UCLA wifi blocks phone-to-laptop traffic, so we use an AWS box.
 
 ## Accomplishments that we're proud of

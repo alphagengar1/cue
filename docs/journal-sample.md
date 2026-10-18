@@ -8,7 +8,7 @@ What `GET /journal.md` looks like after the morning's lookups, debriefs, the Fol
 
 Generated 2026-10-18T16:49:06.889Z. Wearer: Swaraj Adhikari, UCLA. Goal: internship.
 
-Entries: 39. People: 6. Days: 1.
+Entries: 28. People: 3. Days: 1.
 
 ## People (newest first)
 
@@ -20,8 +20,8 @@ Entries: 39. People: 6. Days: 1.
 - follow-up email: Even Hub SDK internship and the demo video / Hi Will, Thanks for talking with me at LA Hacks. You asked for the demo video tonight, so it is attached. It shows the whole flow end to end. I am applying for a summer internship on the Even Hub SDK team. If you have a few minutes, I would value your feedback on the demo and where I could fit. Swaraj Adhikari, UCLA
 - follow-up message: Hi Will, demo video coming tonight like you asked. I'm applying for the Even Hub SDK internship this summer, and I'd value your read on the demo. Swaraj
 - next steps: send will the demo video tonight; apply to the even hub sdk internship this week; follow up with will if he has not replied by friday
-- gmail draft: https://mail.google.com/mail/u/0/#drafts?compose=r5885563208932773826
-- proposed times: 2026-10-21 13:00-13:30, 2026-10-22 15:00-15:30, 2026-10-24 14:00-14:30 (hold on calendar) https://www.google.com/calendar/event?eid=ZGExNWx1M2gwZXBrYWFwcWZxbnEwOGJnZjAgYWxwaGFnZW5nYXIxQGcudWNsYS5lZHU
+- gmail draft: https://mail.google.com/mail/u/0/#drafts?compose=REDACTED
+- proposed times: 2026-10-21 13:00-13:30, 2026-10-22 15:00-15:30, 2026-10-24 14:00-14:30 (hold on calendar) https://www.google.com/calendar/event?eid=REDACTED
 - scheduling message: Hi Will, could we do 30 minutes on the Even Hub SDK internship and the demo? Wednesday Oct 21 at 1pm, Thursday Oct 22 at 3pm, or Saturday Oct 24 at 2pm, all Pacific. Swaraj
 
 ### Kai Cheng, founder and CEO, CREAO
@@ -39,8 +39,8 @@ Entries: 39. People: 6. Days: 1.
 - follow-up email: Cue demo video and the Apple Intelligence internship / Hi Tim, Thanks for the time at LA Hacks this weekend. You asked me to email you about the Cue demo video, and you wanted to see it running on the glasses. The clip is ready, and I will send it over next. I am applying for the Apple Intelligence summer internship you mentioned, so I would like to know which team fits best before I submit. Swaraj Adhikari, UCLA
 - follow-up message: Hi Tim, Swaraj from LA Hacks. Sending the Cue demo video next, and I'm applying for the Apple Intelligence summer internship. Which team should I target? - Swaraj
 - next steps: send tim the cue demo video tonight; apply to the apple intelligence summer internship; record a clean glasses demo clip this week
-- gmail draft: https://mail.google.com/mail/u/0/#drafts?compose=r147429375652025580
-- proposed times: 2026-10-22 09:00-09:30, 2026-10-24 16:00-16:30, 2026-10-25 10:00-10:30 (hold on calendar) https://www.google.com/calendar/event?eid=MDRvdmg3Y3ZjbnU0dDE5Z3NoMGtuZWExajQgYWxwaGFnZW5nYXIxQGcudWNsYS5lZHU
+- gmail draft: https://mail.google.com/mail/u/0/#drafts?compose=REDACTED
+- proposed times: 2026-10-22 09:00-09:30, 2026-10-24 16:00-16:30, 2026-10-25 10:00-10:30 (hold on calendar) https://www.google.com/calendar/event?eid=REDACTED
 - scheduling message: Hi Tim, thanks again for the talk at LA Hacks. Could we grab 30 minutes about the Cue demo and the Apple Intelligence internship? I am free Thu Oct 22 at 9am, Sat Oct 24 at 4pm, or Sun Oct 25 at 10am (Pacific). Swaraj
 
 ## What the wearer said (verbatim speech, newest first)

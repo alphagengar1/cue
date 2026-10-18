@@ -34,7 +34,7 @@ export function coachHistory(now = new Date()): CoachEntry[] {
       cards: b.cards.map((c) => ({ kind: c.kind, title: c.title, body: c.body.replace(/\n/g, " ") })),
       debrief: b.debrief ?? "",
       conversation: (b.conversation ?? "").slice(0, 4000),
-      followUpSent: !!person?.followUp?.email,
+      followUpSent: !!(b.followUp?.email ?? person?.followUp?.email), // drafted by the agent; the wearer presses send
       goal: store.goal,
     };
   });

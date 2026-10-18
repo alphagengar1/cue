@@ -157,7 +157,10 @@ export function journalMarkdown(now = new Date()): string {
     }
     out.push(``);
   }
-  const speech = all.filter((e) => e.type === "say" || e.type === "debrief").slice(-100).reverse();
+  // A spoken debrief is journaled twice (as the utterance and as the debrief); show it once so speech stats are not inflated.
+  const saidKey = (e: (typeof all)[number]) => `${e.briefId ?? ""}|${String((e.data as { text?: unknown }).text ?? "").trim()}`;
+  const said = new Set(all.filter((e) => e.type === "say").map(saidKey));
+  const speech = all.filter((e) => e.type === "say" || (e.type === "debrief" && !said.has(saidKey(e)))).slice(-100).reverse();
   if (speech.length) {
     out.push(`## What the wearer said (verbatim speech, newest first)`, ``);
     for (const e of speech) {

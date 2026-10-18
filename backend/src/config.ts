@@ -34,9 +34,9 @@ export const config = {
   // Agent ids: the Cue agents built on agent.creao.ai (README.md). Used by both transports.
   creaoAgents: {
     // Three merged agents (agents/research.md, follow-up.md, coach.md) are the plan; the split names still work.
-    eventLoader: env("CREAO_RESEARCH_ID") ?? env("CREAO_EVENT_LOADER_ID") ?? "7ed5ac12-fb85-4545-9e4e-abbeaa25db1a",
-    personResearcher: env("CREAO_RESEARCH_ID") ?? env("CREAO_PERSON_RESEARCHER_ID") ?? "e496e45b-c8eb-4079-9aff-876071501d67",
-    briefWriter: env("CREAO_RESEARCH_ID") ? undefined : (env("CREAO_BRIEF_WRITER_ID") ?? "d5ded73b-03b6-407d-be3e-5d332d6e869a"),
+    eventLoader: env("CREAO_RESEARCH_ID") ?? env("CREAO_EVENT_LOADER_ID") ?? "5283bd7f-cc11-4b29-902b-2debe558b46f",
+    personResearcher: env("CREAO_RESEARCH_ID") ?? env("CREAO_PERSON_RESEARCHER_ID") ?? "5283bd7f-cc11-4b29-902b-2debe558b46f",
+    briefWriter: env("CREAO_RESEARCH_ID") ? undefined : env("CREAO_BRIEF_WRITER_ID"),
     followUpWriter: env("CREAO_FOLLOWUP_ID") ?? env("CREAO_FOLLOW_UP_WRITER_ID"),
     meetingScheduler: env("CREAO_FOLLOWUP_ID") ? undefined : env("CREAO_MEETING_SCHEDULER_ID"),
     networkingCoach: env("CREAO_COACH_ID") ?? env("CREAO_NETWORKING_COACH_ID"),

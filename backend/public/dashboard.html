@@ -145,7 +145,7 @@
 
   <section class="grid2">
     <div class="panel">
-      <h2>Open loops <span class="sub">no reply yet, oldest first</span></h2>
+      <h2>Open loops <span class="sub">drafted, no hold yet, oldest first</span></h2>
       <div id="loops"></div>
     </div>
     <div class="panel">
@@ -222,7 +222,7 @@
     for (const e of entries) if (e.type === "goal" && inWin(e.at) && typeof e.data?.goal === "string") goals[e.data.goal] = (goals[e.data.goal] || 0) + 1;
     return { met, withFu, sameDay, debriefed, replied, scheduled, goals,
       followUpRate: pct(withFu.length, met.length), sameDayRate: pct(sameDay.length, met.length),
-      debriefRate: pct(debriefed.length, met.length), replyRate: pct(replied.length, withFu.length) };
+      debriefRate: pct(debriefed.length, met.length), replyRate: pct(replied.length, met.length) };
   }
 
   function delta(now, before, unit) {
@@ -265,7 +265,7 @@
       kpi("Follow-up rate", fmtPct(cur.followUpRate), `${cur.withFu.length} of ${cur.met.length}`, prev && delta(cur.followUpRate, prev.followUpRate, " pts")) +
       kpi("Same-day follow-up", fmtPct(cur.sameDayRate), `${cur.sameDay.length} of ${cur.met.length}`, prev && delta(cur.sameDayRate, prev.sameDayRate, " pts")) +
       kpi("Debrief rate", fmtPct(cur.debriefRate), `${cur.debriefed.length} of ${cur.met.length}`, prev && delta(cur.debriefRate, prev.debriefRate, " pts")) +
-      kpi("Recap texted", fmtPct(cur.replyRate), `${cur.replied.length} of ${cur.withFu.length} follow-ups`, prev && delta(cur.replyRate, prev.replyRate, " pts")) +
+      kpi("Recap texted", fmtPct(cur.replyRate), `${cur.replied.length} of ${cur.met.length} met`, prev && delta(cur.replyRate, prev.replyRate, " pts")) +
       kpi("Times booked", cur.scheduled.length, "calendar holds", prev && delta(cur.scheduled.length, prev.scheduled.length, ""));
 
     // per-day series
@@ -284,7 +284,7 @@
     $("chartSub").textContent = label;
 
     // open loops: follow-up drafted but no recap texted and no hold on the calendar; oldest first
-    const loops = people.filter((p) => p.followUp && !p.recapsSent && !(p.schedule?.calendarEventCreated))
+    const loops = people.filter((p) => p.followUp && !(p.schedule?.calendarEventCreated))
       .map((p) => ({ p, since: Math.floor((now - Date.parse(p.lastSeen)) / DAY) })).sort((a, b) => b.since - a.since);
     $("loops").innerHTML = loops.length ? `<table><tr><th>Who</th><th>Since</th><th>Next</th></tr>${loops.map(({ p, since }) => {
       const stage = since >= 7 ? "bad" : since >= 3 ? "warn" : "";
@@ -296,7 +296,7 @@
     const c = [...entries].reverse().find((e) => e.type === "coaching");
     if (c) {
       const d = c.data;
-      const list = (arr) => Array.isArray(arr) && arr.length ? `<ul>${arr.map((x) => `<li>${esc(typeof x === "string" ? x : x.text || x.name || JSON.stringify(x))}</li>`).join("")}</ul>` : "";
+      const list = (arr) => Array.isArray(arr) && arr.length ? `<ul>${arr.map((x) => `<li>${esc(typeof x === "string" ? x : (x.action ? x.name + ": " + x.action : x.text || x.name) || JSON.stringify(x))}</li>`).join("")}</ul>` : "";
       $("coachWhen").textContent = new Date(c.at).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
       $("coach").innerHTML =
         (d.summary ? `<div><div class="k">Summary</div><p>${esc(d.summary)}</p></div>` : "") +
@@ -330,7 +330,7 @@
       `${cur.met.length} met · ${cur.withFu.length} followed up · ${cur.sameDay.length} same day`,
       loops.length ? `${loops.length} open loop${loops.length > 1 ? "s" : ""}: ${loops.slice(0, 2).map((l) => l.p.name.split(" ")[0]).join(", ")}${loops.length > 2 ? "…" : ""}` : "no open loops",
     ];
-    if (c?.data?.priorities?.[0]) lines.push(`→ ${typeof c.data.priorities[0] === "string" ? c.data.priorities[0] : c.data.priorities[0].text || ""}`);
+    if (c?.data?.priorities?.[0]) lines.push(`→ ${typeof c.data.priorities[0] === "string" ? c.data.priorities[0] : (c.data.priorities[0].action ? c.data.priorities[0].name + ": " + c.data.priorities[0].action : c.data.priorities[0].name || "")}`);
     else if (loops[0]) lines.push(`→ chase ${loops[0].p.name} first (${loops[0].since}d)`);
     if (c?.data?.nextTime) lines.push(`next: ${Array.isArray(c.data.nextTime) ? c.data.nextTime[0] : c.data.nextTime}`);
     $("hudBody").textContent = lines.map((l) => l.length > 48 ? l.slice(0, 47) + "…" : l).slice(0, 5).join("\n");
