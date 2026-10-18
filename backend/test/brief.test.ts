@@ -29,7 +29,7 @@ describe("template fallback (no keys)", () => {
       const out = await buildBrief("Jordan, Sentry, developer advocate");
       assert.equal(out.fallback, true);
       assert.equal(out.brief.match.confidence, "high");
-      assert.equal(out.brief.query.name, "Jordan");
+      assert.equal(out.brief.query.name, "Jordan Lee"); // the resolved attendee name, not the misheard or partial one
       const kinds = out.brief.cards.map((c) => c.kind);
       assert.deepEqual(kinds, ["context", "angle"], "connect needs a sourced fact, so the template omits it");
       out.brief.cards.forEach(assertValidCard);
