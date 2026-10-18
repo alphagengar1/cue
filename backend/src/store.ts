@@ -4,8 +4,7 @@
 import fs from "node:fs";
 import path from "node:path";
 import type {
-  Brief, Event, Goal, Organization, Person, WearerProfile,
-} from "../../shared/types.js";
+  Brief, Event, Goal, Organization, Person, WearerProfile, FollowUp } from "../../shared/types.js";
 import { BACKEND_DIR, config } from "./config.js";
 import { cleanFacts, factAboutPerson, hostOf, sanitize, sortFacts } from "./safety.js";
 
@@ -72,6 +71,15 @@ class Store {
   people = new Map<string, Person>();
   briefs = new Map<string, Brief>();
   runs = new Map<string, RunRecord>();
+
+  /** The matched person behind a brief, if any. */
+  personFor(brief: Pick<Brief, "match">): Person | undefined {
+    return brief.match.personId ? this.people.get(brief.match.personId) : undefined;
+  }
+  /** Follow-up output for a brief: its own run first, then the matched person's (hand-loaded, or an earlier conversation). */
+  followUpFor(brief: Pick<Brief, "match" | "followUp">): FollowUp | undefined {
+    return brief.followUp ?? this.personFor(brief)?.followUp;
+  }
   seenDeliveries = new Set<string>();
   activeEventId: string | null = null;
   profile: WearerProfile = { ...DEFAULT_PROFILE };

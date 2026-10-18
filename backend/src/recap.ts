@@ -67,14 +67,12 @@ export function suggestText(brief: Brief): string {
  * the caller falls back to the fast writer. This is what makes CREAO central, not an add-on.
  */
 export function followUpGate(brief: Brief): string | null {
-  const person = brief.match.personId ? store.people.get(brief.match.personId) : undefined;
-  if (person?.followUp?.email) return null;
+  // The brief's own run first: a re-debrief sets it back to pending, so an older draft never answers for a newer conversation.
+  if (brief.followUp?.status === "pending") return "still writing it, give me a minute ✍️";
+  if (store.followUpFor(brief)?.email) return null; // ready: this run, an earlier conversation, or a hand-loaded file
   if (!creaoEnabled("follow_up_writer")) return "the follow-up agent isn't connected, so there's no draft. connect it on agent.creao.ai and debrief again";
-  const runs = [...store.runs.values()].filter((r) => r.agent === "follow_up_writer" && r.briefId === brief.id);
-  const latest = runs.sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0];
-  if (!latest) return "no debrief yet for this person, so nothing to draft. hold the temple and say what happened";
-  if (latest.status === "pending") return "still writing it, give me a minute ✍️";
-  return null; // failed: the fast writer covers
+  if (!brief.debrief) return "no debrief yet for this person, so nothing to draft. hold the temple and say what happened";
+  return null; // the run failed, or never started (restart, rate-limit pause): the fast writer covers
 }
 
 const HELP = [
@@ -137,16 +135,22 @@ export async function handleReply(text: string, lastBriefId: string | null, now 
     return id ? "on it 🧠 looking at your whole day, give me about a minute" : "the coach isn't set up yet";
   }
   if (/^\s*(book|times?)\b/.test(t)) {
-    const person = last?.match.personId ? store.people.get(last.match.personId) : undefined;
-    const sched = person?.followUp?.schedule;
-    if (!sched) return "nothing to book yet. meet someone and debrief first";
+    const sched = last ? store.followUpFor(last)?.schedule : undefined;
+    if (!sched) {
+      if (!last) return "nothing to book yet. meet someone and debrief first";
+      if (last.followUp?.status === "pending") return "still working out times, give me a minute 📅";
+      if (!creaoEnabled("follow_up_writer")) return "the follow-up agent isn't connected, so there are no times. connect it on agent.creao.ai and debrief again";
+      return last.debrief ? "no times for this one, the agent didn't propose any. say \"email\" for the draft" : "nothing to book yet. hold the temple and say what happened first";
+    }
     const first = firstName(last!.query.name);
     // "book 2" / "book thu": move the tentative hold to that time (calendar.ts), then hand over the message.
     const pick = pickSlot(t, sched.proposedTimes);
     if (pick) {
       const r = await moveHold(sched, pick);
       if (!r.moved) return [`couldn't move the hold, ${r.reason}`, ...bookBubbles(sched, first)].slice(0, 5);
-      store.putPerson({ ...person!, followUp: { ...(person!.followUp ?? {}), schedule: r.schedule } });
+      const person = store.personFor(last!);
+      if (person) store.putPerson({ ...person, followUp: { ...(person.followUp ?? {}), schedule: r.schedule } });
+      if (last!.followUp) store.briefs.set(last!.id, { ...last!, followUp: { ...last!.followUp, schedule: r.schedule } });
       return holdMovedBubbles(r.schedule, first);
     }
     return bookBubbles(sched, first);
@@ -154,14 +158,15 @@ export async function handleReply(text: string, lastBriefId: string | null, now 
   if (/\b(email|mail|draft)\b/.test(t)) {
     if (!last) return "No recap yet, so nothing to draft. Meet someone first.";
     // The CREAO Follow-up agent writes the follow-up. Haiku steps in only when its run actually failed.
-    const gate = followUpGate(last);
-    if (gate) return gate;
-    const { subject, body } = await composeEmail(last);
-    const bubbles = [`Subject: ${subject}`, body];
-    // "email, what should I lead with?": answer the rest too.
+    // "email, what should I lead with?": the second half is answered whether or not the draft is ready.
     const rest = t.replace(/\b(email|mail|draft|me|an?|the|please|pls)\b/g, " ").replace(/[^a-z' ]/g, " ").trim();
-    if (rest.split(/\s+/).filter(Boolean).length >= 3) bubbles.push(...(await composeAnswer(rest, last)).split("\n"));
-    return bubbles;
+    const askedMore = rest.split(/\s+/).filter(Boolean).length >= 3;
+    const gate = followUpGate(last);
+    const bubbles: string[] = [];
+    if (gate) bubbles.push(gate);
+    else { const { subject, body } = await composeEmail(last); bubbles.push(`Subject: ${subject}`, body); }
+    if (askedMore) bubbles.push(...(await composeAnswer(rest, last)).split("\n"));
+    return bubbles.length === 1 ? bubbles[0] : bubbles;
   }
   if (/^(help|hi|hello|hey|yo|\?|what can you do)\b/.test(t) || t.length < 3) return HELP;
   return composeAnswer(text, last);

@@ -64,7 +64,7 @@ TEST: after creating the agent, run it once with this input and check the reply 
   "wearer": { "name": "Sam Lee", "school": "UCLA", "goal": "internship", "goalNote": "summer 2027 SWE intern", "summary": "I'm a UCLA CS student who builds developer tools and AI projects, including Cue, a smart-glasses networking assistant." },
   "today": "2026-10-18",
   "history": [
-    { "date": "2026-10-18", "person": { "name": "Tim Cook", "role": "co-founder", "org": "Sentry" }, "cards": [{ "kind": "connect", "title": "Ask about Seer", "body": "Seer debugs from errors, traces and commits. How does it pick root causes?" }], "debrief": "he said email him about seer, they are hiring summer interns, he wants to see the cue demo video", "conversation": "", "followUpSent": true, "goal": "internship" },
+    { "date": "2026-10-18", "person": { "name": "Jordan Lee", "role": "engineering lead", "org": "Sentry" }, "cards": [{ "kind": "connect", "title": "Ask about Seer", "body": "Seer debugs from errors, traces and commits. How does it pick root causes?" }], "debrief": "he said email him about seer, they are hiring summer interns, he wants to see the cue demo video", "conversation": "", "followUpSent": true, "goal": "internship" },
     { "date": "2026-10-18", "person": { "name": "Priya Shah", "role": "recruiter", "org": "Anduril" }, "cards": [{ "kind": "context", "title": "Who they are", "body": "Anduril builds autonomy and defense tech. No public info found for Priya." }], "debrief": "short chat, she said apply online, did not really get a next step", "conversation": "", "followUpSent": false, "goal": "internship" }
   ],
   "question": "how did I do today?"

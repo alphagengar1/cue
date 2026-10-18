@@ -42,15 +42,17 @@ export interface Person {
   lastResearchedAt?: string;
   fromEventList?: boolean;                          // loaded from an event file / event list (a known attendee)
   confirmed?: boolean;                              // the wearer picked them on the Confirm screen
-  // Hand-run CREAO Follow-up Writer output (agents/follow-up-writer.md). The texting voice builds on it.
-  followUp?: {
+  followUp?: FollowUp;                              // hand-loaded from an event file, or copied from a run
+}
+
+/** The Follow-up agent's output (agents/follow-up.md). Lives on the brief it was written for; mirrored on the matched person. */
+export interface FollowUp {
     agent?: string; agentId?: string; runLink?: string; debrief?: string;
     email?: { subject: string; body: string }; message?: string; nextSteps?: string[];
     draftLink?: string | null;                       // Gmail draft link from the Follow-up Writer (never sent)
     // Meeting Scheduler output (agents/meeting-scheduler.md), chained after the Follow-up Writer.
     // holdEventId/holdSource: the backend placed (and can move) the tentative hold through Google Calendar (backend/src/calendar.ts).
     schedule?: { proposedTimes: string[]; inviteTitle: string; inviteDescription: string; schedulingMessage: string; calendarEventCreated: boolean; eventLink: string | null; holdEventId?: string; holdSource?: "agent" | "backend" };
-  };
 }
 
 export interface WearerProfile {
@@ -81,6 +83,7 @@ export interface Brief {
   slowPath: { status: "none" | "running" | "done" | "failed"; runId?: string };
   debrief?: string;                                 // the wearer's own spoken note after the conversation (Photon follow-up)
   conversation?: string;                            // transcript recorded with the other person's consent (HUD asks first); never logged
+  followUp?: FollowUp & { status: "pending" | "ready" | "failed"; runId?: string };  // the Follow-up agent's run for this debrief, and its output once it lands (recap.ts followUpGate)
   decision?: { match: number; goalFit: number; lead: Card["kind"] };  // decision gate (agents/decision-gate.md); absent when the gate is off
   createdAt: string; updatedAt: string;
 }

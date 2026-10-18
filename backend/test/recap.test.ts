@@ -102,12 +102,12 @@ describe("handleReply", () => {
 
   test("'email' with no recap explains; with one, two bubbles: subject then body", async () => {
     assert.match((await handleReply("email", null)) as string, /No recap yet/);
-    const b = brief({ name: "Jordan Lee", org: "Sentry" });
+    const b = brief({ name: "Jordan Lee", org: "Sentry", debrief: "she said email her about Seer" });
     store.briefs.set(b.id, b);
     // No agent connected in tests: the reply says so instead of writing with Haiku (CREAO is central).
     assert.match((await handleReply("draft email pls", b.id)) as string, /follow-up agent isn't connected/);
     // A failed agent run: the fast writer covers.
-    store.runs.set("run_failed", { runId: "run_failed", agent: "follow_up_writer", briefId: b.id, status: "failed", startedAt: new Date().toISOString() });
+    store.briefs.set(b.id, { ...b, followUp: { status: "failed", runId: "run_failed" } });
     const { config } = await import("../src/config.js");
     const wasKey = config.creaoAppKeys.followUpWriter; const wasId = config.creaoAgents.followUpWriter;
     config.creaoAppKeys.followUpWriter = "capi_test"; config.creaoAgents.followUpWriter = "agent_test";
@@ -117,6 +117,43 @@ describe("handleReply", () => {
     assert.equal(out.length, 2);
     assert.match(out[0], /^Subject: /);
     assert.match(out[1], /^Hi Jordan,/);
+  });
+
+  test("followUpGate reads the brief: pending waits (even over an older draft), no run but a debrief falls back, ready on the brief alone is served, a blocked gate still answers the rest", async () => {
+    const { config } = await import("../src/config.js");
+    const wasKey = config.creaoAppKeys.followUpWriter; const wasId = config.creaoAgents.followUpWriter;
+    config.creaoAppKeys.followUpWriter = "capi_test"; config.creaoAgents.followUpWriter = "agent_test";
+    try {
+      // pending: a re-debrief restarted the run; the older email on the matched person must not answer
+      store.loadSample();
+      const jordan = [...store.people.values()].find((p) => p.name === "Jordan Lee")!;
+      store.putPerson({ ...jordan, followUp: { email: { subject: "Old draft", body: "Hi Jordan,\n\nold" }, message: "old msg" } });
+      const pending = brief({ name: "Jordan Lee", org: "Sentry", debrief: "second chat, she wants the demo video", match: { personId: jordan.id, confidence: "high", candidates: [] }, followUp: { status: "pending", runId: "run_p" } });
+      store.briefs.set(pending.id, pending);
+      assert.match((await handleReply("email", pending.id)) as string, /still writing/);
+      assert.match((await handleReply("book", pending.id)) as string, /still working out times/);
+      // a blocked gate still answers the second half of a compound question
+      const both = (await handleReply("email, what should i lead with?", pending.id)) as string[];
+      assert.ok(Array.isArray(both) && both.length >= 2, JSON.stringify(both));
+      assert.match(both[0], /still writing/);
+      // no run record at all (backend restarted, or the start failed) but a debrief: the fast writer covers
+      const norun = brief({ name: "Priya Shah", org: "Anduril", debrief: "she said apply online" });
+      store.briefs.set(norun.id, norun);
+      const fb = (await handleReply("email", norun.id)) as string[];
+      assert.equal(fb.length, 2); assert.match(fb[0], /^Subject: /); assert.match(fb[1], /^Hi Priya,/);
+      // no debrief yet: says so
+      const nod = brief({ name: "Sam Park", org: "Vercel" });
+      store.briefs.set(nod.id, nod);
+      assert.match((await handleReply("email", nod.id)) as string, /no debrief yet/);
+      assert.match((await handleReply("book", nod.id)) as string, /hold the temple/);
+      // ready on the brief with no matched person (a walk-up): the agent's email is what gets served
+      const walkup = brief({ name: "Alex Kim", org: "Nobody Labs", debrief: "cool chat", followUp: { status: "ready", runId: "run_w", email: { subject: "From the agent", body: "Hi Alex,\n\nagent body" }, message: "agent text", schedule: { proposedTimes: ["2026-10-21 14:00-14:30"], inviteTitle: "t", inviteDescription: "d", schedulingMessage: "Hi Alex, would Wed 2pm work?", calendarEventCreated: false, eventLink: null } } });
+      store.briefs.set(walkup.id, walkup);
+      const ready = (await handleReply("email", walkup.id)) as string[];
+      assert.deepEqual(ready, ["Subject: From the agent", "Hi Alex,\n\nagent body"]);
+      assert.match(await composeAnswer("write me a text to send him", walkup), /agent text/);
+      assert.match(((await handleReply("book", walkup.id)) as string[]).join("\n"), /would Wed 2pm work/);
+    } finally { config.creaoAppKeys.followUpWriter = wasKey; config.creaoAgents.followUpWriter = wasId; }
   });
 
   test("help, empty, and free-form questions", async () => {

@@ -535,7 +535,13 @@ function markFailed(rec: RunRecord, code: string): void {
     // Keep "ready" if hand-written orgs were already loaded (04 B5 fallback).
     if (ev && ev.creaoRunId === rec.runId && ev.loadStatus === "loading") ev.loadStatus = "failed";
   }
-  if (rec.briefId) setSlowPath(rec.briefId, { status: "failed", runId: rec.runId });
+  if (rec.briefId && rec.agent === "follow_up_writer") {
+    // The gate reads this: failed means the fast writer covers. Only this run's own status, never a newer debrief's.
+    const b = store.briefs.get(rec.briefId);
+    if (b?.followUp && b.followUp.runId === rec.runId) store.briefs.set(b.id, { ...b, followUp: { ...b.followUp, status: "failed" }, version: b.version + 1 });
+  } else if (rec.briefId && (rec.agent === "person_researcher" || rec.agent === "brief_writer")) {
+    setSlowPath(rec.briefId, { status: "failed", runId: rec.runId }); // the research chain is what slowPath tracks
+  }
 }
 
 /** Terminal slow-path change. Bumps version so the app's ?since= poll sees it. */
@@ -603,9 +609,11 @@ async function applyFollowUpWriter(rec: RunRecord, out: unknown): Promise<string
   const message = sanitize(d.message).trim().slice(0, 400);
   const nextSteps = d.nextSteps.map((s) => sanitize(s).trim().slice(0, 160)).filter(Boolean).slice(0, 3);
   const person = rec.personId ? store.people.get(rec.personId) : undefined;
-  if (person) {
-    store.putPerson({ ...person, followUp: { ...(person.followUp ?? {}), agent: "creao-follow-up-writer", agentId: agentIdFor("follow_up_writer"), email: { subject, body }, message, nextSteps, draftLink: d.draftLink ?? null } });
-  }
+  const written = { agent: "creao-follow-up-writer", agentId: agentIdFor("follow_up_writer"), email: { subject, body }, message, nextSteps, draftLink: d.draftLink ?? null };
+  if (person) store.putPerson({ ...person, followUp: { ...(person.followUp ?? {}), ...written } });
+  // The brief is the source of truth (a walk-up with no matched person still gets the agent's email).
+  { const b = rec.briefId ? store.briefs.get(rec.briefId) : undefined;
+    if (b) store.briefs.set(b.id, { ...b, followUp: { ...(b.followUp ?? {}), ...written, status: "ready", runId: rec.runId }, version: b.version + 1, updatedAt: new Date().toISOString() }); }
   // The agent's own recap and research notes go to the journal only; Haiku's instant recap already
   // reached the phone, and the wearer asked for fewer texts, not more.
   const recap = (d.recap ?? []).map((b) => sanitize(b).trim().slice(0, 160)).filter(Boolean).slice(0, 5);
@@ -669,6 +677,8 @@ async function applySchedule(rec: RunRecord, d: z.infer<typeof ScheduleOut>, opt
   });
   const person = rec.personId ? store.people.get(rec.personId) : undefined;
   if (person) store.putPerson({ ...person, followUp: { ...(person.followUp ?? {}), schedule } });
+  { const b = rec.briefId ? store.briefs.get(rec.briefId) : undefined;
+    if (b) store.briefs.set(b.id, { ...b, followUp: { status: "ready", runId: rec.runId, ...(b.followUp ?? {}), schedule }, version: b.version + 1 }); }
   const first = person?.name.split(/\s+/)[0] ?? "them";
   const r = opts.quiet ? { sent: false as const, reason: "sent with the follow-up wave" } : await sendText(scheduleBubbles(schedule, first));
   { const b0 = rec.briefId ? store.briefs.get(rec.briefId) : undefined;

@@ -26,18 +26,18 @@ const SAMPLES: Record<AgentKind, unknown> = {
     sourceText: "Sponsors: Even Realities (G2 glasses track), CREAO (agents track), Sentry (best use of Sentry).",
   },
   person_researcher: {
-    name: "Tim Cook", org: "Sentry", role: "co-founder", orgAliases: ["Sentry.io", "Getsentry"],
+    name: "Jordan Lee", org: "Sentry", role: "engineering lead", orgAliases: ["Sentry.io", "Getsentry"],
   },
   follow_up_writer: {
-    brief: { person: { name: "Tim Cook", role: "co-founder", org: "Sentry" }, cards: [{ kind: "connect", title: "Ask about Seer", body: "Seer debugs from errors and traces.", source: "blog.sentry.io" }] },
+    brief: { person: { name: "Jordan Lee", role: "engineering lead", org: "Sentry" }, cards: [{ kind: "connect", title: "Ask about Seer", body: "Seer debugs from errors and traces.", source: "blog.sentry.io" }] },
     debrief: "he said email him about Seer, they are hiring summer interns",
     goal: "internship",
     wearer: { name: "Test Student", school: "UCLA", major: "CS", summary: "CS student building a smart-glasses networking app.", interests: ["observability"], projects: ["Cue"], goalNote: "summer 2027 SWE intern" },
     eventName: "LA Hacks Fall 2026",
   },
   meeting_scheduler: {
-    person: { name: "Tim Cook", role: "co-founder", org: "Sentry" },
-    followUp: { email: { subject: "Following up on Seer", body: "Hi Tim,\n\nThanks for the chat.\n\nSam" }, message: "Hi Tim, great meeting you. Sam", nextSteps: ["Email Tim about Seer"] },
+    person: { name: "Jordan Lee", role: "engineering lead", org: "Sentry" },
+    followUp: { email: { subject: "Following up on Seer", body: "Hi Jordan,\n\nThanks for the chat.\n\nSam" }, message: "Hi Jordan, great meeting you. Sam", nextSteps: ["Email Jordan about Seer"] },
     debrief: "he said email him about seer", conversation: "",
     wearer: { name: "Sam Lee", school: "UCLA", availability: "weekday afternoons", timezone: "America/Los_Angeles" },
     eventName: "LA Hacks Fall 2026",
@@ -45,13 +45,13 @@ const SAMPLES: Record<AgentKind, unknown> = {
   networking_coach: {
     wearer: { name: "Sam Lee", school: "UCLA", goal: "internship", goalNote: "summer 2027 SWE intern", summary: "CS student building Cue." },
     today: "2026-10-17",
-    history: [{ date: "2026-10-17", person: { name: "Tim Cook", role: "co-founder", org: "Sentry" }, cards: [{ kind: "connect", title: "Ask about Seer", body: "Seer debugs from traces." }], debrief: "he said email him about seer", conversation: "", followUpSent: true, goal: "internship" }],
+    history: [{ date: "2026-10-17", person: { name: "Jordan Lee", role: "engineering lead", org: "Sentry" }, cards: [{ kind: "connect", title: "Ask about Seer", body: "Seer debugs from traces." }], debrief: "he said email him about seer", conversation: "", followUpSent: true, goal: "internship" }],
     question: "how did I do today?",
   },
   brief_writer: {
     person: {
-      name: "Tim Cook", role: "co-founder", match: "high",
-      facts: [{ text: "Co-founded Sentry, the open-source error monitoring project.", sourceUrl: "https://sentry.io/about/", sourceKind: "org_site" }],
+      name: "Jordan Lee", role: "engineering lead", match: "high",
+      facts: [{ text: "Leads engineering on Seer, Sentry's AI debugging agent.", sourceUrl: "https://blog.sentry.io/", sourceKind: "org_site" }],
     },
     organization: { name: "Sentry", oneLiner: "Application monitoring: errors, tracing, logs and replay.", focusNow: [] },
     wearer: { name: "Test Student", summary: "CS student building a smart-glasses networking app.", interests: ["observability"], projects: ["Cue"], goal: "internship" },

@@ -37,7 +37,7 @@ const shortEvent = (name: string | undefined): string =>
   (name ?? "the event").replace(/\s*\([^)]*\)\s*$/, "").replace(/\s+(Fall|Spring|Summer|Winter)\s+\d{4}$/i, "").trim() || "the event";
 
 const context = (brief: Brief, debrief?: string) => {
-  const person = brief.match.personId ? store.people.get(brief.match.personId) : undefined;
+  const person = store.personFor(brief);
   const org = person ? store.orgs.get(`${brief.eventId}:${person.orgId}`) ?? null : null;
   const p = store.profile;
   const facts: Fact[] = person?.facts ?? [];
@@ -98,7 +98,7 @@ export async function composeRecap(brief: Brief, debrief?: string): Promise<stri
 /** Follow-up email with real paragraphs. Falls back to the template in recap.ts. */
 export async function composeEmail(brief: Brief, debrief?: string): Promise<{ subject: string; body: string }> {
   // The CREAO Follow-up agent is the engine: its email wins whenever it has landed.
-  const ready = (brief.match.personId ? store.people.get(brief.match.personId) : undefined)?.followUp?.email;
+  const ready = store.followUpFor(brief)?.email;
   if (ready?.subject && ready.body) return ready;
   try {
     const out = await parseWithModel(SYSTEM, {
@@ -117,7 +117,7 @@ export async function composeEmail(brief: Brief, debrief?: string): Promise<{ su
   } catch (err) {
     console.warn(`[compose] email fell back: ${err instanceof LlmUnavailable ? err.message : String(err)}`);
   }
-  const pre = (brief.match.personId ? store.people.get(brief.match.personId) : undefined)?.followUp?.email;
+  const pre = store.followUpFor(brief)?.email;
   if (pre) return pre; // CREAO Follow-up Writer's email, loaded from the event file
   const t = draftEmail(brief);
   const [subjectLine, ...rest] = t.split("\n");
@@ -168,7 +168,7 @@ export async function composeEventAnswer(question: string): Promise<string> {
 /** Answer a free-form text ("what was his talk about?", "write me a short text to send him"). */
 export async function composeAnswer(question: string, brief: Brief | null): Promise<string> {
   // "text" -> the CREAO Follow-up agent's message when it has landed.
-  const readyMsg = brief?.match.personId ? store.people.get(brief.match.personId)?.followUp?.message : undefined;
+  const readyMsg = brief ? store.followUpFor(brief)?.message : undefined;
   if (brief && readyMsg && /\b(text|message|dm)\b/i.test(question) && !/\b(what|why|how|should)\b/i.test(question)) return `here's one to send ${brief.query.name.split(/\s+/)[0]}:\n${readyMsg}`;
   if (!brief) return composeEventAnswer(question);
   try {
@@ -185,7 +185,7 @@ export async function composeAnswer(question: string, brief: Brief | null): Prom
   } catch (err) {
     console.warn(`[compose] answer fell back: ${err instanceof LlmUnavailable ? err.message : String(err)}`);
   }
-  const pre = (brief.match.personId ? store.people.get(brief.match.personId) : undefined)?.followUp?.message;
+  const pre = store.followUpFor(brief)?.message;
   if (/\b(text|message|dm)\b/i.test(question)) return pre ? `Here's one to send ${brief.query.name.split(/\s+/)[0]}:\n${pre}` : suggestText(brief);
   return `I only have what's in the brief for ${brief.query.name}. Say "email" for a draft, or "who did I meet" for today's list.`;
 }

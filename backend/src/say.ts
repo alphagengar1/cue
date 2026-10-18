@@ -64,7 +64,7 @@ export async function handleSay(text: string, briefId?: string): Promise<SayOutc
   };
   const debrief = async (): Promise<SayOutcome> => {
     if (!current) return done({ intent: "unknown", say: "No one to debrief yet.\nSay a name, company, role first." });
-    const brief: Brief = { ...current, debrief: text.trim().slice(0, 600), version: current.version + 1, updatedAt: new Date().toISOString() };
+    let brief: Brief = { ...current, debrief: text.trim().slice(0, 600), version: current.version + 1, updatedAt: new Date().toISOString() };
     store.briefs.set(brief.id, brief);
     journal({ type: "debrief", briefId: brief.id, person: brief.query, data: { text: brief.debrief } });
     // With the Follow-up agent configured, it writes the recap itself after post-conversation research
@@ -85,6 +85,10 @@ export async function handleSay(text: string, briefId?: string): Promise<SayOutc
       }, { briefId: brief.id, personId: brief.match.personId ?? undefined });
       notes.push(runId ? `follow_up_writer run ${runId}` : "follow_up_writer start failed");
       creaoRunId = runId ?? undefined;
+      // The outcome lives on the brief (recap.ts followUpGate): pending now, ready or failed when the run ends.
+      // A second debrief of the same person starts over, so "email" waits for the new draft instead of serving the old one.
+      brief = { ...brief, followUp: runId ? { status: "pending", runId } : { status: "failed" }, version: brief.version + 1 };
+      store.briefs.set(brief.id, brief);
     }
     // Long-run agent: after every third debrief of the day, the Networking Coach reviews the day.
     if (debriefsToday() % 3 === 0) { const id = await startCoach("", "third debrief"); if (id) notes.push(`networking_coach run ${id}`); }
