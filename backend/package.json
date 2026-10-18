@@ -15,7 +15,8 @@
     "smoke": "tsx src/smoke.ts",
     "bench": "tsx src/bench.ts",
     "creao:test": "tsx --env-file-if-exists=.env src/creao-test.ts",
-    "google:auth": "tsx scripts/google-auth.ts"
+    "google:auth": "tsx scripts/google-auth.ts",
+    "simulate": "tsx scripts/simulate-day.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.135.0",
