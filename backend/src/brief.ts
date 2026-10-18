@@ -4,10 +4,11 @@
 import type { Brief, Card, Confidence, Goal, Organization, Person, Query } from "../../shared/types.js";
 import { config } from "./config.js";
 import { creaoEnabled, startRun } from "./creao.js";
+import { decide, type Decision } from "./decide.js";
 import { CueError } from "./errors.js";
 import { LlmUnavailable, writeCards, type BriefInput } from "./llm.js";
 import { findOrg, findStoredPerson, parseTranscript } from "./parse.js";
-import { cleanSource, enforceCards, hostOf } from "./safety.js";
+import { cleanSource, enforceCards, hostOf, isBoilerplate } from "./safety.js";
 import {
   filterResults, fullNamesIn, resultsToFacts, searchPerson, SearchUnavailable, type SearchResult,
 } from "./search.js";
@@ -70,8 +71,8 @@ export function templateCard(
       source: cleanSource(fact?.sourceUrl) ?? `${org.id} (event pack)`,
     };
   }
-  // connect: needs a real fact to open with
-  const f = person?.facts[0];
+  // connect: needs a real fact to open with (not a nav/boilerplate snippet)
+  const f = person?.facts.find((x) => !isBoilerplate(x.text));
   if (!f) return null;
   return { kind, title: "Connect", body: `Ask about: ${f.text}`, source: cleanSource(f.sourceUrl) };
 }
@@ -223,6 +224,34 @@ export async function buildBrief(text: string): Promise<BriefOutcome> {
     }
   }
 
+  // Decision gate (agents/decision-gate.md): one Decisions API call, 700 ms cap, off without a key.
+  // match < 0.6 on a search-only person -> treat as "no public info" (never a card about a stranger);
+  // sensitive[i] > 0.5 -> that fact is dropped before the writer; lead -> that card shows first.
+  let decision: Decision | null = null;
+  if (person && confidence !== "low") {
+    const tD = Date.now();
+    decision = await decide({
+      query, goal: store.goal, goalNote: store.profile.goalNote,
+      facts: person.facts.map((f) => ({ text: f.text, sourceUrl: f.sourceUrl })),
+    }, { timeoutMs: config.decideTimeoutMs });
+    timings.decide = Date.now() - tD;
+    if (decision) {
+      const d = decision;
+      notes.push(`decide ${timings.decide}ms match ${d.match.toFixed(2)} fit ${d.goalFit.toFixed(1)} lead ${d.lead}`);
+      const keep = person.facts.filter((_, i) => (d.sensitive[i] ?? 0) <= 0.5);
+      if (keep.length !== person.facts.length) {
+        notes.push(`decide dropped ${person.facts.length - keep.length} sensitive fact(s)`);
+        person = { ...person, facts: keep };
+      }
+      if (!stored && d.match < 0.6) {
+        notes.push("decide: match below 0.6, no person cards");
+        confidence = "low"; person = null; candidates.length = 0;
+      }
+    } else {
+      notes.push(`decide off/skipped (${timings.decide}ms)`);
+    }
+  }
+
   const lowPrefix = confidence === "low"
     ? (searchFailed && !stored ? "Person lookup unavailable." : `No public info found for ${query.name}.`)
     : undefined;
@@ -236,7 +265,9 @@ export async function buildBrief(text: string): Promise<BriefOutcome> {
     transcript: text,
     query,
     match: { personId: person?.id ?? null, confidence, candidates },
-    cards,
+    // Lead card first (stable: the other two keep their order).
+    cards: decision ? [...cards].sort((a, b) => Number(b.kind === decision!.lead) - Number(a.kind === decision!.lead)) : cards,
+    ...(decision ? { decision: { match: decision.match, goalFit: decision.goalFit, lead: decision.lead } } : {}),
     slowPath: { status: "none" },
     createdAt: t, updatedAt: t,
   };
@@ -257,6 +288,7 @@ export async function buildBrief(text: string): Promise<BriefOutcome> {
     "cue.ms.store": timings.store,
     "cue.ms.search": timings.search,
     "cue.ms.llm": timings.llm,
+    "cue.ms.decide": timings.decide,
     "cue.ms.total": timings.total,
   });
   return { brief: store.briefs.get(brief.id)!, fallback, notes, timings };
@@ -293,9 +325,10 @@ export async function confirmPerson(briefId: string, personId: string | null): P
   let next: Brief;
 
   if (personId === null) {
-    // "Neither": org-only, one context card.
+    // "Neither": org-only, one context card. Org unknown too: the generic angle card (Brief.cards rule).
     const prefix = `${brief.query.name} not confirmed.`;
-    const card = templateCard("context", brief.query, org, null, store.goal, { lowPrefix: prefix });
+    const card = templateCard("context", brief.query, org, null, store.goal, { lowPrefix: prefix })
+      ?? templateCard("angle", brief.query, org, null, store.goal);
     next = {
       ...brief,
       match: { ...brief.match, personId: null, confidence: "low" },
@@ -304,22 +337,28 @@ export async function confirmPerson(briefId: string, personId: string | null): P
   } else {
     const idx = brief.match.candidates.findIndex((c) => c.personId === personId);
     if (idx < 0) throw new CueError("BAD_REQUEST", `personId ${personId} is not a candidate on this brief`);
-    const person = store.people.get(personId) ?? null;
+    let person = store.people.get(personId) ?? null;
+    if (person && !person.confirmed) {
+      person = { ...person, confirmed: true };
+      store.putPerson(person);
+    }
     if (idx === 0 || !person) {
       next = { ...brief, match: { ...brief.match, personId, confidence: "high" } };
     } else {
       const r = await writeBriefCards(brief.query, org, person, "high", notes);
       fallback = r.fallback;
-      next = { ...brief, match: { ...brief.match, personId, confidence: "high" }, cards: r.cards };
+      // Re-read after the LLM await: a slow-path update may have landed meanwhile. Keep its slowPath.
+      const cur = store.briefs.get(briefId) ?? brief;
+      next = { ...cur, match: { ...cur.match, personId, confidence: "high" }, cards: r.cards };
     }
     if (person) {
-      next = { ...next, version: brief.version + 1, updatedAt: now() };
+      next = { ...next, version: next.version + 1, updatedAt: now() };
       store.briefs.set(next.id, next);
       maybeStartResearch(next, person, org);
       return { brief: store.briefs.get(next.id)!, fallback, notes };
     }
   }
-  next = { ...next, version: brief.version + 1, updatedAt: now() };
+  next = { ...next, version: next.version + 1, updatedAt: now() };
   store.briefs.set(next.id, next);
   return { brief: next, fallback, notes };
 }
@@ -342,11 +381,13 @@ export async function regenerateAngle(briefId: string): Promise<BriefOutcome> {
     brief.query, org, person, brief.match.confidence, notes, undefined, ["angle"],
   );
   const angle = cards.find((c) => c.kind === "angle");
-  if (!angle) return { brief, fallback, notes };
+  // Re-read after the LLM await: the slow path may have replaced cards 1-2 meanwhile. Change only card 3.
+  const cur = store.briefs.get(briefId) ?? brief;
+  if (!angle || !cur.cards.some((c) => c.kind === "angle")) return { brief: cur, fallback, notes };
   const next: Brief = {
-    ...brief,
-    cards: brief.cards.map((c) => (c.kind === "angle" ? angle : c)),
-    version: brief.version + 1,
+    ...cur,
+    cards: cur.cards.map((c) => (c.kind === "angle" ? angle : c)),
+    version: cur.version + 1,
     updatedAt: now(),
   };
   store.briefs.set(next.id, next);

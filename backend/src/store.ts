@@ -6,6 +6,7 @@ import type {
   Brief, Event, Goal, Organization, Person, WearerProfile,
 } from "../../shared/types.js";
 import { config } from "./config.js";
+import { cleanFacts, factAboutPerson, hostOf, sanitize, sortFacts } from "./safety.js";
 
 export interface RunRecord {
   runId: string;
@@ -20,8 +21,29 @@ export interface RunRecord {
 interface SampleFile {
   event: Event;
   organizations: Omit<Organization, "eventId">[];
-  people: { name: string; orgId: string; role?: string }[];
+  // `facts`/`headline`/`match`/`research`: optional hand-run CREAO Person Researcher output
+  // (agents/person-researcher.md, "Loading the output into Cue"). Facts go through the same checks as live research.
+  people: {
+    name: string; orgId: string; role?: string; headline?: string;
+    facts?: unknown[]; match?: string; matchReason?: string;
+    research?: { agent?: string; agentId?: string; runLink?: string; date?: string };
+    followUp?: Person["followUp"];                 // hand-run CREAO Follow-up Writer output (agents/follow-up-writer.md)
+  }[];
   profile?: Omit<WearerProfile, "id">;
+}
+
+/** Keep the Follow-up Writer's output to plain, bounded strings (it is pasted by hand). */
+function cleanFollowUp(f: NonNullable<Person["followUp"]>): NonNullable<Person["followUp"]> {
+  const str = (s: unknown, n: number) => (typeof s === "string" ? sanitize(s).trim().slice(0, n) : undefined);
+  const email = f.email && typeof f.email === "object"
+    ? { subject: str(f.email.subject, 120) ?? "", body: (typeof f.email.body === "string" ? f.email.body.trim().slice(0, 2500) : "") }
+    : undefined;
+  return {
+    agent: str(f.agent, 60), agentId: str(f.agentId, 80), runLink: str(f.runLink, 200), debrief: str(f.debrief, 600),
+    ...(email && email.subject && email.body ? { email } : {}),
+    message: str(f.message, 400),
+    nextSteps: Array.isArray(f.nextSteps) ? f.nextSteps.map((s) => str(s, 160)).filter((s): s is string => !!s).slice(0, 3) : undefined,
+  };
 }
 
 export const slug = (s: string): string =>
@@ -100,18 +122,39 @@ class Store {
     return best;
   }
 
-  /** Load an event file (data/*.json). `withProfile: false` keeps the wearer profile pasted on the setup page. */
+  /**
+   * Load an event file (data/*.json). Replaces that event's orgs and people (two files may share an
+   * event id). `withProfile: false` keeps the wearer profile pasted on the setup page.
+   */
   loadSample(file = config.sampleEventFile, opts: { withProfile?: boolean } = {}): Event {
     const raw = JSON.parse(fs.readFileSync(file, "utf8")) as SampleFile;
     const ev = raw.event;
     this.events.set(ev.id, ev);
     this.activeEventId = ev.id;
+    for (const [k, o] of this.orgs) if (o.eventId === ev.id) this.orgs.delete(k);
+    for (const [k, p] of this.people) if (p.eventId === ev.id) this.people.delete(k);
     for (const o of raw.organizations) this.putOrg({ ...o, eventId: ev.id });
-    for (const p of raw.people) {
+    for (const p of raw.people ?? []) {
+      const org = this.getOrg(ev.id, p.orgId) ?? null;
+      const labels = [org?.name ?? "", ...(org?.aliases ?? []), p.orgId].filter(Boolean);
+      const hosts = (org?.focusNow ?? []).map((f) => hostOf(f.sourceUrl)).filter(Boolean);
+      const given = Array.isArray(p.facts) ? p.facts.length : 0;
+      const facts = sortFacts(cleanFacts(p.facts, 8, "article").filter((f) => factAboutPerson(f, p.name, labels, hosts)));
+      if (given && facts.length < given) {
+        console.warn(`[store] ${p.name}: kept ${facts.length}/${given} researched facts (need http(s) source, name + org, no sensitive/LinkedIn)`);
+      }
       this.upsertPerson(ev.id, p.orgId, p.name, {
         role: p.role,
+        ...(p.headline ? { headline: sanitize(p.headline).trim().slice(0, 120) } : {}),
+        facts,
         match: "high",
-        matchReason: "on the event list",
+        matchReason: facts.length
+          ? `on the event list; ${facts.length} researched fact(s) (${p.research?.agent ?? "event file"})`
+          : "on the event list",
+        fromEventList: true,
+        // Hand-run research present: don't start a paid Person Researcher run for them again.
+        ...(p.research && facts.length ? { lastResearchedAt: p.research.date ?? new Date().toISOString() } : {}),
+        ...(p.followUp ? { followUp: cleanFollowUp(p.followUp) } : {}),
       });
     }
     if (raw.profile && opts.withProfile !== false) this.profile = { ...raw.profile, id: "me" };

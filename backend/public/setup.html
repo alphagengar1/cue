@@ -127,6 +127,8 @@
       <textarea id="p_projects"></textarea>
       <label for="p_interests">Interests (comma separated)</label>
       <input id="p_interests">
+      <label for="p_resumeFile">Resume (PDF or .txt): fills the fields above for you to check, then Save</label>
+      <div class="row"><input id="p_resumeFile" type="file" accept=".pdf,.txt,application/pdf,text/plain" style="width:auto"><button type="button" id="p_resumeRead">Read resume</button><span class="msg" id="resumeMsg"></span></div>
       <label for="p_resume">Resume text (stored on the server only, never sent to the fast LLM or Sentry)</label>
       <textarea id="p_resume" style="min-height:120px"></textarea>
       <div class="row" style="margin-top:10px"><button class="primary" type="submit">Save profile</button></div>
@@ -257,6 +259,24 @@
       $("p_resume").value = p.resumeText || "";
     } catch {}
   }
+  $("p_resumeRead").onclick = async () => {
+    const f = $("p_resumeFile").files[0];
+    if (!f) return say($("resumeMsg"), "pick a PDF or .txt first", "bad");
+    const type = f.type === "application/pdf" || /\.pdf$/i.test(f.name) ? "application/pdf" : "text/plain";
+    say($("resumeMsg"), "reading (about 10 s)...");
+    try {
+      const headers = { "content-type": type };
+      if (token) headers.authorization = "Bearer " + token;
+      const res = await fetch("/api/profile/resume", { method: "POST", headers, body: f });
+      const data = await res.json().catch(() => null);
+      if (!res.ok) throw new Error(data?.error ? data.error.message : "HTTP " + res.status);
+      const d = data.draft;
+      const fill = (id, v) => { if (v) $(id).value = v; };
+      fill("p_name", d.name); fill("p_school", d.school); fill("p_major", d.major); fill("p_summary", d.summary);
+      fill("p_projects", (d.projects || []).join("\n")); fill("p_interests", (d.interests || []).join(", ")); fill("p_resume", d.text);
+      say($("resumeMsg"), "filled from the resume. Check the fields, then Save profile.", "ok");
+    } catch (e) { say($("resumeMsg"), e.message, "bad"); }
+  };
   $("profileForm").onsubmit = async (ev) => {
     ev.preventDefault();
     const opt = (v) => v.trim() || undefined;

@@ -2,24 +2,32 @@
 import type { Organization, Person, Query } from "../../shared/types.js";
 import { norm, store } from "./store.js";
 
-const clean = (s: string): string => s.replace(/[.?!;:"]+/g, " ").replace(/\s+/g, " ").trim();
+// Strip sentence punctuation but keep dots inside words ("Sentry.io", "Next.js").
+const clean = (s: string): string =>
+  s.replace(/[?!;:"]+/g, " ").replace(/\.(?!\w)|(?<!\w)\./g, " ").replace(/\s+/g, " ").trim();
 
-/**
- * 1. If the text splits on commas into 2-3 parts: name, org, role.
- * 2. Else find the longest org name/alias from the store inside the text:
- *    words before = name, words after = role.
- * 3. Else (unknown org, no commas): first word = name, last word = role if 3+ words, rest = org.
- */
-export function parseTranscript(text: string, orgs: Organization[] = store.eventOrgs()): Query {
-  const t = clean(text);
-  const parts = t.split(",").map((p) => p.trim()).filter(Boolean);
-  if (parts.length >= 2 && parts.length <= 3) {
-    const [name, org, role] = parts;
-    return role ? { name, org, role } : { name, org };
-  }
+// Spoken lead-ins before a name, and connectors between name and org ("um this is Alex Kim from ...").
+const FILLERS = ["um", "uh", "hi", "hey", "hello", "oh", "ok", "okay", "so", "and", "this is", "i'm", "i am",
+  "my name is", "name's", "meet", "that's", "thats", "it's", "its", "here's"];
+const CONNECTORS = ["from", "at", "with", "of", "who's", "who is", "and"];
+const FILLER_RE = new RegExp(`^(?:(?:${FILLERS.join("|")})(?:\\s+|$))+`, "i");
+const CONNECTOR_RE = new RegExp(`(?:^|\\s+)(?:${CONNECTORS.join("|")})$`, "i");
+const LEAD_CONNECTOR_RE = new RegExp(`^(?:${CONNECTORS.join("|")})(?:\\s+|$)`, "i");
 
-  const flat = parts.join(" ");
-  const lower = flat.toLowerCase();
+const tidyName = (s: string): string => {
+  let t = s.replace(/,/g, " ").replace(/\s+/g, " ").trim().replace(FILLER_RE, "");
+  for (let prev = ""; prev !== t;) { prev = t; t = t.replace(CONNECTOR_RE, "").trim(); }
+  return t;
+};
+const tidyRole = (s: string): string => {
+  let t = s.replace(/,/g, " ").replace(/\s+/g, " ").trim();
+  for (let prev = ""; prev !== t;) { prev = t; t = t.replace(LEAD_CONNECTOR_RE, "").replace(CONNECTOR_RE, "").trim(); }
+  return t;
+};
+
+/** Longest org name/alias from the store inside `text` (whole words, case-insensitive). */
+function findOrgSpan(text: string, orgs: Organization[]): { start: number; end: number } | null {
+  const lower = text.toLowerCase();
   let best: { start: number; end: number } | null = null;
   for (const o of orgs) {
     for (const label of [o.name, ...o.aliases]) {
@@ -33,13 +41,48 @@ export function parseTranscript(text: string, orgs: Organization[] = store.event
       if (!best || end - start > best.end - best.start) best = { start, end };
     }
   }
+  return best;
+}
+
+const withRole = (name: string, org: string, role: string): Query => (role ? { name, org, role } : { name, org });
+
+/**
+ * 1. Find the longest org name/alias from the store inside the text: words before = name
+ *    (fillers like "um this is" and connectors like "from" dropped; if the text before the org has
+ *    commas, the first non-filler part is the name and the rest is the role), words after = role.
+ * 2. Else, if the text splits on commas into 2-3 parts: name, org, role ("recruiter at X" -> role, org).
+ * 3. Else (unknown org, no commas): "<name> from/at <org>", or first word = name,
+ *    last word = role if 3+ words, rest = org.
+ */
+export function parseTranscript(text: string, orgs: Organization[] = store.eventOrgs()): Query {
+  const t = clean(text);
+  const best = findOrgSpan(t, orgs);
   if (best) {
-    const name = flat.slice(0, best.start).trim();
-    const org = flat.slice(best.start, best.end).trim();
-    const role = flat.slice(best.end).trim();
-    return role ? { name, org, role } : { name, org };
+    const before = t.slice(0, best.start);
+    const org = t.slice(best.start, best.end).trim();
+    let role = tidyRole(t.slice(best.end));
+    let name = tidyName(before);
+    if (before.includes(",")) {
+      const parts = before.split(",").map(tidyName).filter(Boolean);
+      name = parts[0] ?? "";
+      if (!role) role = tidyRole(parts.slice(1).join(" "));
+    }
+    return withRole(name, org, role);
   }
 
+  const parts = t.split(",").map((p) => p.trim()).filter(Boolean);
+  while (parts.length > 1 && !tidyName(parts[0])) parts.shift(); // "Hi, Priya, ..." -> drop the greeting
+  if (parts.length >= 2 && parts.length <= 3) {
+    const name = tidyName(parts[0]);
+    let [, org, role] = parts;
+    const at = /^(.+?)\s+(?:at|from|with)\s+(.+)$/i.exec(org);
+    if (at && !role) { role = at[1]; org = at[2]; }
+    return withRole(name, org, role ?? "");
+  }
+
+  const flat = tidyRole(parts.join(" ").replace(FILLER_RE, ""));
+  const from = /^(.+?)\s+(?:from|at|with)\s+(.+)$/i.exec(flat);
+  if (from) return { name: from[1], org: from[2] };
   const words = flat.split(" ").filter(Boolean);
   if (words.length >= 3) {
     return { name: words[0], org: words.slice(1, -1).join(" "), role: words[words.length - 1] };
@@ -81,11 +124,12 @@ export function findOrg(orgText: string, orgs: Organization[] = store.eventOrgs(
 
 /**
  * Name expansion: if the wearer said only a first name and the store has exactly one
- * Person at that org with that first name, return that person.
+ * Person at that org with that first name, return that person. Only known people count:
+ * from the event list, or confirmed by the wearer. Search guesses saved as Person records do not.
  */
 export function findStoredPerson(name: string, org: Organization | null): Person | null {
   if (!org || !name) return null;
-  const atOrg = store.eventPeople(org.eventId).filter((p) => p.orgId === org.id);
+  const atOrg = store.eventPeople(org.eventId).filter((p) => p.orgId === org.id && (p.fromEventList || p.confirmed));
   const full = atOrg.filter((p) => norm(p.name) === norm(name));
   if (full.length === 1) return full[0];
   const first = norm(name.split(" ")[0]);

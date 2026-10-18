@@ -42,7 +42,9 @@ export const config = {
   // Timeouts (01 section 7). STT is longer than 01's 2 s because there is no Groq fallback yet.
   sttTimeoutMs: num("STT_TIMEOUT_MS", 4000),
   searchTimeoutMs: num("SEARCH_TIMEOUT_MS", 1500),
-  llmTimeoutMs: num("LLM_TIMEOUT_MS", 3000),
+  llmTimeoutMs: num("LLM_TIMEOUT_MS", 4500), // Haiku p50 ~2.2 s, p95 ~2.8 s; 3 s cut real briefs to templates
+  // Decision gate cap. Measured 290 ms for 2 facts; the first call of a process and 13-fact inputs ran over 700 ms.
+  decideTimeoutMs: num("DECIDE_TIMEOUT_MS", 1200),
   maxAudioBytes: num("MAX_AUDIO_BYTES", 1_000_000), // ~31 s of s16le 16 kHz mono
   lookupsPerMinute: num("LOOKUPS_PER_MINUTE", 30),
 };

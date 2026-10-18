@@ -1,19 +1,24 @@
 // CREAO slow path (01 section 8, 03 section 7, design/creao-api-notes.md).
-// - startRun(): POST /v1/runs when CREAO_API_KEY and the agent id are set, else a no-op (returns null).
+// Developer Platform /v2 only (project key, USD wallet). /v1 (CLI Account keys, credits) is not used.
+// - startRun(): POST /v2/runs when CREAO_API_KEY (a /v2 project key) and the hosted agent id are set,
+//   else a no-op (returns null). Agent ids must be /v2 hosted agents on this project; agent.creao.ai
+//   (C-end) agent ids are AGENT_NOT_FOUND on /v2.
 // - Completion: webhook (creaoRouter) or the 15 s poller. Both end in finalize(), which re-fetches the
 //   run with our key (the webhook has no signature), extracts the JSON, validates it, and applies it.
 // - Never on the fast path: callers fire-and-forget, every network call has a timeout, all errors are caught.
 import express, { Router } from "express";
 import { z } from "zod";
-import type { Brief, Card, Fact, Organization, Person, SourceKind } from "../../shared/types.js";
+import type { Brief, Card, Organization, Person } from "../../shared/types.js";
 import { config } from "./config.js";
 import { writeCards, type BriefInput } from "./llm.js";
-import { enforceCards, filterFacts, sanitize } from "./safety.js";
+import { cleanFacts, enforceCards, factAboutPerson, hostOf, sanitize, sortFacts } from "./safety.js";
 import { newId, norm, slug, store, type RunRecord } from "./store.js";
 
 export type AgentKind = RunRecord["agent"];
 
 const BASE = (process.env.CREAO_BASE_URL?.trim() || "https://developer.creao.ai").replace(/\/$/, "");
+/** Optional exact /v2 catalog id (e.g. "openai/gpt-6-luna"). Unset: the hosted agent's saved default. */
+const MODEL = process.env.CREAO_MODEL?.trim() || undefined;
 const POLL_EVERY_MS = 15_000;
 const GIVE_UP_MS = 15 * 60_000;
 const HTTP_TIMEOUT_MS = 10_000;
@@ -35,10 +40,51 @@ export interface CreaoRun {
     artifacts?: { id?: string; title?: string; type?: string; url?: string }[];
     [k: string]: unknown;
   };
-  usage?: { credits?: number };
+  usage?: { models?: UsageModel[] };   // no credits on /v2; billed in USD from tokens
   error?: { code: string; message?: string };
   created_at?: string;
+  started_at?: string | null;
   completed_at?: string | null;
+  webhook_delivered_at?: string | null;
+}
+
+export interface UsageModel {
+  model: string;
+  kind: string;
+  input_tokens?: number;
+  output_tokens?: number;
+  cache_read_tokens?: number;
+  cache_write_tokens?: number;
+}
+
+/** NL create/edit run (GET /v2/agents/{agent_id}/edits/{run_id}). */
+export interface CreaoAgentEdit {
+  run_id: string;
+  agent_id: string;
+  status: "queued" | "running" | "succeeded" | "failed" | "cancelled";
+  result?: Record<string, unknown>;
+  usage?: { models?: UsageModel[] };
+  error?: { code: string; message?: string };
+}
+
+// USD per 1M tokens [input, output], copied from the Console Dashboard on 2026-10-17. Rates change;
+// this is only for logging an estimate. Unknown models -> no estimate.
+const USD_PER_MTOK: Record<string, [number, number]> = {
+  "anthropic/claude-sonnet-5-5": [2.6, 13],
+  "openai/gpt-6-luna": [0.13, 0.65],
+  "deepseek/deepseek-v4-flash": [0.286, 0.858],
+};
+
+export function usageSummary(run: { usage?: { models?: UsageModel[] } }): { inTok: number; outTok: number; usd: number | null } {
+  let inTok = 0, outTok = 0, usd: number | null = 0;
+  for (const m of run.usage?.models ?? []) {
+    const i = (m.input_tokens ?? 0) + (m.cache_read_tokens ?? 0) + (m.cache_write_tokens ?? 0);
+    const o = m.output_tokens ?? 0;
+    inTok += i; outTok += o;
+    const rate = USD_PER_MTOK[m.model];
+    usd = rate && usd !== null ? usd + (i * rate[0] + o * rate[1]) / 1e6 : null;
+  }
+  return { inTok, outTok, usd };
 }
 
 export class CreaoHttpError extends Error {
@@ -57,7 +103,7 @@ export function creaoEnabled(agent: AgentKind): boolean {
   return !!(config.creaoKey && agentIdFor(agent));
 }
 
-async function api<T>(method: "GET" | "POST", path: string, body?: unknown): Promise<T> {
+async function api<T>(method: "GET" | "POST" | "PATCH", path: string, body?: unknown): Promise<T> {
   if (!config.creaoKey) throw new CreaoHttpError(0, "NO_KEY");
   const res = await fetch(`${BASE}${path}`, {
     method,
@@ -78,20 +124,42 @@ async function api<T>(method: "GET" | "POST", path: string, body?: unknown): Pro
   return JSON.parse(text) as T;
 }
 
-/** POST /v1/runs. Throws CreaoHttpError on non-2xx. */
+/** POST /v2/runs (202). Throws CreaoHttpError on non-2xx. Body is closed: only documented fields. */
 export async function createRun(agentId: string, input: unknown, webhookUrl?: string): Promise<CreaoRun> {
   const body: Record<string, unknown> = { agent_id: agentId, input };
   if (webhookUrl) body.webhook_url = webhookUrl;
-  return api<CreaoRun>("POST", "/v1/runs", body);
+  if (MODEL) body.model = MODEL;
+  return api<CreaoRun>("POST", "/v2/runs", body);
 }
 
-/** GET /v1/runs/{id}. rawOutput=true swaps result.text for the full transcript. */
+/** GET /v2/runs/{id}. rawOutput=true prefers the full assistant transcript in result. */
 export async function getRun(runId: string, rawOutput = false): Promise<CreaoRun> {
-  return api<CreaoRun>("GET", `/v1/runs/${encodeURIComponent(runId)}${rawOutput ? "?raw_output=true" : ""}`);
+  return api<CreaoRun>("GET", `/v2/runs/${encodeURIComponent(runId)}${rawOutput ? "?raw_output=true" : ""}`);
 }
 
+/** GET /v2/agents: this project's hosted agents only (metadata). */
 export async function listAgents(): Promise<{ agents: { agent_id: string; name: string; status: string; version: string }[] }> {
-  return api("GET", "/v1/agents?limit=100");
+  return api("GET", "/v2/agents?limit=100");
+}
+
+/** GET /v2/me: probe the project key. */
+export async function getMe(): Promise<{ projectId: string; keyId: string }> {
+  return api("GET", "/v2/me");
+}
+
+/** POST /v2/agents: natural-language hosted-agent create (202, bills USD). Poll getAgentEdit after. */
+export async function createAgent(input: string): Promise<CreaoRun> {
+  return api<CreaoRun>("POST", "/v2/agents", { input, ...(MODEL ? { model: MODEL } : {}) });
+}
+
+/** GET /v2/agents/{agent_id}/edits/{run_id}: status of an NL create/edit run. */
+export async function getAgentEdit(agentId: string, runId: string): Promise<CreaoAgentEdit> {
+  return api("GET", `/v2/agents/${encodeURIComponent(agentId)}/edits/${encodeURIComponent(runId)}`);
+}
+
+/** GET /v2/agents/{agent_id}: includes skill_content and config_content. */
+export async function getAgent(agentId: string): Promise<{ agent_id: string; name: string; skill_content?: string | null; config_content?: string | null }> {
+  return api("GET", `/v2/agents/${encodeURIComponent(agentId)}`);
 }
 
 const TERMINAL = new Set(["completed", "failed", "cancelled"]);
@@ -166,9 +234,11 @@ function textsOf(run: CreaoRun): string[] {
 
 async function downloadArtifact(url: string): Promise<string | null> {
   try {
-    // The stable CREAO URL needs our key and 302s to temporary storage; never send the key to that origin.
+    // GET /v2/runs hydrates artifact URLs (signed). Send our key only to the CREAO origin itself,
+    // and never to a redirect target.
+    const sameOrigin = new URL(url).origin === new URL(BASE).origin;
     const first = await fetch(url, {
-      headers: { authorization: `Bearer ${config.creaoKey}` },
+      headers: sameOrigin ? { authorization: `Bearer ${config.creaoKey}` } : {},
       redirect: "manual",
       signal: AbortSignal.timeout(HTTP_TIMEOUT_MS),
     });
@@ -207,33 +277,9 @@ export async function extractResult(run: CreaoRun, agent: AgentKind): Promise<un
 // Validation of agent output (lenient: bad entries are dropped, not fatal)
 // ---------------------------------------------------------------------------
 
-const SOURCE_KINDS: SourceKind[] = ["talk", "podcast", "own_post", "personal_site", "github",
-  "article", "school_page", "team_page", "org_site", "search_snippet"];
-const SOURCE_RANK = new Map(SOURCE_KINDS.map((k, i) => [k, i]));
-
-const RawFact = z.object({
-  text: z.string().min(1),
-  sourceUrl: z.string().url(),
-  sourceKind: z.string().optional(),
-  date: z.string().nullish(),
-});
-
 const clip = (s: string, n: number) => (s.length > n ? s.slice(0, n - 3).trimEnd() + "..." : s);
 
-/** Validate, clip and safety-filter facts from agent output. */
-export function cleanFacts(raw: unknown, max: number, defaultKind: SourceKind): Fact[] {
-  if (!Array.isArray(raw)) return [];
-  const facts: Fact[] = [];
-  for (const f of raw) {
-    const p = RawFact.safeParse(f);
-    if (!p.success || !/^https?:\/\//i.test(p.data.sourceUrl)) continue;
-    const kind = SOURCE_KINDS.includes(p.data.sourceKind as SourceKind) ? (p.data.sourceKind as SourceKind) : defaultKind;
-    const text = clip(sanitize(p.data.text).replace(/\s+/g, " ").trim(), 140);
-    if (!text) continue;
-    facts.push({ text, sourceUrl: p.data.sourceUrl, sourceKind: kind, ...(p.data.date ? { date: p.data.date } : {}) });
-  }
-  return filterFacts(facts).slice(0, max);
-}
+export { cleanFacts }; // moved to safety.ts (also used by store.loadSample); re-exported for creao-test.ts
 
 const EventLoaderOut = z.object({
   organizations: z.array(z.unknown()),
@@ -281,7 +327,8 @@ interface RunMeta {
   conversationId: string | null;
   lastStatus: string;
   lastPolledAt: number;
-  credits?: number;
+  tokens?: { in: number; out: number };
+  usd?: number | null;   // estimate from USD_PER_MTOK; null if a model's rate is unknown
   errorCode?: string;
   outcome?: string;      // short human summary of what the result changed
 }
@@ -372,7 +419,11 @@ export async function finalize(runId: string, via: "webhook" | "poll"): Promise<
     m.lastPolledAt = Date.now();
     m.lastStatus = run.status;
     m.conversationId = run.conversation_id ?? m.conversationId;
-    if (run.usage?.credits != null) m.credits = run.usage.credits;
+    if (run.usage?.models?.length) {
+      const u = usageSummary(run);
+      m.tokens = { in: u.inTok, out: u.outTok };
+      m.usd = u.usd;
+    }
     meta.set(runId, m);
     if (!isTerminal(run.status)) return;
 
@@ -380,7 +431,7 @@ export async function finalize(runId: string, via: "webhook" | "poll"): Promise<
     const out = await extractResult(run, rec.agent);
     if (!out) { markFailed(rec, "NO_JSON_IN_RESULT"); return; }
     rec.status = "completed";
-    console.log(`[creao] run ${runId} (${rec.agent}) completed via ${via}, credits=${m.credits ?? "?"}`);
+    console.log(`[creao] run ${runId} (${rec.agent}) completed via ${via}, tokens=${m.tokens ? `${m.tokens.in}/${m.tokens.out}` : "?"} usd~${m.usd?.toFixed(4) ?? "?"}`);
     await applyResult(rec, out);
   } catch (err) {
     console.error(`[creao] finalize ${runId} error: ${String(err)}`);
@@ -473,7 +524,7 @@ export function applyEventLoader(rec: Pick<RunRecord, "eventId">, out: unknown):
     if (!orgId) continue;
     store.upsertPerson(eventId, orgId, sanitize(p.data.name).trim(), {
       ...(p.data.role ? { role: sanitize(p.data.role).trim() } : {}),
-      match: "high", matchReason: "on the event list",
+      match: "high", matchReason: "on the event list", fromEventList: true,
     });
     const org = store.getOrg(eventId, orgId);
     if (org && !org.people.some((n) => norm(n) === norm(p.data.name))) {
@@ -485,19 +536,16 @@ export function applyEventLoader(rec: Pick<RunRecord, "eventId">, out: unknown):
   return `${orgsApplied} orgs (${factsKept} sourced facts), ${peopleApplied} people -> event ${eventId} ${ev.loadStatus}`;
 }
 
-function sortFacts(facts: Fact[]): Fact[] {
-  const seen = new Set<string>();
-  return facts
-    .filter((f) => (seen.has(f.sourceUrl) ? false : (seen.add(f.sourceUrl), true)))
-    .sort((a, b) => (SOURCE_RANK.get(a.sourceKind) ?? 99) - (SOURCE_RANK.get(b.sourceKind) ?? 99))
-    .slice(0, 8);
-}
-
 /** The wearer fields we share with CREAO. resumeText stays on our backend. */
 function wearerForAgent() {
   const { resumeText: _omit, ...rest } = store.profile;
   return rest;
 }
+
+export const orgLabels = (person: Pick<Person, "orgId">, org: Organization | null): string[] =>
+  [org?.name ?? "", ...(org?.aliases ?? []), person.orgId].filter(Boolean);
+export const orgHosts = (org: Organization | null): string[] =>
+  [...new Set((org?.focusNow ?? []).map((f) => hostOf(f.sourceUrl)).filter(Boolean))];
 
 async function applyPersonResearcher(rec: RunRecord, out: unknown): Promise<string> {
   const parsed = PersonOut.safeParse(out);
@@ -508,13 +556,8 @@ async function applyPersonResearcher(rec: RunRecord, out: unknown): Promise<stri
   }
   const org = store.getOrg(person.eventId, person.orgId) ?? null;
   // Backend re-check (03 section 4): agent facts must be about this person at this org.
-  // The fact text names the person or the org, or comes from the org's own domain.
-  const labels = [person.name, person.name.split(/\s+/).pop() ?? "", org?.name ?? "", ...(org?.aliases ?? [])]
-    .map(norm).filter((s) => s.length >= 3);
-  const facts = cleanFacts(parsed.data.facts, 8, "article").filter((f) => {
-    const t = norm(f.text) + " " + norm(f.sourceUrl);
-    return labels.some((l) => t.includes(l));
-  });
+  // The fact names the person (full, or first + last) AND the org (label in text/URL, or the org's domain).
+  const facts = cleanFacts(parsed.data.facts, 8, "article").filter((f) => factAboutPerson(f, person.name, orgLabels(person, org), orgHosts(org)));
   const agentMatch = facts.length ? parsed.data.match : "low";
   const updated: Person = {
     ...person,
@@ -530,6 +573,10 @@ async function applyPersonResearcher(rec: RunRecord, out: unknown): Promise<stri
 
   const brief = store.briefs.get(rec.briefId);
   if (!brief) return `${summary}; brief gone`;
+  if (brief.match.personId !== person.id) {
+    setSlowPath(rec.briefId, { status: "done", runId: rec.runId });
+    return `${summary}; brief not updated (wearer changed the person)`;
+  }
   const input: BriefInput & { improvesOnHint?: string } = {
     person: { name: updated.name, role: updated.role, headline: updated.headline, facts: updated.facts, match: brief.match.confidence },
     organization: org ? { name: org.name, oneLiner: org.oneLiner, focusNow: org.focusNow, eventRole: org.eventRole, hiring: org.hiring } : null,
@@ -550,7 +597,7 @@ async function applyPersonResearcher(rec: RunRecord, out: unknown): Promise<stri
   // Fallback (01 section 8): write Brief v2 with the fast LLM from the researched Person.
   try {
     const cards = enforceCards(await writeCards(input));
-    return applyCardsV2(rec.briefId, cards, rec.runId, `${summary}; v2 via fast LLM`);
+    return applyCardsV2(rec.briefId, cards, rec.runId, `${summary}; v2 via fast LLM`, rec.personId);
   } catch (err) {
     setSlowPath(rec.briefId, { status: "done", runId: rec.runId });
     return `${summary}; fast LLM fallback failed (${String(err)})`;
@@ -561,14 +608,28 @@ function applyBriefWriter(rec: RunRecord, out: unknown): string {
   if (!rec.briefId) return "no brief linked";
   const parsed = BriefOut.safeParse(out);
   if (!parsed.success) { setSlowPath(rec.briefId, { status: "failed", runId: rec.runId }); return "invalid shape"; }
-  const cards = enforceCards(parsed.data.cards.map((c) => ({ kind: c.kind, title: c.title, body: c.body, source: c.source ?? null })));
-  return applyCardsV2(rec.briefId, cards, rec.runId, `improvesOn: ${parsed.data.improvesOn ?? "-"}`);
+  // Sources must be hosts of facts we gave the agent (the researched person's facts + org focusNow).
+  const person = rec.personId ? store.people.get(rec.personId) : undefined;
+  const org = person ? store.getOrg(person.eventId, person.orgId) ?? null : null;
+  const allowedHosts = [...(person?.facts ?? []).map((f) => hostOf(f.sourceUrl)), ...orgHosts(org)];
+  const cards = enforceCards(
+    parsed.data.cards.map((c) => ({ kind: c.kind, title: c.title, body: c.body, source: c.source ?? null })),
+    { allowedHosts },
+  );
+  return applyCardsV2(rec.briefId, cards, rec.runId, `improvesOn: ${parsed.data.improvesOn ?? "-"}`, rec.personId);
 }
 
-/** Replace a brief's cards with the slow-path version, if still valid and still the wearer's current brief. */
-function applyCardsV2(briefId: string, cards: Card[], runId: string, why: string): string {
+/**
+ * Replace a brief's cards with the slow-path version, if still valid, still the wearer's current brief,
+ * and still about the person the run researched (the wearer may have picked "Neither" or someone else since).
+ */
+function applyCardsV2(briefId: string, cards: Card[], runId: string, why: string, personId?: string): string {
   const brief = store.briefs.get(briefId);
   if (!brief) return `${why}; brief gone`;
+  if (personId && brief.match.personId !== personId) {
+    setSlowPath(briefId, { status: "done", runId });
+    return `${why}; not applied (wearer changed the person)`;
+  }
   const latest = [...store.briefs.values()].reduce((a, b) => (b.createdAt > a.createdAt ? b : a), brief);
   const kinds = new Set(brief.cards.map((c) => c.kind));
   const next = brief.cards.map((c) => cards.find((n) => n.kind === c.kind) ?? c);
@@ -588,7 +649,8 @@ function applyCardsV2(briefId: string, cards: Card[], runId: string, why: string
 export const creaoRouter = Router();
 
 // No signature (design/creao-api-notes.md section 5): accept only runIds we started, dedupe on
-// X-Creao-Delivery-Id (or runId), reply 200 at once, then re-fetch the run with our key.
+// X-Creao-Delivery-Id (or runId), reply 200 at once, then re-fetch the run with our key
+// (the webhook body's artifact urls are empty on /v2 anyway).
 creaoRouter.post("/webhooks/creao", express.json({ limit: "2mb" }), (req, res) => {
   const payload = (req.body ?? {}) as Record<string, unknown>;
   const runId = String(payload.runId ?? payload.run_id ?? "");
@@ -612,7 +674,7 @@ creaoRouter.get("/api/creao/runs", (_req, res) => {
     return {
       runId: r.runId, agent: r.agent, agentId: agentIdFor(r.agent) ?? null, status: r.status,
       creaoStatus: m?.lastStatus ?? null, conversationId: m?.conversationId ?? null,
-      credits: m?.credits ?? null, error: m?.errorCode ?? null, outcome: m?.outcome ?? null,
+      tokens: m?.tokens ?? null, usd: m?.usd ?? null, error: m?.errorCode ?? null, outcome: m?.outcome ?? null,
       startedAt: r.startedAt, briefId: r.briefId ?? null, eventId: r.eventId ?? null,
     };
   });

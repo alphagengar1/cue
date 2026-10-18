@@ -3,7 +3,7 @@
 // No third-party keys here; only our backend origin and the device token.
 
 import type {
-  BriefResponse, ConfirmRequest, Goal, GoalRequest, GoalResponse, StateResponse, SttResponse,
+  BriefResponse, ConfirmRequest, Goal, GoalRequest, GoalResponse, RecapResponse, StateResponse, SttResponse,
 } from '../../shared/types'
 
 export const BACKEND_URL = ((import.meta.env.VITE_BACKEND_URL as string | undefined) ?? '').replace(/\/+$/, '')
@@ -80,6 +80,14 @@ export const getBrief = (id: string, since: number) =>
 export const postConfirm = (id: string, personId: string | null, signal?: AbortSignal) =>
   call<BriefResponse>(`/api/briefs/${encodeURIComponent(id)}/confirm`,
     jsonInit('POST', { personId } satisfies ConfirmRequest), 15000, signal)
+
+/** POST /api/briefs/:id/recap -> { sent, ... } (Photon texts the wearer; sent=false when not set up). */
+export const postRecap = (id: string) =>
+  call<RecapResponse>(`/api/briefs/${encodeURIComponent(id)}/recap`, jsonInit('POST', {}), 12000)
+
+/** POST /api/briefs/:id/debrief { text } -> { brief } (version + 1; the wearer's own spoken note). */
+export const postDebrief = (id: string, text: string) =>
+  call<BriefResponse>(`/api/briefs/${encodeURIComponent(id)}/debrief`, jsonInit('POST', { text }), 10000)
 
 /** PUT /api/goal { goal, briefId? } -> { goal, brief? } (card 3 regenerated). */
 export const putGoal = (goal: Goal, briefId?: string) =>

@@ -12,6 +12,7 @@ export const BYTES_PER_SEC = 32000
 export const TAIL_MS = 300        // keep capturing after stop (02: Listening)
 export const MIN_CLIP_MS = 400    // shorter clips are discarded (02: Listening)
 export const MAX_CLIP_MS = 8000   // auto-stop (02: Listening)
+const LATE_MS = 150               // 1-2 frames trickle in after audioControl(false) (measured)
 
 export interface MicStats {
   recording: boolean
@@ -24,12 +25,13 @@ export interface MicStats {
   stoppedAt: number          // when audioControl(false) was sent
   lateFrames: number         // frames that arrived after audioControl(false)
   openResult: boolean | undefined   // what audioControl(true) returned
+  ignoreUntil: number        // late frames from the previous capture arrive until about here
 }
 
 const fresh = (): MicStats => ({
   recording: false, frames: 0, bytes: 0, lastFrameBytes: 0,
   startedAt: 0, firstFrameAt: 0, lastFrameAt: 0, stoppedAt: 0, lateFrames: 0,
-  openResult: undefined,
+  openResult: undefined, ignoreUntil: 0,
 })
 
 export class Mic {
@@ -43,7 +45,8 @@ export class Mic {
   async start() {
     if (this.stats.recording) return
     this.chunks = []
-    this.stats = { ...fresh(), recording: true, startedAt: Date.now() }
+    const lastStop = this.stats.stoppedAt
+    this.stats = { ...fresh(), recording: true, startedAt: Date.now(), ignoreUntil: lastStop ? lastStop + LATE_MS : 0 }
     const ok = await serial('audioControl(true)', () =>
       this.bridge.audioControl(true, AudioInputSource.Glasses))
     this.stats.openResult = ok
@@ -53,8 +56,8 @@ export class Mic {
   /** Call with every audioEvent PCM frame. */
   onFrame(pcm: Uint8Array) {
     const now = Date.now()
-    if (!this.stats.recording) {
-      if (this.stats.stoppedAt) this.stats.lateFrames++
+    if (!this.stats.recording || now < this.stats.ignoreUntil) {
+      if (this.stats.stoppedAt || this.stats.ignoreUntil) this.stats.lateFrames++
       return
     }
     this.chunks.push(pcm.slice())

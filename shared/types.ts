@@ -40,6 +40,13 @@ export interface Person {
   facts: Fact[];                                    // max 8, sorted by source priority (03 section 4)
   match: Confidence; matchReason: string;           // "3 sources mention both name and Anduril"
   lastResearchedAt?: string;
+  fromEventList?: boolean;                          // loaded from an event file / event list (a known attendee)
+  confirmed?: boolean;                              // the wearer picked them on the Confirm screen
+  // Hand-run CREAO Follow-up Writer output (agents/follow-up-writer.md). The texting voice builds on it.
+  followUp?: {
+    agent?: string; agentId?: string; runLink?: string; debrief?: string;
+    email?: { subject: string; body: string }; message?: string; nextSteps?: string[];
+  };
 }
 
 export interface WearerProfile {
@@ -67,6 +74,8 @@ export interface Brief {
   match: { personId: string | null; confidence: Confidence; candidates: { personId: string; label: string }[] };
   cards: Card[];                                    // high/medium: 3 cards. low or "Neither": only "context" for the org. Org unknown too: only "angle" (generic ask)
   slowPath: { status: "none" | "running" | "done" | "failed"; runId?: string };
+  debrief?: string;                                 // the wearer's own spoken note after the conversation (Photon follow-up)
+  decision?: { match: number; goalFit: number; lead: Card["kind"] };  // decision gate (agents/decision-gate.md); absent when the gate is off
   createdAt: string; updatedAt: string;
 }
 
@@ -78,7 +87,8 @@ export interface Brief {
 export type ErrorCode =
   | "STT_EMPTY" | "STT_FAILED" | "NO_EVENT" | "SEARCH_FAILED" | "LLM_FAILED" | "UNAUTHORIZED"
   // backend-only extras (not in 01's list): bad input, unknown id, rate limit, server bug
-  | "BAD_REQUEST" | "NOT_FOUND" | "RATE_LIMITED" | "INTERNAL";
+  | "BAD_REQUEST" | "NOT_FOUND" | "RATE_LIMITED" | "INTERNAL"
+  | "LLM_UNAVAILABLE";                              // resume read needs the model; nothing to fall back to
 
 export interface ApiError { error: { code: ErrorCode; message: string } }
 
@@ -104,3 +114,7 @@ export interface CreateEventRequest {
   sourceText: string;
 }
 export interface EventResponse { event: Event }
+/** POST /api/briefs/:id/recap (Photon add-on). sent=false is a normal answer, not an error. */
+export type RecapResponse =
+  | { sent: true; chars: number }
+  | { sent: false; reason: string; configured: boolean };

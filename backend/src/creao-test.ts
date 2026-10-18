@@ -1,14 +1,19 @@
-// One-off CREAO check for a human with real keys (design/creao-api-notes.md).
-//   npm run creao:test                      -> run the Event Loader on a small sample, poll, print the result
-//   npm run creao:test -- person_researcher -> same for the Person Researcher
-//   npm run creao:test -- brief_writer      -> same for the Brief Writer
-//   npm run creao:test -- --list            -> list your agents and their agent_id values
-//   npm run creao:test -- --run <run_id>    -> fetch an existing run and print/validate it
-// Needs CREAO_API_KEY (+ the agent id env var) in backend/.env. Each run spends CREAO credits.
-import { config } from "./config.js";
+// One-off CREAO /v2 check for a human with a real project key (design/creao-api-notes.md).
+//   npm run creao:test -- --me                 -> probe the key (GET /v2/me, free)
+//   npm run creao:test -- --list               -> list this project's hosted agents and agent_id values (free)
+//   npm run creao:test -- --create <agent>     -> NL-create a hosted agent from agents/<agent>.md (BILLS USD)
+//   npm run creao:test                         -> run the Event Loader on a small sample, poll, print (BILLS USD)
+//   npm run creao:test -- person_researcher    -> same for the Person Researcher
+//   npm run creao:test -- brief_writer         -> same for the Brief Writer
+//   npm run creao:test -- --run <run_id>       -> fetch an existing run and print/validate it (free)
+// <agent> is event_loader | person_researcher | brief_writer. Needs CREAO_API_KEY (a /v2 project key) and,
+// for runs, the hosted agent id env var in backend/.env. Optional CREAO_MODEL picks the model.
+import fs from "node:fs";
+import path from "node:path";
+import { config, REPO_DIR } from "./config.js";
 import {
-  agentIdFor, applyEventLoader, cleanFacts, createRun, extractResult, getRun, isTerminal, listAgents,
-  type AgentKind, type CreaoRun,
+  agentIdFor, applyEventLoader, cleanFacts, createAgent, createRun, extractResult, getAgent, getAgentEdit,
+  getMe, getRun, isTerminal, listAgents, usageSummary, type AgentKind, type CreaoRun,
 } from "./creao.js";
 import { store } from "./store.js";
 
@@ -37,8 +42,55 @@ const SAMPLES: Record<AgentKind, unknown> = {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
+const NAMES: Record<AgentKind, string> = {
+  event_loader: "Cue Event Loader", person_researcher: "Cue Person Researcher", brief_writer: "Cue Brief Writer",
+};
+const ENV_VARS: Record<AgentKind, string> = {
+  event_loader: "CREAO_EVENT_LOADER_ID", person_researcher: "CREAO_PERSON_RESEARCHER_ID", brief_writer: "CREAO_BRIEF_WRITER_ID",
+};
+
+/** The ```text block under "## Instructions (paste this)" in agents/<kind>.md. */
+function instructionsFor(agent: AgentKind): string {
+  const md = fs.readFileSync(path.join(REPO_DIR, "agents", `${agent.replace("_", "-")}.md`), "utf8");
+  const m = md.match(/## Instructions \(paste this\)\s*```text\n([\s\S]*?)\n```[ \t]*$/m);
+  if (!m) throw new Error(`No Instructions block in agents/${agent}.md`);
+  return m[1].trim();
+}
+
+function usageLine(run: Pick<CreaoRun, "usage">): string {
+  const u = usageSummary(run);
+  const per = (run.usage?.models ?? []).map((m) => `${m.model}(${m.kind}) in=${m.input_tokens ?? 0} out=${m.output_tokens ?? 0}`).join("; ");
+  return `tokens in=${u.inTok} out=${u.outTok} usd~${u.usd?.toFixed(4) ?? "? (rate unknown)"}${per ? ` [${per}]` : ""}`;
+}
+
+async function create(agent: AgentKind): Promise<void> {
+  const instructions = instructionsFor(agent);
+  const input = `Create a hosted agent named "${NAMES[agent]}". Output format: Markdown. Use the instructions below as the agent's skill, keeping every rule word for word (especially the safety rules and the output format). The run input is a JSON object with the fields described under INPUT. The final reply must always end with one \`\`\`json block in the output format, and nothing after it.\n\n${instructions}`;
+  console.log(`Creating hosted agent "${NAMES[agent]}" (${input.length} chars of instructions). This bills the USD wallet.`);
+  const run = await createAgent(input);
+  console.log(`create run_id=${run.run_id} agent_id=${run.agent_id ?? "(not yet known)"} status=${run.status}`);
+  if (!run.agent_id) { console.log("agent_id not in the 202 response. Check `--list` in a minute."); return; }
+  const t0 = Date.now();
+  for (;;) {
+    const e = await getAgentEdit(run.agent_id, run.run_id);
+    process.stdout.write(`\r${Math.round((Date.now() - t0) / 1000)}s status=${e.status}      `);
+    if (["succeeded", "failed", "cancelled"].includes(e.status)) {
+      console.log(`\n${usageLine(e)}`);
+      if (e.status !== "succeeded") { console.log(`error: ${JSON.stringify(e.error ?? null)}`); process.exitCode = 1; return; }
+      const a = await getAgent(e.agent_id);
+      const skill = a.skill_content ?? "";
+      const kept = ["sourceUrl", "```json"].filter((k) => skill.includes(k));
+      console.log(`agent_id=${a.agent_id} name=${a.name}\nskill_content keeps ${kept.length}/2 output markers (sourceUrl, \`\`\`json). Read it with care.`);
+      console.log(`Put this in backend/.env: ${ENV_VARS[agent]}=${a.agent_id}`);
+      return;
+    }
+    if (Date.now() - t0 > 20 * 60_000) { console.log("\nGave up after 20 min."); return; }
+    await sleep(10_000);
+  }
+}
+
 async function show(run: CreaoRun, agent: AgentKind): Promise<void> {
-  console.log(`\nstatus=${run.status} credits=${run.usage?.credits ?? "?"} model=${run.model ?? "?"} conversation_id=${run.conversation_id}`);
+  console.log(`\nstatus=${run.status} model=${run.model ?? "?"} conversation_id=${run.conversation_id}\n${usageLine(run)}`);
   if (run.error) console.log(`error: ${JSON.stringify(run.error)}`);
   console.log(`result keys: ${Object.keys(run.result ?? {}).join(", ") || "(none)"}`);
   console.log(`result.text (first 800 chars):\n${(run.result?.text ?? "").slice(0, 800)}\n`);
@@ -60,14 +112,21 @@ async function main(): Promise<void> {
   const args = process.argv.slice(2);
   if (!config.creaoKey) { console.error("CREAO_API_KEY is not set (backend/.env)."); process.exit(2); }
 
+  if (args.includes("--me")) {
+    const me = await getMe();
+    console.log(`projectId=${me.projectId} keyId=${me.keyId}`);
+    return;
+  }
+
   if (args.includes("--list")) {
     const { agents } = await listAgents();
     for (const a of agents) console.log(`${a.agent_id}  v${a.version}  ${a.status}  ${a.name}`);
-    if (!agents.length) console.log("No personal agents visible to this key.");
+    if (!agents.length) console.log("No hosted agents on this project. Create one with --create <agent>.");
     return;
   }
 
   const agent = (args.find((a) => !a.startsWith("--") && a in SAMPLES) ?? "event_loader") as AgentKind;
+  if (args.includes("--create")) { await create(agent); return; }
   const runIdx = args.indexOf("--run");
   let runId = runIdx >= 0 ? args[runIdx + 1] : undefined;
 

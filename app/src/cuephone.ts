@@ -31,7 +31,7 @@ export function mountCuePhone(openTest: () => void) {
           <button type="submit">Look up</button>
         </form>
         <div class="row btns">
-          <button data-m="2">Goal: internship</button><button data-m="3">cofounder</button><button data-m="8">Go quiet</button>
+          <button data-m="2">Goal: internship</button><button data-m="3">cofounder</button><button data-m="10">Text me a recap</button><button data-m="11">Debrief</button><button data-m="8">Go quiet</button>
           <button id="ctest">Hardware test mode</button>
         </div>
       </section>

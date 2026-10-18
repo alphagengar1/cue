@@ -216,3 +216,37 @@ Unverified: whether a developer API key (`cr_sk_`) is available on the free plan
 3. End-to-end latency with `claude-haiku-5-5` (target: cards within about 5 s of release).
 4. Whether `excludeDomains: ["linkedin.com"]` leaves enough kept results for our demo people (check each with a saved Exa fixture).
 5. Whether CREAO `result.text` reliably returns bare JSON, or we need to extract it from Markdown.
+
+## 9. Decision gate (optional)
+
+Status: draft, Sat Oct 17 2026. Code: `backend/src/decide.ts`. Devpost write-up: `agents/decision-gate.md`.
+
+One extra call per brief, between the search filter and the Brief Writer, to the OpenAI Decisions API (`POST /v1/decisions`, model `gpt-6-luna`, public beta). It asks fixed questions over the kept facts and gets calibrated numbers back, which the fast path thresholds in code. The Brief Writer is good at writing cards and bad at saying "no"; this gate is where "no" comes from.
+
+| Question | Type | Returns | Threshold and effect |
+|---|---|---|---|
+| `match` | predicate | 0-1: facts describe the named person (same name, same org) | below 0.6: treat as `match: "low"`, the "No public info found for <name>." line instead of cards about a stranger |
+| `goal_fit` | score, levels 0-2 | 0 not useful, 1 somewhat, 2 strongly useful for the goal | below 0.5: one quiet line instead of three cards |
+| `lead` | choice | `connect`, `context` or `angle` | that card shows first |
+| `sensitive_<i>` | predicate per fact | 0-1: fact i mentions health, family, religion, politics, legal, home, age or appearance | above 0.5: fact dropped before the Brief Writer sees it |
+
+Rules:
+
+- Optional. Env `OPENAI_API_KEY`; when it is missing the gate returns `null` and the pipeline behaves exactly as in sections 4-6.
+- Never throws. Timeout 700 ms (`AbortController`), non-200, unparseable body, missing answer, or a `{type: "refusal"}` answer all return `null`.
+- Budget: one request per brief, at most 12 facts, each truncated to 140 characters, so the input stays under about 3k tokens. Input is billed at about $0.10 per 1M tokens.
+- Raw `fetch`, no SDK. Tests stub `fetch` and never hit the network (`backend/test/decide.test.ts`).
+- It adds to the code filters in section 6, it does not replace them. The blocklist still runs on every fact.
+
+Exported from `backend/src/decide.ts`:
+
+```ts
+decide(input: DecideInput, opts?: DecideOptions): Promise<Decision | null>
+DecideInput = { query: { name; org; role? }, goal: string, goalNote?: string, facts: { text; sourceUrl }[] }
+Decision = { match: number, goalFit: number, lead: "connect" | "context" | "angle", sensitive: number[] }
+buildRequest(input): DecisionsRequest      // pure, unit-tested against literal JSON
+parseResponse(body, factCount): Decision | null
+factsForDecision(facts)                     // the capped, truncated facts; sensitive[i] aligns with this list
+```
+
+Unverified: `gpt-6-luna` latency on venue wifi against the 700 ms budget. Measure 5 calls before relying on it in the demo.

@@ -9,7 +9,7 @@ import { zodOutputFormat } from "@anthropic-ai/sdk/helpers/zod";
 import { z } from "zod";
 import type { Card, Goal, Organization, Person, WearerProfile } from "../../shared/types.js";
 import { config, REPO_DIR } from "./config.js";
-import { enforceCards } from "./safety.js";
+import { enforceCards, hostOf } from "./safety.js";
 
 // Length limits are enforced in code (safety.enforceCards), not in the schema,
 // because structured outputs do not support string length constraints.
@@ -37,7 +37,7 @@ function loadPrompt(): string {
 const SYSTEM_TEMPLATE = loadPrompt();
 
 let client: Anthropic | null = null;
-const getClient = (): Anthropic | null => {
+export const getClient = (): Anthropic | null => {
   if (!config.anthropicKey) return null;
   client ??= new Anthropic({
     apiKey: config.anthropicKey, maxRetries: 0, timeout: config.llmTimeoutMs,
@@ -64,6 +64,34 @@ const GOAL_TEXT: Record<Goal, string> = {
   teammates_sponsors: "find teammates or sponsors",
   mentorship: "mentorship",
 };
+
+/**
+ * Generic structured call for the off-path writers (compose.ts): same model and client, no
+ * thinking, a longer per-request timeout. Throws LlmUnavailable exactly like writeCards.
+ */
+export async function parseWithModel<T extends z.ZodType>(
+  system: string, payload: unknown, schema: T, opts: { maxTokens?: number; timeoutMs?: number } = {},
+): Promise<z.infer<T>> {
+  const c = getClient();
+  if (!c) throw new LlmUnavailable("ANTHROPIC_API_KEY not set");
+  try {
+    const response = await c.messages.parse({
+      model: config.briefModel,
+      max_tokens: opts.maxTokens ?? 800,
+      system,
+      thinking: { type: "disabled" },
+      output_config: { effort: "low", format: zodOutputFormat(schema) },
+      messages: [{ role: "user", content: JSON.stringify(payload) }],
+    }, { timeout: opts.timeoutMs ?? 8000 });
+    if (response.stop_reason === "refusal") throw new LlmUnavailable("model refused");
+    if (!response.parsed_output) throw new LlmUnavailable("no parsed output");
+    return response.parsed_output as z.infer<T>;
+  } catch (err) {
+    if (err instanceof LlmUnavailable) throw err;
+    if (err instanceof Anthropic.APIError) throw new LlmUnavailable(`Anthropic ${err.status ?? "connection"}: ${err.message}`);
+    throw new LlmUnavailable(String(err));
+  }
+}
 
 /**
  * One LLM call. `only` restricts the output to the given card kinds (used by PUT /api/goal
@@ -117,7 +145,9 @@ export async function writeCards(input: BriefInput, only?: Card["kind"][]): Prom
     throw new LlmUnavailable(String(err));
   }
   if (!parsed) throw new LlmUnavailable("no parsed output");
-  let cards = enforceCards(parsed.cards);
+  // Cited sources must be hosts of facts we sent; anything else was invented (dropped, template fills).
+  const allowedHosts = [...input.person.facts, ...(input.organization?.focusNow ?? [])].map((f) => hostOf(f.sourceUrl));
+  let cards = enforceCards(parsed.cards, { allowedHosts });
   if (only) cards = cards.filter((k) => only.includes(k.kind));
   return cards;
 }

@@ -123,5 +123,65 @@
       "people": []
     }
   ],
-  "people": []
+  "people": [
+    {
+      "name": "David Cramer",
+      "orgId": "sentry",
+      "role": "co-founder",
+      "headline": "Co-founder of Sentry; product and engineering leader",
+      "facts": [
+        {
+          "text": "David Cramer, Sentry co-founder and CTO, spoke at USENIX SREcon23 Americas.",
+          "sourceUrl": "https://www.usenix.org/conference/srecon23americas/speaker-or-organizer/david-cramer-sentry",
+          "sourceKind": "talk"
+        },
+        {
+          "text": "David Cramer of Sentry spoke at the AI Engineer conference on AI-assisted debugging and agent tooling.",
+          "sourceUrl": "https://ai.engineer/speakers/david-cramer",
+          "sourceKind": "talk"
+        },
+        {
+          "text": "David Cramer appeared on the First Round podcast on growing Sentry into a $3 billion company.",
+          "sourceUrl": "https://review.firstround.com/podcast/building-sentry/",
+          "sourceKind": "podcast",
+          "date": "2026-02"
+        },
+        {
+          "text": "David Cramer discussed building Sentry for the Fortune 500,000 on the Evil Martians podcast.",
+          "sourceUrl": "https://evilmartians.com/events/podcast-david-cramer-sentry",
+          "sourceKind": "podcast",
+          "date": "2025-12"
+        },
+        {
+          "text": "David Cramer serves as Sentry Chief Product Officer after previously holding CEO and CTO roles.",
+          "sourceUrl": "https://review.firstround.com/podcast/building-sentry/",
+          "sourceKind": "podcast",
+          "date": "2026-02"
+        },
+        {
+          "text": "David Cramer wrote a Sentry blog post on monitoring MCP servers in production.",
+          "sourceUrl": "https://blog.sentry.io/authors/david-cramer/",
+          "sourceKind": "own_post",
+          "date": "2025-05"
+        },
+        {
+          "text": "David Cramer launched the Open Source Pledge on the Sentry blog to fund open-source maintainers.",
+          "sourceUrl": "https://blog.sentry.io/authors/david-cramer/",
+          "sourceKind": "own_post",
+          "date": "2024-10"
+        },
+        {
+          "text": "David Cramer maintains Sentry open-source projects on GitHub as dcramer.",
+          "sourceUrl": "https://github.com/dcramer",
+          "sourceKind": "github"
+        }
+      ],
+      "match": "high",
+      "research": {
+        "agent": "creao-person-researcher",
+        "agentId": "e496e45b-c8eb-4079-9aff-876071501d67",
+        "runLink": "https://agent.creao.ai/share/21c460878c2ec3e4eed039a5a327e0e6"
+      }
+    }
+  ]
 }

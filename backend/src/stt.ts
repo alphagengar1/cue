@@ -31,14 +31,23 @@ export function parseAudioFormat(header: string | undefined): { rate: number; ch
   const [codec, ...params] = header.split(";").map((s) => s.trim());
   if (codec !== "pcm_s16le") throw new CueError("BAD_REQUEST", `unsupported audio format ${codec}`);
   const kv = Object.fromEntries(params.map((p) => p.split("=").map((s) => s.trim())));
-  return { rate: Number(kv.rate) || 16000, channels: Number(kv.channels) || 1 };
+  const rate = kv.rate === undefined || kv.rate === "" ? 16000 : Number(kv.rate);
+  const channels = kv.channels === undefined || kv.channels === "" ? 1 : Number(kv.channels);
+  // Out-of-range values would make pcmToWav throw a RangeError (500); reject them as bad input.
+  if (!Number.isInteger(rate) || rate < 8000 || rate > 48000) {
+    throw new CueError("BAD_REQUEST", `unsupported audio rate ${kv.rate} (8000-48000)`);
+  }
+  if (!Number.isInteger(channels) || channels < 1 || channels > 2) {
+    throw new CueError("BAD_REQUEST", `unsupported audio channels ${kv.channels} (1-2)`);
+  }
+  return { rate, channels };
 }
 
 /** Keyterms: org names and person names in the active event (max 50), plus goal words. */
 export function keyterms(): string[] {
   const terms = new Set<string>();
   for (const o of store.eventOrgs()) terms.add(o.name);
-  for (const p of store.eventPeople()) terms.add(p.name);
+  for (const p of store.eventPeople()) if (p.fromEventList || p.confirmed) terms.add(p.name); // not search guesses
   return [...terms].slice(0, 50);
 }
 
@@ -47,11 +56,11 @@ interface DeepgramResponse {
 }
 
 export async function transcribe(pcm: Buffer, formatHeader?: string): Promise<string> {
+  const { rate, channels } = parseAudioFormat(formatHeader); // bad header -> 400 even without a key
   if (!config.deepgramKey) {
     throw new CueError("STT_FAILED", "Speech-to-text not configured (DEEPGRAM_API_KEY not set)", 503);
   }
   if (!pcm.length) throw new CueError("STT_EMPTY", "Didn't catch that");
-  const { rate, channels } = parseAudioFormat(formatHeader);
   const wav = pcmToWav(pcm.length % 2 ? pcm.subarray(0, pcm.length - 1) : pcm, rate, channels);
 
   const url = new URL("https://api.deepgram.com/v1/listen");

@@ -2,7 +2,7 @@
 // Two parallel searches, linkedin.com excluded at search time, then the name AND org filter.
 import type { Fact, SourceKind } from "../../shared/types.js";
 import { config } from "./config.js";
-import { filterFacts, hostOf, isLinkedIn } from "./safety.js";
+import { filterFacts, hostOf, isBoilerplate, isLinkedIn } from "./safety.js";
 
 export interface SearchResult {
   title: string;
@@ -65,31 +65,58 @@ export async function searchPerson(query: string): Promise<SearchResult[]> {
   return out;
 }
 
-const contains = (hay: string, needle: string): boolean =>
-  !!needle && hay.toLowerCase().includes(needle.toLowerCase());
+const escRe = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+/** Whole-word, case-insensitive ("Sam" does not match "Samsung", "Even" needs to stand alone). */
+const containsWord = (hay: string, needle: string): boolean =>
+  !!needle.trim() && new RegExp(`(^|[^A-Za-z0-9])${escRe(needle.trim()).replace(/\s+/g, "\\s+")}($|[^A-Za-z0-9])`, "i").test(hay);
+
+// Aliases that are everyday English words match too much prose ("even though", "open to").
+const COMMON_WORDS = new Set([
+  "even", "open", "one", "go", "get", "all", "best", "first", "next", "new", "now", "just", "may", "will",
+  "can", "well", "real", "true", "here", "there", "about", "more", "like", "time", "work", "home", "help",
+  "made", "make", "line", "base", "scale", "square", "notion", "ramp", "box", "bolt", "loom", "zoom",
+  "apple", "oracle", "slack", "signal",
+]);
 
 /**
  * Disambiguation rule (03 section 4): keep a result only if its title or text mentions
- * the person's name AND the org name (or an alias).
+ * the person's name AND the org name (or an alias), as whole words. orgLabels[0] is the org's
+ * name and is always used; other aliases are ignored if under 4 chars or a common English word.
  */
 export function filterResults(results: SearchResult[], name: string, orgLabels: string[]): SearchResult[] {
-  const labels = orgLabels.filter(Boolean);
+  const [main, ...aliases] = orgLabels.map((l) => l.trim()).filter(Boolean);
+  const labels = [main, ...aliases.filter((a) => a.length >= 4 && !COMMON_WORDS.has(a.toLowerCase()))].filter(Boolean);
   return results.filter((r) => {
     const hay = `${r.title}\n${r.text}`;
-    return contains(hay, name) && labels.some((l) => contains(hay, l));
+    return containsWord(hay, name) && labels.some((l) => containsWord(hay, l));
   });
 }
 
+// Words that follow a first name in headlines but are not surnames ("Priya Speaks at ...").
+const NOT_SURNAMES = new Set([
+  "speaks", "says", "said", "talks", "joins", "joined", "leads", "led", "will", "and", "the", "from", "at", "is",
+  "was", "has", "had", "shares", "explains", "discusses", "presents", "announces", "launches", "builds", "writes",
+  "wins", "named", "about", "on", "in", "with", "for", "to", "of", "interview", "podcast", "blog", "team",
+  "keynote", "talk", "episode", "profile", "bio", "github", "home", "posts", "news", "update", "here", "who",
+]);
+
 /**
  * When only a first name was said, find distinct "<First> <Last>" full names in kept results.
- * Used to fill `candidates` when results name 2+ different people.
+ * Used to fill `candidates` when results name 2+ different people. The first name matches
+ * case-insensitively; the surname must look like one (Capitalized, not a common headline word).
  */
 export function fullNamesIn(results: SearchResult[], firstName: string): string[] {
-  const re = new RegExp(`\\b${firstName.replace(/[^A-Za-z'-]/g, "")}\\s+([A-Z][a-zA-Z'-]+)\\b`, "g");
+  const first = firstName.replace(/[^A-Za-z'-]/g, "");
+  if (!first) return [];
+  const ci = [...first].map((c) => (/[a-z]/i.test(c) ? `[${c.toLowerCase()}${c.toUpperCase()}]` : c)).join("");
+  const re = new RegExp(`\\b${ci}\\s+([A-Z][a-z'-]+(?:-[A-Z][a-z]+)?)\\b`, "g");
   const counts = new Map<string, number>();
   for (const r of results) {
     const found = new Set<string>();
-    for (const m of `${r.title} ${r.text}`.matchAll(re)) found.add(`${firstName} ${m[1]}`);
+    for (const m of `${r.title} ${r.text}`.matchAll(re)) {
+      if (m[1].length < 2 || NOT_SURNAMES.has(m[1].toLowerCase())) continue;
+      found.add(`${firstName} ${m[1]}`);
+    }
     for (const n of found) counts.set(n, (counts.get(n) ?? 0) + 1);
   }
   return [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([n]) => n);
@@ -118,7 +145,9 @@ export function classifySource(url: string, orgDomains: string[] = []): SourceKi
 /** Kept results -> Facts: one sentence each, <= 140 chars, safety-filtered, sorted by source priority, max 8. */
 export function resultsToFacts(results: SearchResult[], orgDomains: string[] = []): Fact[] {
   const facts: Fact[] = results.map((r) => {
-    const sentence = (r.text || r.title).replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s/)[0] ?? "";
+    // First sentence that is real content (skip "Skip to main content", cookie banners, nav crumbs).
+    const sentences = (r.text || r.title).replace(/\s+/g, " ").trim().split(/(?<=[.!?])\s|\s+\.\.\.\s+/);
+    const sentence = sentences.find((x) => !isBoilerplate(x)) ?? (isBoilerplate(r.title) ? "" : r.title);
     const text = sentence.length > 140 ? sentence.slice(0, 137).trimEnd() + "..." : sentence;
     const fact: Fact = { text, sourceUrl: r.url, sourceKind: classifySource(r.url, orgDomains) };
     if (r.publishedDate) fact.date = r.publishedDate.slice(0, 10);

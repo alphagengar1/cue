@@ -206,6 +206,8 @@ interface Person {
   facts: Fact[];                                    // max 8, sorted by source priority (03 section 4)
   match: Confidence; matchReason: string;           // "3 sources mention both name and Anduril"
   lastResearchedAt?: string;
+  fromEventList?: boolean;                          // loaded from an event file / event list (a known attendee)
+  confirmed?: boolean;                              // the wearer picked them on the Confirm screen
 }
 
 interface WearerProfile {
@@ -248,7 +250,7 @@ Card length limits come from the display: a full-screen text container fits abou
 
 - Org match: exact or alias match on `Organization`, then case-insensitive fuzzy match. The Deepgram keyterm list is built from org names and person names in the active event (top 20-50, under the 500-token limit) plus goal words.
 - Name expansion: the wearer often says only a first name. If the store has exactly one Person at that org with that first name, use their full name for search. Otherwise search `"<first name> <org> <role>"` and cap confidence at `medium`.
-- Person match (same rule as 03 section 4 and 04 section 8): `high` if a stored Person matches name and org, or 2+ kept results agree on one person; `medium` if exactly 1 kept result, or kept results name 2+ different full names (fill `candidates`, max 3); `low` if 0. Medium shows the Confirm screen (02). Low shows the org card only, whose body starts with `No public info found for <name>.`
+- Person match (same rule as 03 section 4 and 04 section 8): `high` if a stored Person (on the event list, or confirmed by the wearer; search guesses saved as Person records do not count) matches name and org, or 2+ kept results agree on one person; `medium` if exactly 1 kept result, or kept results name 2+ different full names (fill `candidates`, max 3); `low` if 0. Medium shows the Confirm screen (02). Low shows the org card only, whose body starts with `No public info found for <name>.`
 - Search results are kept only if title or text contains both the name and the org (or an alias). The fast path excludes `linkedin.com` at search time (03 section 4); we never fetch LinkedIn contents.
 
 ## 6. Secrets, CORS and privacy

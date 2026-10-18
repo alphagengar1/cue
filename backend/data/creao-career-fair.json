@@ -127,7 +127,15 @@
     {
       "name": "Priya Shah",
       "orgId": "anduril",
-      "role": "recruiter"
+      "role": "recruiter",
+      "headline": "",
+      "facts": [],
+      "match": "low",
+      "research": {
+        "agent": "creao-person-researcher",
+        "agentId": "e496e45b-c8eb-4079-9aff-876071501d67",
+        "runLink": "https://agent.creao.ai/share/21c460878c2ec3e4eed039a5a327e0e6"
+      }
     },
     {
       "name": "Alex Kim",
