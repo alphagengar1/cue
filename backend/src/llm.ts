@@ -98,11 +98,12 @@ export async function parseWithModel<T extends z.ZodType>(
  * to regenerate only the angle card). Throws LlmUnavailable on missing key, timeout,
  * refusal, or unparseable output; the caller falls back to the template brief.
  */
-export async function writeCards(input: BriefInput, only?: Card["kind"][]): Promise<Card[]> {
+export async function writeCards(input: BriefInput, only?: Card["kind"][], opts: { systemOverride?: string } = {}): Promise<Card[]> {
   const c = getClient();
   if (!c) throw new LlmUnavailable("ANTHROPIC_API_KEY not set");
 
-  const system = SYSTEM_TEMPLATE
+  // systemOverride: prompt experiments (backend/scripts/card-variants.ts); production uses agents/fast-brief.md.
+  const system = (opts.systemOverride ?? SYSTEM_TEMPLATE)
     .replaceAll("{goal}", GOAL_TEXT[input.goal])
     .replaceAll("{name}", input.person.name);
 
