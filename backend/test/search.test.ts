@@ -40,9 +40,9 @@ describe("misheard surnames across events", () => {
     store.loadSample(); // lahacks-f26 active
     const other = "other-event-" + process.pid;
     store.events.set(other, { id: other, name: "Other", date: "2026-10-18", sources: [], loadStatus: "ready" });
-    store.upsertPerson(other, "sentry", "David Cramer", { role: "co-founder", facts: [], match: "high", matchReason: "list", fromEventList: true });
-    assert.equal(findListedPersonByName("David Kramer")?.name, "David Cramer");
-    assert.equal(findListedPersonByName("Davit Cramer")?.name, "David Cramer");
+    store.upsertPerson(other, "sentry", "Steve Jobs", { role: "co-founder", facts: [], match: "high", matchReason: "list", fromEventList: true });
+    assert.equal(findListedPersonByName("Steve Jobes")?.name, "Steve Jobs");
+    assert.equal(findListedPersonByName("Steeve Jobs")?.name, "Steve Jobs");
     assert.equal(findListedPersonByName("Someone Else"), null);
   });
 });

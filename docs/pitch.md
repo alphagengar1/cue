@@ -1,12 +1,12 @@
 # Cue - table pitch
 
-For expo-style table visits. Person A wears the glasses. Person B talks and drives the laptop, which shows two tabs: the setup page's Judge view (`/setup?view=mirror`, the lens, large) and the CREAO Sessions tab with the live runs. Before the judge arrives: goal preset to Internship on the setup page, the mirror on the quiet line, the demo person (David Cramer, Sentry co-founder, the same person as the video script: public bio, in the preloaded event) chosen, the wearer's one "hi" text already sent to the Photon line so the links are clickable, and A's phone face up on the table with the iMessage thread open. Between judges, reset the goal on the setup page and keep the Sessions tab on the most recent runs.
+For expo-style table visits. Person A wears the glasses. Person B talks and drives the laptop, which shows two tabs: the setup page's Judge view (`/setup?view=mirror`, the lens, large) and the CREAO Sessions tab with the live runs. Before the judge arrives: goal preset to Internship on the setup page, the mirror on the quiet line, the demo person (Steve Jobs, Sentry co-founder, the same person as the video script: public bio, in the preloaded event) chosen, the wearer's one "hi" text already sent to the Photon line so the links are clickable, and A's phone face up on the table with the iMessage thread open. Between judges, reset the goal on the setup page and keep the Sessions tab on the most recent runs.
 
 ## The 90-second table pitch
 
 | Time | Beat | Say / do |
 |---|---|---|
-| 0:00-0:08 | Hook and live lookup | B: "Watch the glasses, not me." A reads the badge, holds the temple, says "David Cramer, Sentry, co-founder," lets go. Mirror shows `Listening`, `Heard: David Cramer | Sentry | co-founder`, then card 1 in about 3 seconds. |
+| 0:00-0:08 | Hook and live lookup | B: "Watch the glasses, not me." A reads the badge, holds the temple, says "Steve Jobs, Sentry, co-founder," lets go. Mirror shows `Listening`, `Heard: Steve Jobs | Sentry | co-founder`, then card 1 in about 3 seconds. |
 | 0:08-0:22 | The three cards | B: "Three cards, each with a source. Connect is an opener that is not small talk. Context is who they are and what their company is doing now. Your angle is what to ask, given your goal." A taps through them. |
 | 0:22-0:30 | Quiet | A turns to the "rep". B: "And now it is gone. One dim line. Nothing talks to you during the conversation. A little help when you need it, then out of the way." |
 | 0:30-0:45 | Spoken debrief, recap, follow-up | A holds the temple: "He said email him about Seer, they're hiring interns for summer." Quiet line shows `★ note saved, recap texted`; the phone buzzes with the recap in seconds. B: "Ten seconds in your own words. The recap is instant, and in a minute or two the Follow-up agent texts a draft email and next steps; reply text for the short message." B scrolls the thread to a follow-up from earlier today while this one runs. |
@@ -51,7 +51,7 @@ Never: Photon only messages the wearer, the backend refuses any number but `WEAR
 Only the professional sections: headline, current role, Experience, Projects and Publications, each fact kept only with a source URL, and never contact info, connections, activity, photos or anything personal in About. `ALLOW_LINKEDIN=0` restores the block, and the same blocklist and sensitive-fact check apply to every source.
 
 **8. What if it mishears the name or picks the wrong person?**
-Deepgram gets the event's names and orgs as keyterms, the lens echoes what it heard, and a transcript within two edits of one listed attendee snaps to them, so "David Kramer" is researched as David Cramer. A search result counts only if it names both the person and the org, the gate drops the brief to "No public info found" when match is below 0.6, and the "Which Priya?" confirm screen appears only for a real ambiguity.
+Deepgram gets the event's names and orgs as keyterms, the lens echoes what it heard, and a transcript within two edits of one listed attendee snaps to them, so "Steve Jobes" is researched as Steve Jobs. A search result counts only if it names both the person and the org, the gate drops the brief to "No public info found" when match is below 0.6, and the "Which Priya?" confirm screen appears only for a real ambiguity.
 
 **9. What is live and what is preloaded?**
 Live: the push-to-talk audio, the speech-to-text, the Exa web search, the decision calls, the Haiku cards, every CREAO run and every Photon text. Preloaded: the demo event, with a few people who agreed to be in it and have public bios, so a judge sees a strong result instead of a lucky one.

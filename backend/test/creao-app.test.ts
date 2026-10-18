@@ -29,28 +29,28 @@ describe("CREAO app transport (per-agent capi_ keys)", () => {
 
   test("createRun posts {inputs} to the app URL with the agent key; getRun maps chatText; extractResult finds the JSON", async () => {
     const appId = "e496e45b-c8eb-4079-9aff-876071501d67";
-    const chatText = "Researched David Cramer.\n\n```json\n" + JSON.stringify({
-      name: "David Cramer", role: "co-founder", headline: "Co-founder of Sentry",
-      facts: [{ text: "David Cramer of Sentry spoke at SREcon.", sourceUrl: "https://usenix.org/x", sourceKind: "talk" }],
+    const chatText = "Researched Steve Jobs.\n\n```json\n" + JSON.stringify({
+      name: "Steve Jobs", role: "co-founder", headline: "Co-founder of Sentry",
+      facts: [{ text: "Steve Jobs of Sentry spoke at SREcon.", sourceUrl: "https://usenix.org/x", sourceKind: "talk" }],
       match: "high", matchReason: "x",
     }) + "\n```";
     stub({
-      [`/runs/a28c`]: { id: "a28c", status: "completed", appId, threadId: "t1", result: { text: '{"name":"David Cramer","factsCount":1}', chatText } },
+      [`/runs/a28c`]: { id: "a28c", status: "completed", appId, threadId: "t1", result: { text: '{"name":"Steve Jobs","factsCount":1}', chatText } },
       [`/apps/${appId}/runs`]: { id: "a28c", status: "pending", appId, appName: "Cue Person Researcher" },
     });
-    const created = await createRun(appId, { name: "David Cramer", org: "Sentry", role: "co-founder", orgAliases: [] }, undefined, "person_researcher");
+    const created = await createRun(appId, { name: "Steve Jobs", org: "Sentry", role: "co-founder", orgAliases: [] }, undefined, "person_researcher");
     assert.equal(created.run_id, "a28c"); assert.equal(created.status, "pending"); assert.equal(created.agent_id, appId);
     assert.equal(calls.length, 1);
     assert.equal(calls[0].url, `https://agent.creao.ai/api/v1/apps/${appId}/runs`);
     assert.equal((calls[0].init.headers as Record<string, string>).authorization, "Bearer capi_test");
-    assert.deepEqual(JSON.parse(String(calls[0].init.body)), { inputs: { name: "David Cramer", org: "Sentry", role: "co-founder", orgAliases: [] } });
+    assert.deepEqual(JSON.parse(String(calls[0].init.body)), { inputs: { name: "Steve Jobs", org: "Sentry", role: "co-founder", orgAliases: [] } });
 
     const run = await getRun("a28c");
     assert.equal(calls[1].url, `https://agent.creao.ai/api/v1/apps/${appId}/runs/a28c`);
     assert.equal(run.status, "completed"); assert.equal(run.conversation_id, "t1");
     assert.equal(run.result?.chat_text, chatText);
     const out = (await extractResult(run, "person_researcher")) as { name: string; facts: unknown[] };
-    assert.equal(out.name, "David Cramer"); assert.equal(out.facts.length, 1);
+    assert.equal(out.name, "Steve Jobs"); assert.equal(out.facts.length, 1);
   });
 
   test("createRun without an app key for that agent uses the /v2 transport (and fails closed without a key)", async () => {

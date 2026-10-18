@@ -62,7 +62,7 @@ The menu is five items: **Talk**, **Last brief**, **Text me a recap**, **Record 
 | You say | Intent | What happens |
 |---|---|---|
 | "Priya Shah, Anduril, recruiter" | lookup | three cards in about 3 s |
-| "Cramer with a C" / "no, it's Priya not Maya" | correction | the last lookup re-runs with the fixed name |
+| "Jobs with a C" / "no, it's Priya not Maya" | correction | the last lookup re-runs with the fixed name |
 | "he said email him about Seer, they're hiring interns" | debrief | note saved on the brief, recap texted ("★ note saved, recap texted"), then Follow-up Writer and Meeting Scheduler text their results |
 | "I'm looking for a cofounder" | goal | goal set, the angle card is rewritten and shown |
 | "text me the recap" | recap | "★ recap texted" |
@@ -72,7 +72,7 @@ The menu is five items: **Talk**, **Last brief**, **Text me a recap**, **Record 
 
 **Record conversation** needs a real brief on screen. The HUD first shows a consent screen: "Ask them: OK if my glasses take notes? Tap once they say yes." Swipe up cancels. A tap starts "● Recording m:ss" with a running word count; a tap stops (15 min cap). Audio streams in 20 s chunks to `POST /api/briefs/:id/transcript`. The transcript lives only on `brief.conversation` and rides into the Follow-up Writer (inside the debrief), the Meeting Scheduler and the Coach. Nothing is stored on the glasses or the phone, and it is never logged.
 
-Misheard names snap to the event list: Deepgram gets the event's names and orgs as keyterms, and the backend accepts a listed attendee within 2 edits ("David Kramer" becomes David Cramer), so a near miss never needs a confirm screen. The "Which Priya?" confirm screen remains for a real ambiguity. If the decision gate says the facts match the person but offer nothing for your goal, you get one quiet line ("<name>: nothing for your goal") instead of cards; the cards stay under Last brief.
+Misheard names snap to the event list: Deepgram gets the event's names and orgs as keyterms, and the backend accepts a listed attendee within 2 edits ("Steve Jobes" becomes Steve Jobs), so a near miss never needs a confirm screen. The "Which Priya?" confirm screen remains for a real ambiguity. If the decision gate says the facts match the person but offer nothing for your goal, you get one quiet line ("<name>: nothing for your goal") instead of cards; the cards stay under Last brief.
 
 Verified on the G2 on Oct 18 (spoken lookup, debrief, coach, goal change, Record conversation); see "What is verified and what is not" below.
 

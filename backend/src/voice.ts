@@ -26,7 +26,7 @@ export interface CoachVoiceInput {
   nextTime?: string;
 }
 
-/** "David Cramer" -> "david"; undefined -> "". */
+/** "Steve Jobs" -> "steve"; undefined -> "". */
 export const firstName = (name: string | undefined | null): string =>
   (name ?? "").trim().split(/\s+/)[0]?.toLowerCase() ?? "";
 
@@ -160,7 +160,7 @@ export function coachBubbles(coaching: CoachVoiceInput): string[] {
   const action2 = casual(p2?.action ?? p2?.why ?? "");
   return cap([
     ...summary.map((line) => ({ line })),
-    // "david is the one to chase: he asked for the demo video" then "send it tonight, lead with the video"
+    // "steve is the one to chase: he asked for the demo video" then "send it tonight, lead with the video"
     ...(p1 ? [{ line: why1 ? `${firstName(p1.name)} is the one to chase: ${why1}` : `${firstName(p1.name)} is the one to chase` }] : []),
     ...(action1 ? [{ line: action1 }] : []),
     ...(next ? [{ line: `next time, ${casual(next)}` }] : []),

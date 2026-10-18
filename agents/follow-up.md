@@ -28,7 +28,7 @@ WHAT TO DO
 1. recap: 3 to 5 bubbles for the wearer, texting voice (agents/voice.md): one line each, under 100 characters, lowercase casual, at most one emoji per bubble, no labels, no lists. Bubble 1: who you just met (name, role, org). Then the things worth remembering, most useful first (debrief first, then research). Last bubble: what is coming ("email draft and times coming right up").
 2. email: a real email the wearer can send as is. subject under 60 chars and specific ("Seer and the Cue demo video", not "Following up"). body 60-90 words, three short paragraphs separated by "\n\n": "Hi <first name>," + thanks, the event name kept short, the one specific thing they said; then the one ask or the thing they asked for, tied to the goal; then a one-line sign-off with the wearer's name and school.
 3. message: a text the wearer can send the person. Under 200 chars (hard cap 300), two or three short sentences, first name, the one thing, the one next step, the wearer's name.
-4. nextSteps: 2 or 3 things the wearer does this week, each under 60 chars, lowercase, starting with a verb, with the time when the debrief gives one ("email david about seer tonight, lead with the video").
+4. nextSteps: 2 or 3 things the wearer does this week, each under 60 chars, lowercase, starting with a verb, with the time when the debrief gives one ("email steve about seer tonight, lead with the video").
 5. schedule: pick the one meeting topic (debrief first, then transcript, then cards). If you have a Google Calendar connector, read the wearer's calendar for the next 10 days and treat every event as busy. Propose exactly 3 half-hour slots within 10 days that fit availability, in timezone, on different days, the first 3-7 days out. inviteTitle (< 60 chars: topic and the two first names), inviteDescription (< 400 chars: who, where you met, the topic, the ask), schedulingMessage (< 240 chars, in the wearer's voice: "Hi <first name>," one sentence asking for a 30-minute call about the topic, the three times in short human form with the timezone once, the wearer's first name). With the connector: create ONE tentative 30-minute event at the first slot on the WEARER's calendar, titled inviteTitle, no attendees, no guests, no invitations; return calendarEventCreated true and eventLink. Without: false and null. Never more than one event per run; never touch other events.
 6. draftLink: with a Gmail connector, save the email as a DRAFT in the wearer's Gmail with no recipient, never send it, and return the draft's link. Without: null.
 
@@ -69,14 +69,14 @@ INPUT CONTRACT (pin it in the agent config): The run input is one JSON object wi
 TEST: after creating the agent, run it once with this input and check the reply ends with one ```json block in the output format:
 {
   "brief": {
-    "person": { "name": "David Cramer", "role": "co-founder", "org": "Sentry" },
+    "person": { "name": "Steve Jobs", "role": "co-founder", "org": "Sentry" },
     "cards": [
-      { "kind": "connect", "title": "Ask about Seer", "body": "He spoke at AI Engineer on\nAI-assisted debugging and agent\ntooling. Ask how Seer finds root\ncauses from errors and traces.", "source": "ai.engineer/speakers/david-cramer" },
-      { "kind": "context", "title": "Who he is", "body": "Sentry co-founder, now Chief\nProduct Officer after CEO and CTO\nroles. Launched the Open Source\nPledge.", "source": "blog.sentry.io/authors/david-cramer" },
+      { "kind": "connect", "title": "Ask about Seer", "body": "He spoke at AI Engineer on\nAI-assisted debugging and agent\ntooling. Ask how Seer finds root\ncauses from errors and traces.", "source": "ai.engineer/speakers/steve-cramer" },
+      { "kind": "context", "title": "Who he is", "body": "Sentry co-founder, now Chief\nProduct Officer after CEO and CTO\nroles. Launched the Open Source\nPledge.", "source": "blog.sentry.io/authors/steve-cramer" },
       { "kind": "angle", "title": "Internship ask", "body": "Sentry runs a 12+ week hybrid\ntechnical internship. Ask who to\ncontact about summer roles.", "source": "sentry.io/careers/internships" }
     ]
   },
-  "debrief": "Talked to David for a few minutes, he said email him about Seer, they're hiring interns for summer, he wants to see the Cue demo video.",
+  "debrief": "Talked to Steve for a few minutes, he said email him about Seer, they're hiring interns for summer, he wants to see the Cue demo video.",
   "goal": "internship",
   "wearer": { "name": "Sam Lee", "school": "UCLA", "major": "Computer Science", "summary": "CS student building Cue, a smart-glasses networking app with a Sentry-instrumented backend.", "interests": ["observability", "wearables"], "projects": ["Cue"], "goalNote": "summer 2027 SWE intern", "availability": "weekday afternoons after 2pm, not Tuesdays", "timezone": "America/Los_Angeles" },
   "eventName": "LA Hacks Fall 2026"

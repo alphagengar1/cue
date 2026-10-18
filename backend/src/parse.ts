@@ -145,7 +145,7 @@ export function findStoredPerson(name: string, org: Organization | null): Person
 }
 
 /**
- * Misheard names: STT gives "David Kramer" for David Cramer. Within the people at the org (or, with
+ * Misheard names: STT gives "Steve Jobes" for Steve Jobs. Within the people at the org (or, with
  * no org match, every listed attendee), accept a unique person whose normalized full name is within
  * 2 edits, or whose first name matches and last name is within 2 edits. Never applied to search
  * guesses, only to the event list.
@@ -168,7 +168,7 @@ export function fuzzyPerson(name: string, pool: Person[]): Person | null {
 export function findListedPersonByName(name: string, eventId: string | null = store.activeEventId): Person | null {
   const pools: Person[][] = [];
   if (eventId) pools.push(store.eventPeople(eventId).filter((p) => p.fromEventList || p.confirmed));
-  // Then every other loaded event: an attendee from last night's pack is still "David Cramer" today.
+  // Then every other loaded event: an attendee from last night's pack is still "Steve Jobs" today.
   pools.push([...store.people.values()].filter((p) => p.eventId !== eventId && (p.fromEventList || p.confirmed)));
   for (const listed of pools) {
     const exact = listed.filter((p) => norm(p.name) === norm(name));

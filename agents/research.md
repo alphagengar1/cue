@@ -50,7 +50,7 @@ INPUT CONTRACT (pin it in the agent config): Inputs are a single JSON object, ei
 
 TEST: after creating the agent, run it once with this input and check the reply ends with one ```json block in the output format:
 {
-  "name": "David Cramer", "org": "Sentry", "role": "co-founder", "orgAliases": ["Sentry.io", "Getsentry"],
+  "name": "Steve Jobs", "org": "Sentry", "role": "co-founder", "orgAliases": ["Sentry.io", "Getsentry"],
   "wearer": { "name": "Sam Lee", "school": "UCLA", "major": "Computer Science", "summary": "CS student building Cue, a smart-glasses networking app with a Sentry-instrumented backend.", "interests": ["observability", "wearables"], "projects": ["Cue"], "goal": "internship", "goalNote": "summer 2027 SWE intern" },
   "organization": { "name": "Sentry", "oneLiner": "Application monitoring: error tracking, tracing, logs and session replay.", "focusNow": [], "eventRole": "sponsor", "hiring": "Engineering internships listed on its careers page." },
   "eventName": "LA Hacks Fall 2026"

@@ -15,7 +15,7 @@ Everything Cue observes about the wearer's networking is appended to one journal
 ## Entry shape
 
 ```json
-{ "at": "2026-10-18T08:52:10.113Z", "type": "debrief", "briefId": "brf_…", "person": { "name": "David Cramer", "org": "Sentry", "role": "co-founder" }, "data": { … } }
+{ "at": "2026-10-18T08:52:10.113Z", "type": "debrief", "briefId": "brf_…", "person": { "name": "Steve Jobs", "org": "Sentry", "role": "co-founder" }, "data": { … } }
 ```
 
 `person` is present on everything tied to a conversation. `data` depends on `type`:

@@ -17,15 +17,15 @@ before(async () => {
 after(() => new Promise<void>((r) => server.close(() => r())));
 beforeEach(() => { journalReset(); store.briefs.clear(); });
 
-const david = { name: "David Cramer", org: "Sentry", role: "co-founder" };
+const steve = { name: "Steve Jobs", org: "Sentry", role: "co-founder" };
 
 describe("journal: append, aggregate, render", () => {
   test("entries persist in order and aggregate per person", () => {
-    journal({ type: "brief", briefId: "b1", person: david, data: { confidence: "high", cards: [{ kind: "connect", title: "Ask about Seer", body: "x" }] } });
-    journal({ type: "debrief", briefId: "b1", person: david, data: { text: "he said email him about seer" } });
-    journal({ type: "transcript", briefId: "b1", person: david, data: { text: "so what are you building these days" } });
-    journal({ type: "follow_up", briefId: "b1", person: david, data: { subject: "Seer", body: "Hi David,\n\nx", message: "hi", nextSteps: ["email david"] } });
-    journal({ type: "coaching", data: { summary: "solid day", patterns: ["asks worked"], priorities: [{ name: "David Cramer", action: "email tonight" }], coaching: [], nextTime: "ask for a next step" } });
+    journal({ type: "brief", briefId: "b1", person: steve, data: { confidence: "high", cards: [{ kind: "connect", title: "Ask about Seer", body: "x" }] } });
+    journal({ type: "debrief", briefId: "b1", person: steve, data: { text: "he said email him about seer" } });
+    journal({ type: "transcript", briefId: "b1", person: steve, data: { text: "so what are you building these days" } });
+    journal({ type: "follow_up", briefId: "b1", person: steve, data: { subject: "Seer", body: "Hi Steve,\n\nx", message: "hi", nextSteps: ["email steve"] } });
+    journal({ type: "coaching", data: { summary: "solid day", patterns: ["asks worked"], priorities: [{ name: "Steve Jobs", action: "email tonight" }], coaching: [], nextTime: "ask for a next step" } });
     journal({ type: "goal", data: { goal: "cofounder" } });
     assert.equal(journalEntries().length, 6);
     const people = journalPeople();
@@ -36,7 +36,7 @@ describe("journal: append, aggregate, render", () => {
     assert.equal(people[0].followUp?.subject, "Seer");
     const md = journalMarkdown();
     assert.match(md, /^# Cue Journal/);
-    assert.match(md, /### David Cramer, co-founder, Sentry/);
+    assert.match(md, /### Steve Jobs, co-founder, Sentry/);
     assert.match(md, /debrief \(the wearer's own words\): he said email him about seer/);
     assert.match(md, /conversation transcript \(recorded with consent/);
     assert.match(md, /## Coaching/);
@@ -47,7 +47,7 @@ describe("journal: append, aggregate, render", () => {
 
 describe("journal routes (JOURNAL_TOKEN, not the device token)", () => {
   test("503 when no journal token is configured; 401 wrong token; 200 markdown and json with the right one", async () => {
-    journal({ type: "brief", briefId: "b1", person: david, data: { confidence: "high", cards: [] } });
+    journal({ type: "brief", briefId: "b1", person: steve, data: { confidence: "high", cards: [] } });
     const was = config.journalToken;
     (config as { journalToken?: string }).journalToken = undefined;
     try {
@@ -58,7 +58,7 @@ describe("journal routes (JOURNAL_TOKEN, not the device token)", () => {
       const md = await fetch(`${base}/journal.md?token=jt_test`);
       assert.equal(md.status, 200);
       assert.match(md.headers.get("content-type") ?? "", /text\/markdown/);
-      assert.match(await md.text(), /David Cramer/);
+      assert.match(await md.text(), /Steve Jobs/);
       const json = await fetch(`${base}/api/journal.json`, { headers: { authorization: "Bearer jt_test" } });
       assert.equal(json.status, 200);
       const body = (await json.json()) as { entries: unknown[]; people: unknown[] };
