@@ -13,7 +13,7 @@ import { CueError } from "./errors.js";
 import { classifyIntent } from "./intent.js";
 import { LlmUnavailable, parseWithModel } from "./llm.js";
 import { parseTranscript } from "./parse.js";
-import { photonConfigured, sendRecap } from "./photon.js";
+import { photonConfigured, sendRecap, sendText } from "./photon.js";
 import { store } from "./store.js";
 import { log } from "./telemetry.js";
 
@@ -62,12 +62,20 @@ export async function handleSay(text: string, briefId?: string): Promise<SayOutc
     journal({ type: "recap", briefId: brief.id, person: brief.query, data: r.sent ? { sent: true, chars: r.text.length, bubbles } : { sent: false, reason: r.reason, bubbles } });
     return r.sent ? { sent: true, chars: r.text.length } : { sent: false, reason: r.reason };
   };
+  const ackFor = async (brief: Brief): Promise<NonNullable<SayResponse["recap"]>> => {
+    if (!photonConfigured()) return { sent: false, reason: "Photon not set up" };
+    const first = brief.query.name.split(/\s+/)[0] || "them";
+    const r = await sendText([`got it 👍 working on ${first}, give me a couple of minutes`]);
+    return r.sent ? { sent: true, chars: r.text.length } : { sent: false, reason: r.reason };
+  };
   const debrief = async (): Promise<SayOutcome> => {
     if (!current) return done({ intent: "unknown", say: "No one to debrief yet.\nSay a name, company, role first." });
     const brief: Brief = { ...current, debrief: text.trim().slice(0, 600), version: current.version + 1, updatedAt: new Date().toISOString() };
     store.briefs.set(brief.id, brief);
     journal({ type: "debrief", briefId: brief.id, person: brief.query, data: { text: brief.debrief } });
-    const recap = await recapFor(brief);
+    // With the Follow-up agent configured, it writes the recap itself after post-conversation research
+    // (agents/follow-up.md); the phone gets a one-line ack now. Without it, Haiku's instant recap.
+    const recap = creaoEnabled("follow_up_writer") ? await ackFor(brief) : await recapFor(brief);
     // CREAO Follow-up Writer, live when its app key is set: the full email + message + next steps,
     // texted when the run completes (about a minute). The Haiku recap above is the instant part.
     let creaoRunId: string | undefined;

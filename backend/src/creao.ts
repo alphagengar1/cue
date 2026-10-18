@@ -580,6 +580,8 @@ const FollowUpOut = z.object({
   nextSteps: z.array(z.string()).default([]),
   draftLink: z.string().nullable().optional(), // Gmail draft the agent saved (never sent), when it has the connector
   schedule: ScheduleOut.optional(),            // the merged Follow-up agent returns the times too (agents/follow-up.md)
+  recap: z.array(z.string()).optional(),       // the agent's own recap bubbles (replaces the instant Haiku recap)
+  researchNotes: z.array(z.string()).optional(), // what it looked up after the conversation (journaled, not texted)
 });
 async function applyFollowUpWriter(rec: RunRecord, out: unknown): Promise<string> {
   const parsed = FollowUpOut.safeParse(out);
@@ -593,12 +595,19 @@ async function applyFollowUpWriter(rec: RunRecord, out: unknown): Promise<string
   if (person) {
     store.putPerson({ ...person, followUp: { ...(person.followUp ?? {}), agent: "creao-follow-up-writer", agentId: agentIdFor("follow_up_writer"), email: { subject, body }, message, nextSteps, draftLink: d.draftLink ?? null } });
   }
+  const recap = (d.recap ?? []).map((b) => sanitize(b).trim().slice(0, 160)).filter(Boolean).slice(0, 5);
+  if (recap.length) {
+    const rr = await sendText(recap);
+    const b0 = rec.briefId ? store.briefs.get(rec.briefId) : undefined;
+    journal({ type: "recap", briefId: rec.briefId, person: b0?.query, data: { sent: rr.sent, bubbles: recap, by: "follow-up agent", ...(rr.sent ? { chars: rr.text.length } : { reason: rr.reason }) } });
+    await new Promise((res) => setTimeout(res, 1500));
+  }
   const r = await sendText(followUpBubbles({ email: { subject, body }, message, nextSteps }, firstName(person?.name))
     .concat(d.draftLink && /^https?:\/\//.test(d.draftLink) ? [`saved as a gmail draft too: ${d.draftLink}`] : []));
   let note = `follow-up stored${person ? ` on ${person.name}` : ""}; text ${r.sent ? "sent" : `not sent (${r.reason})`}`;
   { const b0 = rec.briefId ? store.briefs.get(rec.briefId) : undefined;
     journal({ type: "follow_up", briefId: rec.briefId, person: b0?.query ?? (person ? { name: person.name, org: person.orgId } : undefined),
-      data: { subject, body, message, nextSteps, draftLink: d.draftLink ?? null, runId: rec.runId, texted: r.sent } }); }
+      data: { subject, body, message, nextSteps, draftLink: d.draftLink ?? null, runId: rec.runId, texted: r.sent, researchNotes: (d.researchNotes ?? []).slice(0, 8) } }); }
   // Orchestration: Follow-up Writer -> Meeting Scheduler (agents/meeting-scheduler.md).
   if (d.schedule) return `${note}; ${await applySchedule(rec, d.schedule)}`;
   const brief = rec.briefId ? store.briefs.get(rec.briefId) : undefined;
