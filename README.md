@@ -63,7 +63,7 @@ The menu is five items: **Talk**, **Last brief**, **Text me a recap**, **Record 
 |---|---|---|
 | "Priya Shah, Anduril, recruiter" | lookup | three cards in about 3 s |
 | "Cook with a C" / "no, it's Priya not Maya" | correction | the last lookup re-runs with the fixed name |
-| "he said email him about Seer, they're hiring interns" | debrief | note saved on the brief, recap texted ("★ note saved, recap texted"), then Follow-up Writer and Meeting Scheduler text their results |
+| "he said email him about Seer, they're hiring interns" | debrief | note saved on the brief, recap texted ("★ note saved, recap texted"), the Follow-up agent writes the email, times and hold in the background, served on "email" or "book" |
 | "I'm looking for a cofounder" | goal | goal set, the angle card is rewritten and shown |
 | "text me the recap" | recap | "★ recap texted" |
 | "how did I do today?" / "who should I follow up with?" | coach | the Networking Coach runs and texts a few bubbles |
@@ -78,15 +78,17 @@ Verified on the G2 on Oct 18 (spoken lookup, debrief, coach, goal change, Record
 
 ## CREAO agents
 
-Three agents, split by when they run, all built on agent.creao.ai and all started from the backend. Each file in [agents/](agents/) is the complete message for the CREAO chat (`cat agents/follow-up.md | pbcopy`, paste): it creates the agent, applies every setting, runs a test, creates the API key and replies with the id and key. The backend contract is [design/05-agent-contracts.md](design/05-agent-contracts.md).
+Five agents, split by when they run, all built on agent.creao.ai. The first three are started from the backend; the last two run on their own schedule over the Cue Journal and need nothing from the backend. Each file in [agents/](agents/) is the complete message for the CREAO chat (`cat agents/follow-up.md | pbcopy`, paste): it creates the agent, applies every setting, runs a test, creates the API key and replies with the id and key. The backend contract is [design/05-agent-contracts.md](design/05-agent-contracts.md).
 
 | # | Agent | Agent ID | Link | Started by | Returns |
 |---|---|---|---|---|---|
 | 1 | Research | `5283bd7f-cc11-4b29-902b-2debe558b46f` | https://agent.creao.ai/install/5283bd7f-cc11-4b29-902b-2debe558b46f?version=4c8c119a-7514-4dca-9e6b-64798d859bbd | `POST /api/events` from the setup page (EVENT request); optionally after a lookup (PERSON request, `RESEARCH_AFTER_LOOKUP=1`, off by default) | organizations and seed people; or sourced facts, headline, match level and the final three cards with an `improvesOn` note |
 | 2 | Follow-up | `7a639acb-b15a-4d88-b66d-c76831b92ddf` | https://agent.creao.ai/install/7a639acb-b15a-4d88-b66d-c76831b92ddf?version=e2188ecf-8212-4b00-a590-4396a046cc07 | the backend on a spoken or texted debrief, right after the instant Haiku recap | email, message (300 chars or less), next steps, Gmail draft link (never sent), three half-hour times, scheduling message, one tentative 30-minute hold on the wearer's own calendar with no guests; texted by Photon, "book" for the message |
 | 3 | Coach | `b095ddf1-cccc-42ae-a381-ccc7906b14a4` | https://agent.creao.ai/install/b095ddf1-cccc-42ae-a381-ccc7906b14a4?version=58dfa39f-5361-4cb3-9e04-e92d421dda4f | intent `coach` by voice or iMessage, automatically after every third debrief, and a nightly Schedule on the agent | summary, patterns, priorities, coaching, next time, 7-day metrics and trend, open loops; syncs the "Cue Connections" sheet and renders a dashboard; texted as a few bubbles |
+| 4 | Speech Coach | [SPEECH COACH ID] | [SPEECH COACH LINK] | Schedule only, nightly at 9:30 PM, with extended memory across periods | delivery and conversation skills from the verbatim speech and consented transcripts: filler words, pacing, rambling, drills for next time; a dashboard per run |
+| 5 | Relationships | [RELATIONSHIPS ID] | [RELATIONSHIPS LINK] | Schedule only, nightly at 10 PM (weekly report on Mondays), with extended memory of every person and nudge | stale follow-ups, the next nudge drafted for the wearer to send, open loops, the weekly networking report; reads and writes the "Cue Connections" sheet |
 
-The earlier six single-purpose agents (Event Loader `7ed5ac12…`, Person Researcher `e496e45b…`, Brief Writer `d5ded73b…`, Follow-up Writer, Meeting Scheduler, Networking Coach) were merged into these three on Oct 18; the backend still accepts their outputs. [agents/voice.md](agents/voice.md) is the texting voice every agent and every backend text follows. [agents/fast-brief.md](agents/fast-brief.md) is the backend Haiku prompt and [agents/decision-gate.md](agents/decision-gate.md) is the OpenAI gate; neither is a CREAO agent.
+Six earlier single-purpose agents (Event Loader, Person Researcher, Brief Writer, Follow-up Writer, Meeting Scheduler, Networking Coach) were merged into the first three on Oct 18 and deleted. [agents/voice.md](agents/voice.md) is the texting voice every agent and every backend text follows. [agents/fast-brief.md](agents/fast-brief.md) is the backend Haiku prompt and [agents/decision-gate.md](agents/decision-gate.md) is the OpenAI gate; neither is a CREAO agent.
 
 ## How CREAO is used
 
@@ -94,9 +96,9 @@ The earlier six single-purpose agents (Event Loader `7ed5ac12…`, Person Resear
 
 - **Three agents built from the CREAO chat** (one paste each), started from the backend over CREAO's per-agent App API: each agent has its own `capi_` key, kept in `backend/.env`. `backend/src/creao.ts` POSTs the inputs to `agent.creao.ai/api/v1/apps/{agentId}/runs`, registers a **webhook** (`PUBLIC_BASE_URL`) and **polls** as a fallback, then extracts the first JSON block from the reply or its artifacts, validates it with zod and applies it. Keys never leave the server.
 - **The Cue Journal** (`backend/src/journal.ts`): every stage of every conversation (brief, research, cards, debrief, consented transcript, recap, follow-up, times, coaching, goal) is appended to a persistent journal and served as Markdown at `/journal.md` behind its own `JOURNAL_TOKEN`. The Coach reads it on its own schedule; nothing has to start it.
-- **Three scheduled agents on the journal**: the Coach (nightly, below), a Speech Coach (filler words, pacing, drills from the verbatim speech) and a Relationships agent (stale follow-ups, next nudge, weekly report). Neither of the last two needs the backend.
+- **Three scheduled agents on the journal**: the Coach (nightly, below), the Speech Coach (filler words, pacing, drills from the verbatim speech) and the Relationships agent (stale follow-ups, next nudge, weekly report). Neither of the last two needs the backend; rows 4 and 5 above.
 - **Long-running, memory-backed agent**: the Coach runs nightly from the Schedule tab with extended memory, compares weeks, keeps the "Cue Connections" Google Sheet (Sheets connector) as a CRM and renders a Dashboard per run. That is the pattern the CREAO team asked for.
-- **Extended memory** on all three agents.
+- **Extended memory** on all five agents.
 - **Connectors**: Google Calendar and Gmail on Follow-up (one tentative hold with no guests, one draft that is never sent), Google Sheets on Coach.
 - **Browser Use** on Research, for professional LinkedIn sections and pages, not just snippets.
 - **Autonomy Auto** on every agent; API runs under "Ask first" cannot write to a connector.
@@ -158,11 +160,11 @@ What works with missing keys: the setup page and `/api/briefs/text` always answe
 
 ## What is verified and what is not
 
-Verified live from the backend and on the AWS server (Oct 18, early), with the six single-purpose agents the three merged ones replace:
+Verified live from the backend and on the AWS server (Oct 18):
 
 - Lookup -> Haiku cards in about 3 s (Exa + LinkedIn + Haiku). The background CREAO rewrite (Research agent, v2 at 100 s) also works on the server but is off by default (`RESEARCH_AFTER_LOOKUP=1` to enable): nobody waits two minutes mid-conversation.
-- Typed or texted debrief -> instant Haiku recap -> Follow-up Writer -> Meeting Scheduler, each texted by Photon as it completes.
-- Networking Coach on a texted or typed "how did I do today?" and after every third debrief, texted as bubbles.
+- Typed or texted debrief -> instant Haiku recap in seconds -> Follow-up agent in the background (email, times, a real calendar hold), served on "email" or "book".
+- Coach on a texted or typed "how did I do today?" and after every third debrief, texted as bubbles; Speech Coach and Relationships on their nightly schedules over the journal.
 - Real Photon sends to the wearer, and the replies "email", "text", "who did I meet", "book" and coach questions in the thread.
 - The OpenAI Decisions API intent router and cue gate, Sentry tracing, the AWS deployment with HTTPS, the Even Hub package (0.1.1) with speech-to-text working from the hub build.
 
