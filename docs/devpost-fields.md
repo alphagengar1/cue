@@ -27,11 +27,11 @@ At a career fair you meet thirty people in two hours and forget all of them by d
 
 ## What it does
 
-Hold the temple of your Even Realities G2 and say "Tim Cook, Sentry, co-founder." Three seconds later the lens shows three cards: how to open, who they are, what to ask for given your goal and your own projects. Then it goes quiet. One dim line while you talk. If it can't find anything public about the person, it says so instead of making something up.
+Hold the temple of your Even Realities G2 and say "Tim Cook, Apple, CEO." Three seconds later the lens shows three cards: how to open, who they are, what to ask for given your goal and your own projects. Then it goes quiet. One dim line while you talk. If it can't find anything public about the person, it says so instead of making something up.
 
 When you're done, hold the temple again and say what happened. Your phone gets a four-line recap by iMessage. In the background a CREAO agent researches what came up and writes the email, next steps, three times to meet, and a tentative hold on your calendar. Reply "email" or "book" when you want them. Nothing is ever sent to the person you met.
 
-Text the line "I'm going to LA Hacks tomorrow" the night before and a Research agent builds a pack of who's there and who's hiring. Ask "how did I do today?" and a Coach agent that has read every conversation, with memory of earlier days, tells you who to chase first and one thing to do differently.
+Text the line "I'm going to LA Hacks tomorrow" the night before and a Research agent builds a pack of who's there and who's hiring. Ask "how did I do today?" and a Coach agent that has read every conversation, with memory of earlier days, tells you who to chase first and one thing to do differently. Two more scheduled agents read the same journal: a Speech Coach that scores your verbatim debriefs for filler words and pacing, and a Relationships agent that flags stale follow-ups each week.
 
 ## How we built it
 
@@ -39,21 +39,25 @@ A TypeScript app on the Even Hub SDK, running inside the Even phone app, that ho
 
 Everything slower than three seconds is a CREAO agent, started through CREAO's per-agent API: Research before the conversation, Follow-up after it (Gmail draft and Google Calendar connectors), Coach over the day (Google Sheets, extended memory, nightly schedule). Every stage lands in a journal the agents read on their own, so long-horizon agents don't need our backend at all. Photon's iMessage line carries everything to the wearer.
 
-Agents (IDs and links): Research `5283bd7f-cc11-4b29-902b-2debe558b46f`, Follow-up `7a639acb-b15a-4d88-b66d-c76831b92ddf`, Coach `b095ddf1-cccc-42ae-a381-ccc7906b14a4`. Install links are in the Try it out section; run share links: [RUN SHARE LINKS]. Pull the CREAO keys and Cue is just three cards and nothing after.
+Agents (IDs and links):
+Research `5283bd7f-cc11-4b29-902b-2debe558b46f`,
+Follow-up `7a639acb-b15a-4d88-b66d-c76831b92ddf`,
+Coach `b095ddf1-cccc-42ae-a381-ccc7906b14a4`.
+Install links are in the Try it out section; run share links: [RUN SHARE LINKS].
+Pull the CREAO keys and Cue is just three cards and nothing after.
 
 ## Challenges we ran into
 
 - The lens cut lines in half until we found the firmware's fixed 27 px line height and rebuilt the layout as exact multiples of it.
-- Nobody documented hold-to-talk. A real G2 told us a long press is system event 9 and the release is 10.
-- Deepgram hears "Cook" as "Kramer". Boost terms, name-and-org filtering, and snapping to the attendee list within two letters.
-- An agent started over the API can't touch your calendar unless its autonomy is set to Auto. It silently skips instead. Took us an hour to find.
+- Deepgram can mishear names, so we boost terms, use name-and-org filtering, and snap to the attendee list within two letters.
+- An agent started over the API can't touch your calendar unless its autonomy is set to Auto. It silently skips instead; this took us an hour to find.
 - The first agent texts read like consultant reports. One page of voice rules and a hard cap of four texts per conversation fixed it.
-- eduroam blocks phone-to-laptop traffic, which is why there's an AWS box.
+- The UCLA wifi blocks phone-to-laptop traffic, so we use an AWS box.
 
 ## Accomplishments that we're proud of
 
 - It runs on real glasses. Spoken lookup, debrief, coach, goal change, and consented recording, all on the G2 against the deployed backend.
-- It says "no public info found" instead of lying.
+- When not enough information is found, it says "no public info found" instead of lying.
 - Three CREAO agents doing the heavy work before, after, and across the day, and a journal that lets more agents join without touching our code.
 - No camera, no face recognition, no recording without a consent screen the other person sees you tap, and nothing ever sent to them.
 
