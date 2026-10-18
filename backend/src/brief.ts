@@ -282,7 +282,7 @@ export async function buildBrief(text: string): Promise<BriefOutcome> {
     version: 1,
     eventId: event.id,
     transcript: text,
-    query,
+    query: { ...query, name }, // the resolved name ("David Cramer"), not the misheard one; transcript keeps what was said
     match: { personId: person?.id ?? null, confidence, candidates },
     // Lead card first (stable: the other two keep their order).
     cards: decision ? [...cards].sort((a, b) => Number(b.kind === decision!.lead) - Number(a.kind === decision!.lead)) : cards,

@@ -135,7 +135,13 @@ export function findStoredPerson(name: string, org: Organization | null): Person
   const first = norm(name.split(" ")[0]);
   const byFirst = atOrg.filter((p) => norm(p.name.split(" ")[0]) === first);
   if (byFirst.length === 1 && !name.includes(" ")) return byFirst[0];
-  return fuzzyPerson(name, atOrg);
+  const here = fuzzyPerson(name, atOrg);
+  if (here) return here;
+  // Same org in another loaded event (last night's pack): exact or near-miss name there counts too.
+  const elsewhere = [...store.people.values()].filter((p) => p.eventId !== org.eventId && p.orgId === org.id && (p.fromEventList || p.confirmed));
+  const exactElsewhere = elsewhere.filter((p) => norm(p.name) === norm(name));
+  if (exactElsewhere.length === 1) return exactElsewhere[0];
+  return fuzzyPerson(name, elsewhere);
 }
 
 /**
