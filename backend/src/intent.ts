@@ -70,9 +70,9 @@ export function rulesIntent(text: string, ctx: IntentContext): IntentResult {
 // ---------------------------------------------------------------------------
 
 const INTENT_CHOICES: { value: Intent; description: string }[] = [
-  { value: "lookup", description: "Names a person and/or a company to look up before talking to them, e.g. 'Priya Shah, Anduril, recruiter' or 'Steve from Sentry'." },
+  { value: "lookup", description: "Names a person and/or a company to look up before talking to them, e.g. 'Priya Shah, Anduril, recruiter' or 'Tim from Sentry'." },
   { value: "debrief", description: "Notes about a conversation that already happened: what the person said, wants, offered, or what to send them, e.g. 'he said email him about Seer, they're hiring interns'." },
-  { value: "correction", description: "Fixes how the last name or company was heard, e.g. 'Jobs with a C', 'no, it's Priya not Maya', 'I meant Anduril'." },
+  { value: "correction", description: "Fixes how the last name or company was heard, e.g. 'Cook with a C', 'no, it's Priya not Maya', 'I meant Anduril'." },
   { value: "goal", description: "States what the wearer is looking for at the event: an internship or job, a cofounder, mentorship, learning from experts, or teammates and sponsors." },
   { value: "recap", description: "Asks to text or send the recap or summary of the last person to their phone." },
   { value: "coach", description: "Asks for reflection or advice across the day: how did I do, who should I follow up with first, what patterns, coach me." },

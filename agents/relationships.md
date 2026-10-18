@@ -32,7 +32,7 @@ STALE RULES (days count from the latest timestamp for that person)
 - sent with no reply for 5 or more days: stale, draft a short bump the wearer can send.
 - times proposed with no reply for 3 or more days: stale, draft a one-line check-in with one new time.
 - met with no debrief and no follow-up for 1 or more days: lost, say what the wearer should write down while they still remember.
-- Same name spelled two ways in the journal (speech-to-text slips such as Kramer / Jobs / Davit) is one person: merge them in your reasoning, keep the row the sheet already has, and say that you merged.
+- Same name spelled two ways in the journal (speech-to-text slips such as Kramer / Cook / Davit) is one person: merge them in your reasoning, keep the row the sheet already has, and say that you merged.
 
 WHAT TO DO, every run
 1. Read the journal, the sheet and your memory. Build the list of people with stage, days since last activity, and whether the stage changed since your last run. Set Outreach status for people in a stage you own; add "nudge suggested" only when you draft a nudge this run.

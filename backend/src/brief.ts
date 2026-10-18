@@ -179,7 +179,7 @@ export async function buildBrief(text: string): Promise<BriefOutcome> {
     }, { "cue.provider": "exa" });
     kept = filterResults(results, name, org ? [org.name, ...org.aliases] : [query.org]);
     notes.push(`search ${Date.now() - t0}ms, kept ${kept.length}/${results.length}`);
-    // Misheard surname ("Steve Jobes" for Steve Jobs) and nobody on a list: search by first name
+    // Misheard surname ("Tim Cooke" for Tim Cook) and nobody on a list: search by first name
     // and the org, and accept the one full name whose surname is within 2 edits of what was heard.
     if (!kept.length && !stored && !firstOnly) {
       const [first, ...rest] = name.split(/\s+/);
@@ -282,7 +282,7 @@ export async function buildBrief(text: string): Promise<BriefOutcome> {
     version: 1,
     eventId: event.id,
     transcript: text,
-    query: { ...query, name }, // the resolved name ("Steve Jobs"), not the misheard one; transcript keeps what was said
+    query: { ...query, name }, // the resolved name ("Tim Cook"), not the misheard one; transcript keeps what was said
     match: { personId: person?.id ?? null, confidence, candidates },
     // Lead card first (stable: the other two keep their order).
     cards: decision ? [...cards].sort((a, b) => Number(b.kind === decision!.lead) - Number(a.kind === decision!.lead)) : cards,

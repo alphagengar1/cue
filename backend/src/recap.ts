@@ -104,7 +104,7 @@ export async function handleReply(text: string, lastBriefId: string | null, now 
       return `got it, ${ev.name} is set${ev.orgs.length ? ` with ${ev.orgs.join(", ")}` : ""}. say "look up <name>, <company>" and i'll prep you (the research agent isn't connected, so i can't find the sponsor list myself)`;
     }
   }
-  // Pre-event prep by text: "look up Steve Jobs, Sentry" / "prep me for Priya Shah, Anduril" / "who is X at Y".
+  // Pre-event prep by text: "look up Tim Cook, Sentry" / "prep me for Priya Shah, Anduril" / "who is X at Y".
   const prep = /^\s*(look ?up|prep( me)?( for)?|brief me on|who is|who's)\s+(.+)$/i.exec(text.trim());
   if (prep) {
     let out;

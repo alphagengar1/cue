@@ -23,7 +23,7 @@ Cue is an app for Even Realities G2 smart glasses, with a backend that runs thre
 **The live moment, on the glasses.**
 
 1. You read a name badge and hold the temple (long press). You quietly say a name, a company, and a role: "Priya, Anduril, recruiter."
-2. Release. The lens shows `Looking up...` and echoes what it heard (`Heard: Priya | Anduril | recruiter`) so you can catch a mistake. If what it heard is within two edits of someone on the event list, the cards are for that person: "Steve Jobes" is looked up as Steve Jobs.
+2. Release. The lens shows `Looking up...` and echoes what it heard (`Heard: Priya | Anduril | recruiter`) so you can catch a mistake. If what it heard is within two edits of someone on the event list, the cards are for that person: "Tim Cooke" is looked up as Tim Cook.
 3. About three seconds later, three cards appear, one at a time, with a source line on each:
    - **Connect:** an opener that is not small talk, such as a shared background or a question about their own work.
    - **Context:** their role and what their company is focused on now.
@@ -33,7 +33,7 @@ Cue is an app for Even Realities G2 smart glasses, with a backend that runs thre
 **The menu is five items:** Talk, Last brief, Text me a recap, Record conversation, Go quiet. Everything else is spoken. Hold the temple (up to 12 seconds) and say anything. A decision model picks what you meant, and the backend does it:
 
 - "Priya Shah, Anduril, recruiter": a lookup, three cards.
-- "Jobs with a C" or "no, it's Priya not Maya": a correction, the last lookup re-runs with the fixed name.
+- "Cook with a C" or "no, it's Priya not Maya": a correction, the last lookup re-runs with the fixed name.
 - "he said email him about Seer, they're hiring interns": a debrief. The note is saved on the brief, the recap is texted, and the follow-up chain starts.
 - "I'm looking for a cofounder": a goal change, the angle card is rewritten and the other two stay.
 - "text me the recap": the recap is texted.
@@ -46,7 +46,7 @@ Cue is an app for Even Realities G2 smart glasses, with a backend that runs thre
 **After the conversation, on your phone.** You hold the temple and say what happened in your own words. Within seconds Photon texts you a recap, written in a texting voice:
 
 ```
-just met steve cramer, sentry co-founder 👀
+just met tim cramer, sentry co-founder 👀
 he said to email him about seer, they're hiring summer interns
 he also wants the cue demo video, put that in the email
 want a draft? just say email ✍️
@@ -112,7 +112,7 @@ We show the agents running in the CREAO Sessions tab in the demo video.
 - **Gestures arrive in different places.** Taps came in as system events with an undefined type (a protobuf quirk where 0 is omitted), swipes came in as text events, and opening the menu fires foreground events even though our page stays mounted. We handle all of these idempotently so opening the menu does not wipe your card.
 - **Audio is real time.** The mic streams 50 ms frames, the first arrives about 450 ms after the press, and a couple arrive after we stop. Peaks hit full scale when speaking normally, which may clip, so we watch transcription accuracy and echo the transcript on screen.
 - **Networking at a university.** eduroam blocks phone-to-laptop traffic, so during development we put the phone and laptop on a phone hotspot. Deploying to Lightsail behind Caddy removed the problem for the demo.
-- **Telling people apart.** Searching "Priya at Anduril" can return the wrong Priya. We keep a result only if it mentions both name and company, and the decision gate checks the match before any card is written. Misheard names are a separate problem: Deepgram gets the event's names and orgs as keyterms, and the backend snaps a transcript to a listed attendee within 2 edits ("Steve Jobes" becomes Steve Jobs), so a near miss never needs a confirm screen. The "Which Priya?" screen remains only for a real ambiguity.
+- **Telling people apart.** Searching "Priya at Anduril" can return the wrong Priya. We keep a result only if it mentions both name and company, and the decision gate checks the match before any card is written. Misheard names are a separate problem: Deepgram gets the event's names and orgs as keyterms, and the backend snaps a transcript to a listed attendee within 2 edits ("Tim Cooke" becomes Tim Cook), so a near miss never needs a confirm screen. The "Which Priya?" screen remains only for a real ambiguity.
 - **Agents that write to the world.** A CREAO run started over the API cannot create a calendar event unless the agent's Autonomy is set to Auto; under "Ask first" it silently skips the write. And an agent that returns prose instead of JSON would break the chain, so every prompt ends with "end your reply with exactly one ```json block" and the backend searches `chatText`, `text` and artifacts for it.
 - **Getting the texts to sound like a person.** The first agent outputs read like consultant reports ("that maps straight to your internship goal"). We wrote `agents/voice.md`, put the rules in every agent prompt, and had the backend strip labels and split long lines, so the Coach now says "send it tonight, lead with the video".
 

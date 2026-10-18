@@ -319,14 +319,14 @@ Hold the temple and say anything. The glasses send the transcript to `POST /api/
 | You say | Intent | What the HUD does |
 |---|---|---|
 | "Priya Shah, Anduril, recruiter" | lookup | cards, as before |
-| "Jobs with a C" / "no, it's Priya not Maya" | correction | re-runs the last lookup with the fixed name |
+| "Cook with a C" / "no, it's Priya not Maya" | correction | re-runs the last lookup with the fixed name |
 | "he said email him about Seer, they're hiring interns" | debrief | note saved on the brief, recap texted; quiet line "★ note saved, recap texted" |
 | "I'm looking for a cofounder" | goal | goal set, angle card rewritten and shown |
 | "text me the recap" | recap | quiet line "★ recap texted" |
 | "never mind" | quiet | back to quiet |
 | anything else | unknown | one quiet line with a hint |
 
-Misheard names: Deepgram gets the event's names and orgs as keyterms, and the backend accepts a listed attendee within 2 edits ("Steve Jobes" -> Steve Jobs), so no confirm screen for a near miss. Hold cap is 12 s. Decision gate: `decision.goalFit < 0.5` shows one quiet line "<name>: nothing for your goal" instead of cards (cards stay under Last brief).
+Misheard names: Deepgram gets the event's names and orgs as keyterms, and the backend accepts a listed attendee within 2 edits ("Tim Cooke" -> Tim Cook), so no confirm screen for a near miss. Hold cap is 12 s. Decision gate: `decision.goalFit < 0.5` shows one quiet line "<name>: nothing for your goal" instead of cards (cards stay under Last brief).
 
 Verified on the physical G2 on Oct 18 (about 10:00): spoken lookup with a misheard name resolved, spoken debrief with the recap texted in seconds, "how did I do today?" starting the coach, a spoken goal change (even "cofinder"), and Record conversation (consent screen, two 20-second chunks transcribed). Not yet seen on the lens: correction, "never mind", the goal-gate quiet line.
 

@@ -2,7 +2,7 @@
 
 Target length: 2:00 (hard cap 2:10). The glasses are on screen by 0:02 and the first card is on screen by about 0:08. Placeholders in [SQUARE BRACKETS] need real values. Voiceover is written at about 2.5 words per second; every beat fits its slot with a little air.
 
-The demo person is Steve Jobs (Sentry, co-founder), who is in the preloaded event and has a public footprint. Keep the same person through the whole video so the debrief, the follow-up, the times and the coach all point at one brief.
+The demo person is Tim Cook (Sentry, co-founder), who is in the preloaded event and has a public footprint. Keep the same person through the whole video so the debrief, the follow-up, the times and the coach all point at one brief.
 
 ## Capture setup
 
@@ -24,9 +24,9 @@ The demo person is Steve Jobs (Sentry, co-founder), who is in the preloaded even
 
 | Time | Shot | On screen (captions) | Voiceover |
 |---|---|---|---|
-| 0:00-0:12 | Wide for 2 s: Person A at a table, a person across, A lifts a finger to the temple. Title flashes "Cue". Cut to through-the-lens: `Listening`, A says "Steve Jobs, Sentry, co-founder", release, `Heard: Steve Jobs \| Sentry \| co-founder`, then card 1 with its source line, about 3 s after release. | Caption: "Cue - quiet networking on Even G2". Then: "Hold. Say a name. About 3 s to the first card." Small corner label: "Deepgram, Exa, Claude Haiku". | "This is Cue, on Even G2 glasses. Hold the temple, say a name, a company, a role. About three seconds later there is a card on your lens." |
+| 0:00-0:12 | Wide for 2 s: Person A at a table, a person across, A lifts a finger to the temple. Title flashes "Cue". Cut to through-the-lens: `Listening`, A says "Tim Cook, Sentry, co-founder", release, `Heard: Tim Cook \| Sentry \| co-founder`, then card 1 with its source line, about 3 s after release. | Caption: "Cue - quiet networking on Even G2". Then: "Hold. Say a name. About 3 s to the first card." Small corner label: "Deepgram, Exa, Claude Haiku". | "This is Cue, on Even G2 glasses. Hold the temple, say a name, a company, a role. About three seconds later there is a card on your lens." |
 
-| 0:12-0:32 | Mirror, close-up: cards 1, 2, 3 flipping with taps. Hold on each for about 4 s. Highlight the source line on each. Then A looks up and starts talking; through-the-lens shows only the dim line `cue \| Steve Jobs \| hold to ask`. | Callouts: "Connect", "Context", "Your angle", "source on every card". Then: "During the conversation: nothing." | "Connect is an opener that is not small talk. Context is who they are and what their company is doing now. Your angle ties it to your goal and says what to ask. Each card has a source. Then Cue goes quiet: one dim line while you talk." |
+| 0:12-0:32 | Mirror, close-up: cards 1, 2, 3 flipping with taps. Hold on each for about 4 s. Highlight the source line on each. Then A looks up and starts talking; through-the-lens shows only the dim line `cue \| Tim Cook \| hold to ask`. | Callouts: "Connect", "Context", "Your angle", "source on every card". Then: "During the conversation: nothing." | "Connect is an opener that is not small talk. Context is who they are and what their company is doing now. Your angle ties it to your goal and says what to ask. Each card has a source. Then Cue goes quiet: one dim line while you talk." |
 
 | 0:32-0:47 | Wide: A steps back from the table, holds the temple and says "he said email him about Seer, they're hiring summer interns". Through-the-lens: the quiet line `★ note saved, recap texted`. Optional 2 s insert from the simulator: the Record conversation consent screen ("Ask them: OK if my glasses take notes? Tap once they say yes."). | Caption: "Debrief in your own words. Spoken, not typed." Insert caption, if used: "Optional: record the conversation, only after they say yes on screen (simulator)". | "After the conversation, step away, hold the temple, say what happened in your own words. The other person is never recorded unless they agreed on screen. Note saved, recap on its way to your phone." |
 

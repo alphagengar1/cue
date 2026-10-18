@@ -135,6 +135,6 @@ The agents built in the agent.creao.ai UI expose their own API from the agent de
 
 - `POST https://agent.creao.ai/api/v1/apps/{agentId}/runs` with `Authorization: Bearer capi_...` and body `{ "inputs": { ...the agent's declared inputs... }, "webhookUrl"?: "..." }` -> `202 { id, status: "pending", appId, appName }`.
 - `GET .../runs/{runId}` -> `{ id, status, threadId, result: { text, chatText }, errorCode, startedAt, completedAt }`. `result.text` is a one-line summary JSON; the full reply with the ```json block is in `result.chatText`. Terminal statuses: completed, failed, cancelled. Runs bill CREAO credits.
-- Measured: Person Researcher 80 s (Steve Jobs, 8 facts), Brief Writer about 2 min. Rate limits not documented.
+- Measured: Person Researcher 80 s (Tim Cook, 8 facts), Brief Writer about 2 min. Rate limits not documented.
 - Backend: `backend/src/creao.ts` keeps both transports. With `CREAO_<AGENT>_KEY` set, `createRun`/`getRun` use the app API (keys never leave the server); otherwise the `/v2` project key. `creaoEnabled(agent)` is true with either. Agent ids default to the Cue agents in README.md.
 - Live chain verified Oct 17: lookup -> fast cards (3.4 s) -> Person Researcher run -> 6 facts kept -> Brief v2 (fast LLM, seconds) -> Brief Writer run -> v3 with an `improvesOn` note. Debrief -> Follow-up Writer run -> email + message + next steps texted to the wearer (needs `CREAO_FOLLOW_UP_WRITER_KEY` and `_ID`).

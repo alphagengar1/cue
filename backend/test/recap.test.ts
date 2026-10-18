@@ -46,7 +46,7 @@ describe("photon recap", () => {
   });
 
   test("clipText keeps line breaks (the email arrived as one blob once) and caps length", () => {
-    assert.equal(clipText("Hi Steve,\n\nThanks   for  today.\n\n\n\nBest", 100), "Hi Steve,\n\nThanks for today.\n\nBest");
+    assert.equal(clipText("Hi Tim,\n\nThanks   for  today.\n\n\n\nBest", 100), "Hi Tim,\n\nThanks for today.\n\nBest");
     assert.ok(clipText("word ".repeat(100), 50).length <= 50);
   });
 
@@ -129,7 +129,7 @@ describe("handleReply", () => {
 describe("splitBubbles: texting shape", () => {
   test("short bubbles pass through, long ones split at sentence ends, max 5", async () => {
     const { splitBubbles } = await import("../src/compose.js");
-    assert.deepEqual(splitBubbles(["just met steve cramer, sentry cofounder"]), ["just met steve cramer, sentry cofounder"]);
+    assert.deepEqual(splitBubbles(["just met tim cramer, sentry cofounder"]), ["just met tim cramer, sentry cofounder"]);
     const long = "He said to email him about Seer, they are hiring interns this summer. He also wants to see the Cue demo video before deciding anything. Reply email for a draft.";
     const out = splitBubbles([long], 80);
     assert.ok(out.length >= 2);
@@ -146,21 +146,21 @@ describe("CREAO Follow-up Writer output (followUp in the event file)", () => {
     fs.writeFileSync(file, JSON.stringify({
       event: { id: "fu-test", name: "LA Hacks Fall 2026 (CREAO)", date: "2026-10-17", sources: [], loadStatus: "ready" },
       organizations: [{ id: "sentry", name: "Sentry", aliases: [], oneLiner: "", focusNow: [], people: [] }],
-      people: [{ name: "Steve Jobs", orgId: "sentry", role: "co-founder", followUp: {
+      people: [{ name: "Tim Cook", orgId: "sentry", role: "co-founder", followUp: {
         agent: "creao-follow-up-writer", agentId: "x", runLink: "https://agent.creao.ai/share/x",
-        email: { subject: "Following up on Seer from LA Hacks", body: "Hi Steve,\n\nThanks for the pointer on Seer.\n\nBest,\nSam" },
-        message: "Hi Steve, great meeting you at LA Hacks. Sam", nextSteps: ["Email Steve about Seer this week"],
+        email: { subject: "Following up on Seer from LA Hacks", body: "Hi Tim,\n\nThanks for the pointer on Seer.\n\nBest,\nSam" },
+        message: "Hi Tim, great meeting you at LA Hacks. Sam", nextSteps: ["Email Tim about Seer this week"],
       } }],
     }));
     const ev = store.loadSample(file, { withProfile: false });
     assert.equal(ev.id, "fu-test");
-    const person = [...store.people.values()].find((p) => p.name === "Steve Jobs" && p.eventId === "fu-test")!;
+    const person = [...store.people.values()].find((p) => p.name === "Tim Cook" && p.eventId === "fu-test")!;
     assert.equal(person.followUp?.email?.subject, "Following up on Seer from LA Hacks");
-    const b = brief({ name: "Steve Jobs", org: "Sentry", eventId: "fu-test", match: { personId: person.id, confidence: "high", candidates: [] } });
+    const b = brief({ name: "Tim Cook", org: "Sentry", eventId: "fu-test", match: { personId: person.id, confidence: "high", candidates: [] } });
     store.briefs.set(b.id, b);
     const { subject, body } = await composeEmail(b);
     assert.equal(subject, "Following up on Seer from LA Hacks");
-    assert.match(body, /^Hi Steve,\n\nThanks/);
+    assert.match(body, /^Hi Tim,\n\nThanks/);
     assert.match(await composeAnswer("write me a text to send him", b), /great meeting you at LA Hacks/);
     const out = (await handleReply("email, what should i lead with?", b.id)) as string[];
     assert.ok(out.length >= 3, `expected subject, body and an answer, got ${out.length}`);

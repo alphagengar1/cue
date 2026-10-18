@@ -58,8 +58,8 @@ describe("calendar: free windows", () => {
 
 const SCHEDULE = {
   proposedTimes: ["2026-10-21 14:00-14:30", "2026-10-22 15:00-15:30", "2026-10-26 14:00-14:30"],
-  inviteTitle: "Seer follow-up: Steve / Sam", inviteDescription: "30 min about Seer.",
-  schedulingMessage: "Hi Steve, would Wed Oct 21 2pm, Thu Oct 22 3pm or Mon Oct 26 2pm work for a quick call? PT. Sam",
+  inviteTitle: "Seer follow-up: Tim / Sam", inviteDescription: "30 min about Seer.",
+  schedulingMessage: "Hi Tim, would Wed Oct 21 2pm, Thu Oct 22 3pm or Mon Oct 26 2pm work for a quick call? PT. Sam",
   calendarEventCreated: false, eventLink: null as string | null,
 };
 
@@ -182,11 +182,11 @@ describe("calendar: connected (fake Google)", () => {
     const g = fakeGoogle([]);
     __setFetchForTests(g.f);
     store.briefs.clear();
-    store.putPerson({ id: "p_cal", eventId: "ev-cal", orgId: "sentry", name: "Steve Jobs", facts: [], match: "high", matchReason: "test",
+    store.putPerson({ id: "p_cal", eventId: "ev-cal", orgId: "sentry", name: "Tim Cook", facts: [], match: "high", matchReason: "test",
       followUp: { schedule: { ...SCHEDULE, calendarEventCreated: true, eventLink: "https://calendar.google.com/event?eid=evt0", holdEventId: "evt0", holdSource: "backend" } } });
     const b: Brief = {
-      id: "b_cal", version: 1, eventId: "ev-cal", transcript: "Steve Jobs, Sentry",
-      query: { name: "Steve Jobs", org: "Sentry", role: "co-founder" }, match: { personId: "p_cal", confidence: "high", candidates: [] },
+      id: "b_cal", version: 1, eventId: "ev-cal", transcript: "Tim Cook, Sentry",
+      query: { name: "Tim Cook", org: "Sentry", role: "co-founder" }, match: { personId: "p_cal", confidence: "high", candidates: [] },
       cards: [{ kind: "connect", title: "Ask about Seer", body: "x", source: null }], slowPath: { status: "none" },
       createdAt: new Date().toISOString(), updatedAt: new Date().toISOString(),
     };
@@ -195,12 +195,12 @@ describe("calendar: connected (fake Google)", () => {
     assert.deepEqual(out, [
       "moved your hold to thu oct 22 3-3:30pm 📅",
       "https://calendar.google.com/event?eid=evt1",
-      "here's what to send steve, copy and tweak",
+      "here's what to send tim, copy and tweak",
       SCHEDULE.schedulingMessage,
     ]);
     assert.equal(store.people.get("p_cal")!.followUp!.schedule!.holdEventId, "evt1");
     const plain = (await handleReply("book", b.id)) as string[];
-    assert.equal(plain[0], "here's what to send steve, copy and tweak");
+    assert.equal(plain[0], "here's what to send tim, copy and tweak");
     assert.equal(plain[1], SCHEDULE.schedulingMessage);
     assert.equal(((await handleReply("book 3", b.id)) as string[])[0], "moved your hold to mon oct 26 2-2:30pm 📅");
   });

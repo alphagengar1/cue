@@ -4,22 +4,22 @@ import assert from "node:assert/strict";
 import { classifyIntent, decisionsIntent, goalFromText, rulesIntent } from "../src/intent.js";
 
 const noBrief = { hasBrief: false };
-const withBrief = { hasBrief: true, lastQuery: { name: "Steve Jobes", org: "Sentry", role: "co-founder" } };
+const withBrief = { hasBrief: true, lastQuery: { name: "Tim Cooke", org: "Sentry", role: "co-founder" } };
 
 describe("rulesIntent", () => {
   test("name, org, role is a lookup", () => {
     const r = rulesIntent("Priya Shah, Anduril, recruiter", noBrief);
     assert.equal(r.intent, "lookup"); assert.ok(r.confidence >= 0.85);
-    assert.equal(rulesIntent("Steve from Sentry", noBrief).intent, "lookup");
+    assert.equal(rulesIntent("Tim from Sentry", noBrief).intent, "lookup");
   });
   test("what they said is a debrief when a brief is open, unknown otherwise", () => {
     assert.equal(rulesIntent("he said to email him about Seer, they're hiring summer interns", withBrief).intent, "debrief");
     assert.notEqual(rulesIntent("he said to email him about Seer, they're hiring summer interns", noBrief).intent, "debrief");
   });
   test("corrections need an open brief", () => {
-    assert.equal(rulesIntent("Jobs with a C", withBrief).intent, "correction");
+    assert.equal(rulesIntent("Cook with a C", withBrief).intent, "correction");
     assert.equal(rulesIntent("no, it's Priya not Maya", withBrief).intent, "correction");
-    assert.notEqual(rulesIntent("Jobs with a C", noBrief).intent, "correction");
+    assert.notEqual(rulesIntent("Cook with a C", noBrief).intent, "correction");
   });
   test("goals", () => {
     const r = rulesIntent("I'm looking for a cofounder", noBrief);

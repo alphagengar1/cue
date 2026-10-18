@@ -21,11 +21,11 @@ export interface SayOutcome { response: SayResponse; fallback: boolean; notes: s
 
 const Rewrite = z.object({ name: z.string(), org: z.string(), role: z.string() });
 
-/** "Jobs with a C" + the last query -> the corrected query. Haiku; falls back to re-parsing the text. */
+/** "Cook with a C" + the last query -> the corrected query. Haiku; falls back to re-parsing the text. */
 export async function rewriteQuery(prev: Query | undefined, text: string): Promise<Query> {
   try {
     const out = await parseWithModel(
-      "The wearer of smart glasses is correcting how their last lookup was heard. Given the previous name, org and role and what they said now, return the corrected name, org and role (role may be empty). Spell the name exactly as the correction implies ('Jobs with a C' means the surname starts with C: 'Jobs'). Keep any field you have no reason to change. Return only the fields.",
+      "The wearer of smart glasses is correcting how their last lookup was heard. Given the previous name, org and role and what they said now, return the corrected name, org and role (role may be empty). Spell the name exactly as the correction implies ('Cook with a C' means the surname starts with C: 'Cook'). Keep any field you have no reason to change. Return only the fields.",
       { previous: prev ?? null, saidNow: text }, Rewrite, { maxTokens: 200, timeoutMs: 4000 },
     );
     const name = out.name.trim();
