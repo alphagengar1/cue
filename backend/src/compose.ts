@@ -123,12 +123,38 @@ export async function composeEmail(brief: Brief, debrief?: string): Promise<{ su
   return { subject: subjectLine.replace(/^Subject:\s*/, ""), body: rest.join("\n").trim() };
 }
 
+/** Before an event, or with nothing on file: answer from the loaded event pack (orgs, focus, hiring, listed people). */
+export async function composeEventAnswer(question: string): Promise<string> {
+  const event = store.activeEvent();
+  const orgs = store.eventOrgs().map((o) => ({ name: o.name, oneLiner: o.oneLiner, focusNow: (o.focusNow ?? []).slice(0, 3).map((f) => f.text), hiring: o.hiring, eventRole: o.eventRole }));
+  const people = store.eventPeople().filter((p) => p.fromEventList || p.confirmed).map((p) => ({ name: p.name, role: p.role, org: store.getOrg(p.eventId, p.orgId)?.name ?? p.orgId, headline: p.headline }));
+  const p = store.profile;
+  if (!event || !orgs.length) return "No event loaded yet. Load one on the setup page and I can prep you for it.";
+  try {
+    const out = await parseWithModel(SYSTEM, {
+      task: "event",
+      format: "Reply in texting voice: 1 to 4 short lines, under 100 characters each, separated by line breaks (each becomes a bubble). " +
+        "Answer only from the event pack in the input: who is there, what each org is focused on, who is hiring, who the wearer should talk to first for their goal and what to ask. " +
+        "If the input does not cover it, say so in one line. To look someone up, the wearer can say: look up <name>, <company>.",
+      question,
+      event: shortEvent(event.name), orgs, people,
+      wearer: { name: p.name, school: p.school, goal: p.goal, goalNote: p.goalNote, summary: p.summary },
+    }, AnswerOut, { maxTokens: 400, timeoutMs: 8000 });
+    const text = clean(out.text);
+    if (text) return splitBubbles(text.split("\n")).join("\n");
+  } catch (err) {
+    console.warn(`[compose] event answer fell back: ${err instanceof LlmUnavailable ? err.message : String(err)}`);
+  }
+  const names = people.slice(0, 6).map((x) => `${x.name} (${x.org})`).join(", ");
+  return `${shortEvent(event.name)}: ${orgs.map((o) => o.name).join(", ")}.${names ? `\npeople on the list: ${names}` : ""}\nsay "look up <name>, <company>" and i'll prep you.`;
+}
+
 /** Answer a free-form text ("what was his talk about?", "write me a short text to send him"). */
 export async function composeAnswer(question: string, brief: Brief | null): Promise<string> {
   // "text" -> the CREAO Follow-up agent's message when it has landed.
   const readyMsg = brief?.match.personId ? store.people.get(brief.match.personId)?.followUp?.message : undefined;
   if (brief && readyMsg && /\b(text|message|dm)\b/i.test(question) && !/\b(what|why|how|should)\b/i.test(question)) return `here's one to send ${brief.query.name.split(/\s+/)[0]}:\n${readyMsg}`;
-  if (!brief) return "I don't have anyone on file yet. Hold a temple and say a name, company, role, and I'll keep notes.";
+  if (!brief) return composeEventAnswer(question);
   try {
     const out = await parseWithModel(SYSTEM, {
       task: "answer",

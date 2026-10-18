@@ -7,6 +7,7 @@ import { composeAnswer, composeEmail } from "./compose.js";
 import { suggestFollowUp } from "./photon.js";
 import { bookBubbles, holdMovedBubbles } from "./voice.js";
 import { moveHold, pickSlot } from "./calendar.js";
+import { handleSay } from "./say.js";
 import { store } from "./store.js";
 
 const LABEL: Record<string, string> = { connect: "Connect", context: "Context", angle: "Ask" };
@@ -76,7 +77,19 @@ export async function handleReply(text: string, lastBriefId: string | null, now 
   if (!t) return null;
   const last = lastBriefId ? store.briefs.get(lastBriefId) ?? null : null;
 
-  if (/\b(who|met|today|everyone|list)\b/.test(t)) {
+  // Pre-event prep by text: "look up David Cramer, Sentry" / "prep me for Priya Shah, Anduril" / "who is X at Y".
+  const prep = /^\s*(look ?up|prep( me)?( for)?|brief me on|who is|who's)\s+(.+)$/i.exec(text.trim());
+  if (prep) {
+    const out = await handleSay(prep[4]);
+    const b = out.response.brief;
+    if (out.response.intent !== "lookup" || !b) return out.response.say ?? "couldn't find a name and company in that. try: look up <name>, <company>";
+    const who = [b.query.name, b.query.role, b.query.org].filter(Boolean).join(", ");
+    return [
+      `prep for ${who}${b.match.confidence === "low" ? " (nothing public found, so just the company)" : ""}`,
+      ...b.cards.map((c) => `${c.title}: ${c.body.replace(/\s*\n\s*/g, " ")}${c.source ? ` (${c.source})` : ""}`),
+    ];
+  }
+  if (/\b(who|met|today|everyone|list)\b/.test(t) && !/\b(at the event|is there|attending|should i)\b/.test(t)) {
     const briefs = metToday(now);
     if (!briefs.length) return "No one yet today. Hold a temple and say a name, company, role.";
     const lines = briefs.map((b) => {

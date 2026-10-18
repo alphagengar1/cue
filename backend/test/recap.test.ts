@@ -74,7 +74,7 @@ describe("compose (no LLM key in tests: every writer falls back, never throws)",
     assert.match(body, /^Hi Jordan,\n\n/);
   });
   test("composeAnswer -> honest fallback, and a text template when asked for a message", async () => {
-    assert.match(await composeAnswer("what did he say about seer", null), /don't have anyone on file/);
+    assert.match(await composeAnswer("what did he say about seer", null), /don't have anyone on file|No event loaded|look up <name>/);
     const b = brief({ name: "Jordan Lee", org: "Sentry" });
     assert.match(await composeAnswer("what did he say about seer", b), /only have what's in the brief/);
     assert.match(await composeAnswer("write me a text to send him", b), /^Follow-up for Jordan Lee:/);
@@ -113,7 +113,7 @@ describe("handleReply", () => {
   test("help, empty, and free-form questions", async () => {
     assert.equal(await handleReply("   ", null), null);
     assert.match((await handleReply("help", null)) as string, /I can do a few things/);
-    assert.match((await handleReply("what was his talk about", null)) as string, /don't have anyone on file/);
+    assert.match((await handleReply("what was his talk about", null)) as string, /don't have anyone on file|No event loaded|look up <name>/);
   });
 });
 
@@ -156,5 +156,16 @@ describe("CREAO Follow-up Writer output (followUp in the event file)", () => {
     const out = (await handleReply("email, what should i lead with?", b.id)) as string[];
     assert.ok(out.length >= 3, `expected subject, body and an answer, got ${out.length}`);
     assert.match(out[0], /^Subject: Following up on Seer/);
+  });
+});
+
+describe("pre-event texting", () => {
+  test("'look up <name>, <company>' runs a lookup and texts the cards; event questions answer from the pack", async () => {
+    store.briefs.clear();
+    const out = (await handleReply("look up Priya Shah, Anduril, recruiter", null)) as string[];
+    assert.ok(Array.isArray(out) && out.length >= 2, JSON.stringify(out));
+    assert.match(out[0], /^prep for Priya Shah, recruiter, Anduril/);
+    const ev = await handleReply("who should I talk to at the event?", null);
+    assert.match(String(ev), /look up <name>, <company>|people on the list|No event loaded/);
   });
 });
