@@ -53,6 +53,15 @@ export const LIMITS = { title: 20, body: 200, lines: 5, lineChars: 40, source: 3
 const clip = (s: string, n: number): string =>
   s.length <= n ? s : s.slice(0, Math.max(0, n - 3)).trimEnd() + "...";
 
+const DEFAULT_TITLE: Record<Card["kind"], string> = { connect: "Connect", context: "Context", angle: "Your angle" };
+
+/** Titles over the limit are cut at a word boundary (no "..."); a stub falls back to the card name. */
+function fitTitle(t: string, kind: Card["kind"]): string {
+  if (t.length <= LIMITS.title) return t || DEFAULT_TITLE[kind];
+  const cut = t.slice(0, LIMITS.title + 1).replace(/\s+\S*$/, "").replace(/[\s,;:'-]+$/, "");
+  return cut.length >= 8 ? cut : DEFAULT_TITLE[kind];
+}
+
 /** Greedy word wrap into <= lineChars lines, <= lines lines, <= body chars total. */
 export function wrapBody(text: string): string {
   const words = sanitize(text).replace(/\s+/g, " ").trim().split(" ").filter(Boolean);
@@ -109,7 +118,7 @@ export function enforceCards(cards: Card[]): Card[] {
   for (const c of cards) {
     const card: Card = {
       kind: c.kind,
-      title: clip(sanitize(c.title).replace(/\s+/g, " ").trim(), LIMITS.title),
+      title: fitTitle(sanitize(c.title).replace(/\s+/g, " ").trim(), c.kind),
       body: wrapBody(c.body),
       source: cleanSource(c.source),
     };
