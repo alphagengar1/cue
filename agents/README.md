@@ -13,6 +13,7 @@ The chat creates the agent, applies every setting, runs the test, creates the AP
 | `research.md` | Cue Research (before the conversation) | `CREAO_RESEARCH_KEY=`, `CREAO_RESEARCH_ID=` | nothing |
 | `follow-up.md` | Cue Follow-up (right after a debrief) | `CREAO_FOLLOWUP_KEY=`, `CREAO_FOLLOWUP_ID=` | nothing; it will prompt for the Gmail and Google Calendar sign-ins |
 | `coach.md` | Cue Coach (long-running, nightly, memory) | `CREAO_COACH_KEY=`, `CREAO_COACH_ID=` | replace `JOURNAL_URL` in the text with `https://35.164.205.54.sslip.io/journal.md?token=<JOURNAL_TOKEN>` (token from `backend/.env`) |
+| `speech-coach.md` | Cue Speech Coach (long-running, nightly, memory; delivery and conversation skills from verbatim speech and consented transcripts) | none needed (scheduled only) | replace `JOURNAL_URL` the same way |
 
 ```
 ssh -i ~/.ssh/lightsail.pem ubuntu@35.164.205.54 "sudo systemctl restart cue-backend"
