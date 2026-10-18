@@ -8,7 +8,7 @@ import type { Brief } from "../../shared/types.js";
 import { handleReply } from "../src/recap.js";
 import { store } from "../src/store.js";
 import {
-  LINE_MAX, MAX_BUBBLES, bookBubbles, casual, coachBubbles, firstName, followUpBubbles, friendlyTime, scheduleBubbles,
+  LINE_MAX, MAX_BUBBLES, SHORT_BUBBLES, bookBubbles, casual, coachBubbles, firstName, followUpBubbles, friendlyTime, scheduleBubbles,
 } from "../src/voice.js";
 
 const EMAIL = {
@@ -129,41 +129,46 @@ describe("voice: meeting scheduler bubbles", () => {
     assert.equal(out[0], "two times you could meet them 📅");
     assert.equal(out.length, 3);
   });
-  test("book: the scheduling message whole, ready to paste", () => {
+  test("book: three bubbles, the scheduling message whole, the hold and its link together", () => {
     const out = bookBubbles(SCHEDULE, "tim");
-    checkShape(out, [SCHEDULE.schedulingMessage]);
-    assert.equal(out[0], "here's what to send tim, copy and tweak");
-    assert.equal(out[1], SCHEDULE.schedulingMessage);
-    assert.equal(out[3], SCHEDULE.eventLink);
+    const hold = `your tentative hold is still on your calendar: ${SCHEDULE.eventLink}`;
+    checkShape(out, [SCHEDULE.schedulingMessage, hold]);
+    assert.deepEqual(out, ["here's what to send tim, copy and tweak", SCHEDULE.schedulingMessage, hold]);
+    assert.deepEqual(bookBubbles({ ...SCHEDULE, eventLink: null }, ""), ["here's what to send them, copy and tweak", SCHEDULE.schedulingMessage]);
   });
 });
 
 describe("voice: networking coach bubbles", () => {
-  test("the cooked run becomes: the answer, who to chase and why, what to do, next time; the 'maps to your goal' sentence is gone", () => {
+  test("the cooked run becomes three bubbles: the answer, who to chase and what to do, next time; the 'maps to your goal' sentence is gone", () => {
     const out = coachBubbles(COOKED_COACH);
     checkShape(out);
-    assert.equal(out.length, 5);
-    assert.ok(out.includes("tim is the one to chase: he asked for the demo video and said they are hiring"), out.join("\n"));
-    assert.ok(out.includes("send the email tonight, lead with the video"), out.join("\n"));
-    assert.ok(out.includes("next time, before you leave, ask what the next step is"), out.join("\n"));
+    assert.equal(out.length, SHORT_BUBBLES);
+    assert.match(out[0], /^he offered an email thread about Seer/);
+    assert.equal(out[1], "tim is the one to chase: send the email tonight, lead with the video");
+    assert.equal(out[2], "next time, before you leave, ask what the next step is");
     assert.ok(!out.some((b) => /maps straight to your internship goal/.test(b)));
     assert.ok(!out.some((b) => /^coach/.test(b)));
   });
-  test("already in voice: summary, chase, action, next time, one pattern", () => {
-    const out = coachBubbles({
+  test("already in voice: summary, chase with the action, next time; the why is used when there is no action", () => {
+    const run = {
       summary: "solid day, three real conversations and one hot lead",
       patterns: ["you walked away without a next step twice today"],
       priorities: [{ name: "Tim Cook", why: "he asked for the demo video and said they're hiring", action: "send it tonight, lead with the video" }],
       coaching: ["ask for a next step before you walk away"],
       nextTime: "ask for a next step before you walk away",
-    });
+    };
+    const out = coachBubbles(run);
     checkShape(out);
     assert.deepEqual(out, [
       "solid day, three real conversations and one hot lead",
-      "tim is the one to chase: he asked for the demo video and said they're hiring",
-      "send it tonight, lead with the video",
+      "tim is the one to chase: send it tonight, lead with the video",
       "next time, ask for a next step before you walk away",
-      "you walked away without a next step twice today",
+    ]);
+    const noAction = coachBubbles({ ...run, priorities: [{ name: "Tim Cook", why: "he asked for the demo video" }], nextTime: "" });
+    assert.deepEqual(noAction, [
+      "solid day, three real conversations and one hot lead",
+      "tim is the one to chase: he asked for the demo video",
+      "next time, ask for a next step before you walk away",
     ]);
   });
   test("empty day: just the summary; a summary longer than two lines is cut to two", () => {

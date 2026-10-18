@@ -1,12 +1,16 @@
 // Texting voice for the CREAO agents' output (agents/voice.md). Pure functions: each takes the parsed,
 // sanitized JSON an apply function in creao.ts already has and returns the bubbles Photon sends.
 // Shape rules: one thought per bubble, under 100 characters, lowercase casual, no labels, no lists,
-// at most 5 bubbles. The email and the scheduling message are the two things the wearer copies, so
-// they are kept whole (one bubble each, never split).
+// at most MAX_BUBBLES here and never more than three on the phone: photon.ts folds anything past
+// the third bubble into the third, so the coach and "book" texts are written to fit in three. The
+// email and the scheduling message are the two things the wearer copies, so they are kept whole
+// (one bubble each, never split).
 import { splitBubbles } from "./compose.js";
 
 export const LINE_MAX = 100;
 export const MAX_BUBBLES = 5;
+/** What one iMessage can carry (photon.ts folds the rest): the coach and book texts are written to this. */
+export const SHORT_BUBBLES = 3;
 
 export interface FollowUpVoiceInput {
   email: { subject: string; body: string };
@@ -51,14 +55,14 @@ const lines = (xs: (string | undefined | null)[]): string[] =>
   splitBubbles(xs.map((x) => casual(x ?? "")).filter(Boolean), LINE_MAX, Number.MAX_SAFE_INTEGER)
     .map((b) => b.replace(/[,;]$/, "")); // a split at ", " leaves the comma on the first half
 
-/** Mix of split lines and whole bubbles (email, scheduling message), capped at MAX_BUBBLES. */
-const cap = (parts: ({ line: string } | { whole: string })[]): string[] => {
+/** Mix of split lines and whole bubbles (email, scheduling message), capped at `max` bubbles. */
+const cap = (parts: ({ line: string } | { whole: string })[], max = MAX_BUBBLES): string[] => {
   const out: string[] = [];
   for (const p of parts) {
     if ("whole" in p) { if (p.whole.trim()) out.push(p.whole.trim()); }
     else out.push(...lines([p.line]));
   }
-  return out.slice(0, MAX_BUBBLES);
+  return out.slice(0, max);
 };
 
 /** Follow-up Writer: a lead-in, the email whole, its subject, then the first next steps. */
@@ -128,14 +132,14 @@ export function scheduleBubbles(schedule: ScheduleVoiceInput, first: string): st
   ]);
 }
 
-/** The "book" reply: the scheduling message whole, ready to paste. */
+/** The "book" reply, three bubbles: lead-in, the scheduling message whole, the hold with its link. */
 export function bookBubbles(schedule: ScheduleVoiceInput, first: string): string[] {
   const who = first ? first.toLowerCase() : "them";
   return cap([
     { line: `here's what to send ${who}, copy and tweak` },
     { whole: schedule.schedulingMessage },
-    ...(schedule.eventLink ? [{ line: "your tentative hold is still on your calendar" }, { whole: schedule.eventLink }] : []),
-  ]);
+    ...(schedule.eventLink ? [{ whole: `your tentative hold is still on your calendar: ${schedule.eventLink}` }] : []),
+  ], SHORT_BUBBLES);
 }
 
 /** "book 2": the hold moved, then the message to send. */
@@ -149,23 +153,20 @@ export function holdMovedBubbles(schedule: ScheduleVoiceInput, first: string): s
   ]);
 }
 
-/** Networking Coach: the answer, who to chase (why, then what to do), the line for next time, one pattern. */
+/**
+ * Networking Coach, three bubbles: the answer, who to chase and what to do about it (the action
+ * when there is one, else the why), the line for next time. The summary takes whatever is left:
+ * one line beside those two, two lines on an empty day when it is all there is.
+ */
 export function coachBubbles(coaching: CoachVoiceInput): string[] {
-  const summary = lines([coaching.summary]).slice(0, 2);
-  const [p1, p2] = (coaching.priorities ?? []).filter((p) => p.name.trim());
+  const [p1] = (coaching.priorities ?? []).filter((p) => p.name.trim());
   const why1 = casual(p1?.why ?? ""), action1 = casual(p1?.action ?? "");
   const next = coaching.nextTime?.trim() || coaching.coaching?.[0]?.trim() || "";
-  const extra = coaching.nextTime?.trim() ? coaching.coaching?.[0]?.trim() : coaching.coaching?.[1]?.trim();
-  const pattern = coaching.patterns?.[0]?.trim();
-  const action2 = casual(p2?.action ?? p2?.why ?? "");
-  return cap([
-    ...summary.map((line) => ({ line })),
-    // "tim is the one to chase: he asked for the demo video" then "send it tonight, lead with the video"
-    ...(p1 ? [{ line: why1 ? `${firstName(p1.name)} is the one to chase: ${why1}` : `${firstName(p1.name)} is the one to chase` }] : []),
-    ...(action1 ? [{ line: action1 }] : []),
-    ...(next ? [{ line: `next time, ${casual(next)}` }] : []),
-    ...(pattern ? [{ line: pattern }] : []),
-    ...(p2 && action2 ? [{ line: `then ${firstName(p2.name)}: ${action2}` }] : []),
-    ...(extra ? [{ line: `also, ${casual(extra)}` }] : []),
-  ]);
+  const rest = [
+    // "tim is the one to chase: send it tonight, lead with the video"
+    p1 ? `${firstName(p1.name)} is the one to chase${action1 || why1 ? `: ${action1 || why1}` : ""}` : "",
+    next ? `next time, ${casual(next)}` : "",
+  ].filter(Boolean);
+  const summary = lines([coaching.summary]).slice(0, Math.max(1, Math.min(2, SHORT_BUBBLES - rest.length)));
+  return cap([...summary, ...rest].map((line) => ({ line })), SHORT_BUBBLES);
 }

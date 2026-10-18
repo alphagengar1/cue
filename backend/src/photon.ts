@@ -1,6 +1,8 @@
 // Photon iMessage recap (design/photon-notes.md). Optional add-on, disabled by default.
 // - sendRecap(brief): texts the WEARER (never the person they met) a <= 600 char recap over a
 //   Spectrum Cloud iMessage line: who, the 3 cards, a suggested follow-up, and the sources.
+// - Every outbound message is at most MAX_SEND_BUBBLES bubbles (foldBubbles): anything past the
+//   third is folded into the third, one line per bubble, still under 1500 characters.
 // - startReplyListener(handler): optional inbound loop; only text from WEARER_PHONE reaches handler.
 // - Not configured (no PHOTON_PROJECT_ID / PHOTON_PROJECT_SECRET / WEARER_PHONE, or SDK not
 //   installed): every call logs once and returns { sent: false }. Never throws.
@@ -37,6 +39,19 @@ export const clipText = (s: string, n: number): string => {
   const t = s.replace(/\r/g, "").replace(/[ \t]+/g, " ").replace(/ *\n */g, "\n").replace(/\n{3,}/g, "\n\n").trim();
   return t.length <= n ? t : `${t.slice(0, n - 1).trimEnd()}…`;
 };
+
+/** The most bubbles one outbound iMessage may have; the rest fold into the last one. */
+export const MAX_SEND_BUBBLES = 3;
+
+/**
+ * Cap a message at `max` bubbles: the first `max - 1` stay as they are, everything from the
+ * `max`th on is joined with newlines into one last bubble, clipped to `chars` like every bubble.
+ */
+export function foldBubbles(bubbles: string[], max = MAX_SEND_BUBBLES, chars = 1500): string[] {
+  const clean = bubbles.map((b) => clipText(b, chars)).filter(Boolean);
+  if (clean.length <= max) return clean;
+  return [...clean.slice(0, max - 1), clipText(clean.slice(max - 1).join("\n"), chars)];
+}
 
 const LABEL: Record<string, string> = { connect: "Connect", context: "Context", angle: "Ask" };
 
@@ -137,6 +152,8 @@ let lastSentAt = 0;
 let wearerSpace: SpSpace | null = null;
 /** Brief the wearer's most recent recap was about; reply handlers use it for "email" etc. */
 export let lastRecapBriefId: string | null = null;
+/** A texted "look up X" moves the conversation to X without a recap: replies now refer to X. */
+export function setLastRecapBriefId(id: string | null): void { lastRecapBriefId = id; }
 
 export type SendResult = { sent: true; text: string } | { sent: false; reason: string };
 
@@ -157,20 +174,20 @@ export async function sendRecap(
   if (brief.cards.length === 0) return { sent: false, reason: "brief has no cards" };
   const key = `${brief.id}:v${brief.version}`;
   if (sentKeys.has(key) && !opts.force) return { sent: false, reason: "already sent" };
-  if (Date.now() - lastSentAt < photonConfig.minGapMs) return { sent: false, reason: "rate limited (local pacing)" };
+  if (!opts.force && Date.now() - lastSentAt < photonConfig.minGapMs) return { sent: false, reason: "rate limited (local pacing)" };
 
   const c = await client();
   if (!c) return skip("Spectrum SDK not installed or init failed (npm i @spectrum-ts/core @spectrum-ts/imessage)");
 
   // Haiku-written bubbles when the caller has them (compose.ts); the template is the fallback.
-  const bubbles = opts.bubbles?.length ? opts.bubbles : [formatRecap(brief, opts.followUp)];
+  const bubbles = foldBubbles(opts.bubbles?.length ? opts.bubbles : [formatRecap(brief, opts.followUp)]);
   const text = bubbles.join("\n\n");
   lastSentAt = Date.now();
   try {
     wearerSpace ??= await c.im.space.create(await c.im.user(photonConfig.wearerPhone!));
     for (const [i, b] of bubbles.entries()) {
       if (i) await new Promise((r) => setTimeout(r, 600)); // keep bubble order; Photon dislikes bursts
-      await wearerSpace.send(clipText(b, 1500));
+      await wearerSpace.send(b);
     }
     sentKeys.add(key);
     lastRecapBriefId = brief.id;
@@ -188,7 +205,7 @@ export async function sendRecap(
 /** Text the wearer any bubbles (e.g. the CREAO follow-up). Wearer only; never the person met. */
 export async function sendText(bubbles: string[]): Promise<SendResult> {
   if (!photonConfigured()) return skip("set PHOTON_PROJECT_ID, PHOTON_PROJECT_SECRET, WEARER_PHONE");
-  const clean = bubbles.map((b) => clipText(b, 1500)).filter(Boolean);
+  const clean = foldBubbles(bubbles);
   if (!clean.length) return { sent: false, reason: "nothing to send" };
   const c = await client();
   if (!c) return skip("Spectrum SDK not installed or init failed");
@@ -236,10 +253,10 @@ export async function startReplyListener(
         }
         try {
           const out = await handler(msg.content.text, { lastBriefId: lastRecapBriefId });
-          const bubbles = Array.isArray(out) ? out : out ? [out] : [];
+          const bubbles = foldBubbles(Array.isArray(out) ? out : out ? [out] : []);
           for (const [i, b] of bubbles.entries()) {
             if (i) await new Promise((r) => setTimeout(r, 600));
-            await space.send(clipText(b, 1500));
+            await space.send(b);
           }
         } catch (err) {
           console.warn(`[photon] reply handler failed: ${err instanceof Error ? err.message : String(err)}`);

@@ -594,7 +594,9 @@ async function notifyEventReady(eventId: string | undefined): Promise<void> {
   const orgs = store.eventOrgs(ev.id);
   const { composeEventAnswer } = await import("./compose.js");
   const answer = await composeEventAnswer(`${ev.name} pack just loaded. In 3 short lines: who is there, and who I should talk to first for my goal and why.`);
-  const r = await sendText([`your ${ev.name} pack is ready: ${orgs.length} orgs`, ...answer.split("\n").filter(Boolean).slice(0, 3), "say \"look up <name>, <company>\" for anyone and i'll prep you"]);
+  // Three bubbles: the headline, the answer (its lines stay together in one bubble), how to use it.
+  const lines = answer.split("\n").filter(Boolean).slice(0, 3).join("\n");
+  const r = await sendText([`your ${ev.name} pack is ready: ${orgs.length} orgs`, ...(lines ? [lines] : []), "say \"look up <name>, <company>\" for anyone and i'll prep you"]);
   console.log(`[creao] event pack texted: ${r.sent ? "sent" : `not sent (${r.reason})`}`);
 }
 
