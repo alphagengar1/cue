@@ -46,7 +46,7 @@ Cue is an app for Even Realities G2 smart glasses, with a backend that runs thre
 **After the conversation, on your phone.** You hold the temple and say what happened in your own words. Within seconds Photon texts you a recap, written in a texting voice:
 
 ```
-just met tim cramer, sentry co-founder 👀
+just met jordan lee, sentry engineering lead 👀
 he said to email him about seer, they're hiring summer interns
 he also wants the cue demo video, put that in the email
 want a draft? just say email ✍️
