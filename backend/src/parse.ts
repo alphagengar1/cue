@@ -108,6 +108,15 @@ export function levenshtein(a: string, b: string): number {
 export function findOrg(orgText: string, orgs: Organization[] = store.eventOrgs()): Organization | null {
   const q = norm(orgText);
   if (!q) return null;
+  // Active event first; then every other loaded event (an org from last night's pack, or the demo file, still counts).
+  if (orgs === store.eventOrgs()) {
+    const here = findOrgIn(q, orgs);
+    if (here) return here;
+    return findOrgIn(q, [...store.orgs.values()].filter((o) => o.eventId !== store.activeEventId));
+  }
+  return findOrgIn(q, orgs);
+}
+function findOrgIn(q: string, orgs: Organization[]): Organization | null {
   const labels = (o: Organization) => [o.id, o.name, ...o.aliases].map(norm).filter(Boolean);
   const exact = orgs.find((o) => labels(o).includes(q));
   if (exact) return exact;
