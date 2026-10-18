@@ -812,13 +812,14 @@ function applyCardsV2(briefId: string, cards: Card[], runId: string, why: string
     setSlowPath(briefId, { status: "done", runId });
     return `${why}; not applied (wearer changed the person)`;
   }
-  const latest = [...store.briefs.values()].reduce((a, b) => (b.createdAt > a.createdAt ? b : a), brief);
+  // The glasses poll the brief they hold by id, so updating an older brief is harmless; the only
+  // guard is the person check above (a "latest brief" check dropped real updates on the server).
   const kinds = new Set(brief.cards.map((c) => c.kind));
   const next = brief.cards.map((c) => cards.find((n) => n.kind === c.kind) ?? c);
   const usable = cards.some((c) => kinds.has(c.kind));
-  if (latest.id !== brief.id || !usable) {
+  if (!usable) {
     setSlowPath(briefId, { status: "done", runId });
-    return `${why}; not applied (${latest.id !== brief.id ? "wearer moved on" : "no usable cards"})`;
+    return `${why}; not applied (no usable cards)`;
   }
   setSlowPath(briefId, { status: "done", runId }, next);
   return `${why}; brief ${briefId} -> v${store.briefs.get(briefId)!.version}`;
