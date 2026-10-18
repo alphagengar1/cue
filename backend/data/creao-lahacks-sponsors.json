@@ -130,19 +130,36 @@
         "Apple Computer"
       ],
       "oneLiner": "Consumer hardware, software and services: iPhone, Mac, Apple Intelligence.",
-      "focusNow": [],
-      "eventRole": "example org for demo lookups (not a sponsor)",
-      "hiring": "",
-      "people": [
-        "Steve Jobs"
-      ]
+      "focusNow": [
+        {
+          "text": "Announced iPhone Duo, its first foldable iPhone; pre-orders opened October 16, 2026.",
+          "sourceUrl": "https://www.apple.com/newsroom/2026/10/open-up-to-new-possibilities-with-iphone-duo/",
+          "sourceKind": "org_site",
+          "date": "2026-10-15"
+        },
+        {
+          "text": "Introduced Apple HomeView, a 7-inch home display for entertainment, calls and home control, shipping November 13.",
+          "sourceUrl": "https://www.apple.com/newsroom/2026/10/meet-apple-homeview-a-new-way-to-enjoy-entertainment-and-manage-the-home/",
+          "sourceKind": "org_site",
+          "date": "2026-10-13"
+        },
+        {
+          "text": "New Apple TV 4K runs on the A19 chip with hands-free Siri AI, the Apple Intelligence version of Siri.",
+          "sourceUrl": "https://www.apple.com/newsroom/2026/10/apple-unveils-the-new-apple-tv-4k/",
+          "sourceKind": "org_site",
+          "date": "2026-10-13"
+        },
+        {
+          "text": "Apple Internships take full-time bachelor's, master's and doctoral students for summer internships or academic-year co-ops.",
+          "sourceUrl": "https://www.apple.com/careers/us/students.html",
+          "sourceKind": "org_site",
+          "date": "2026-10"
+        }
+      ],
+      "eventRole": "demo lookups",
+      "hiring": "Apple Internships (summer or academic-year co-op) for full-time bachelor's, master's and PhD students; apple.com/careers/us/students.html",
+      "people": []
     }
   ],
-  "people": [
-    {
-      "name": "Steve Jobs",
-      "orgId": "apple",
-      "role": "co-founder"
-    }
-  ]
+  "people": []
 }
