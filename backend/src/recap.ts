@@ -4,6 +4,7 @@
 import type { Brief } from "../../shared/types.js";
 import { startCoach } from "./coach.js";
 import { composeAnswer, composeEmail, composeEventAnswer, extractEvent } from "./compose.js";
+import { creaoEnabled } from "./creao.js";
 import { createEvent } from "./events.js";
 import { suggestFollowUp } from "./photon.js";
 import { bookBubbles, holdMovedBubbles } from "./voice.js";
@@ -58,6 +59,22 @@ export function draftEmail(brief: Brief): string {
 /** Template short follow-up text (fallback). */
 export function suggestText(brief: Brief): string {
   return `Follow-up for ${brief.query.name}:\n"${suggestFollowUp(brief)}"`;
+}
+
+/**
+ * Is the CREAO Follow-up agent's output ready for this brief? Returns a line to text when it is not
+ * (still running, or no agent connected). Returns null when it is ready, or when the run failed, so
+ * the caller falls back to the fast writer. This is what makes CREAO central, not an add-on.
+ */
+export function followUpGate(brief: Brief): string | null {
+  const person = brief.match.personId ? store.people.get(brief.match.personId) : undefined;
+  if (person?.followUp?.email) return null;
+  if (!creaoEnabled("follow_up_writer")) return "the follow-up agent isn't connected, so there's no draft. connect it on agent.creao.ai and debrief again";
+  const runs = [...store.runs.values()].filter((r) => r.agent === "follow_up_writer" && r.briefId === brief.id);
+  const latest = runs.sort((a, b) => b.startedAt.localeCompare(a.startedAt))[0];
+  if (!latest) return "no debrief yet for this person, so nothing to draft. hold the temple and say what happened";
+  if (latest.status === "pending") return "still writing it, give me a minute ✍️";
+  return null; // failed: the fast writer covers
 }
 
 const HELP = [
@@ -136,6 +153,9 @@ export async function handleReply(text: string, lastBriefId: string | null, now 
   }
   if (/\b(email|mail|draft)\b/.test(t)) {
     if (!last) return "No recap yet, so nothing to draft. Meet someone first.";
+    // The CREAO Follow-up agent writes the follow-up. Haiku steps in only when its run actually failed.
+    const gate = followUpGate(last);
+    if (gate) return gate;
     const { subject, body } = await composeEmail(last);
     const bubbles = [`Subject: ${subject}`, body];
     // "email, what should I lead with?": answer the rest too.

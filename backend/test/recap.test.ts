@@ -104,7 +104,16 @@ describe("handleReply", () => {
     assert.match((await handleReply("email", null)) as string, /No recap yet/);
     const b = brief({ name: "Jordan Lee", org: "Sentry" });
     store.briefs.set(b.id, b);
-    const out = (await handleReply("draft email pls", b.id)) as string[];
+    // No agent connected in tests: the reply says so instead of writing with Haiku (CREAO is central).
+    assert.match((await handleReply("draft email pls", b.id)) as string, /follow-up agent isn't connected/);
+    // A failed agent run: the fast writer covers.
+    store.runs.set("run_failed", { runId: "run_failed", agent: "follow_up_writer", briefId: b.id, status: "failed", startedAt: new Date().toISOString() });
+    const { config } = await import("../src/config.js");
+    const wasKey = config.creaoAppKeys.followUpWriter; const wasId = config.creaoAgents.followUpWriter;
+    config.creaoAppKeys.followUpWriter = "capi_test"; config.creaoAgents.followUpWriter = "agent_test";
+    let out: string[];
+    try { out = (await handleReply("draft email pls", b.id)) as string[]; }
+    finally { config.creaoAppKeys.followUpWriter = wasKey; config.creaoAgents.followUpWriter = wasId; store.runs.delete("run_failed"); }
     assert.equal(out.length, 2);
     assert.match(out[0], /^Subject: /);
     assert.match(out[1], /^Hi Jordan,/);
