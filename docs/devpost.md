@@ -144,7 +144,7 @@ We show the agents running in the CREAO Sessions tab in the demo video.
 - Importing a real attendee list (Luma, speaker lists) with one tap.
 - An offline cache of company cards for venues with poor wifi.
 - Letting the person opt out or correct their card, and an on-lens way to see exactly which sources were used.
-- Loading Research agent cards from a hand-run event file, so a pre-event run can also give v3 cards.
+- A "send" reply that sends the follow-up from the wearer's own account (today the wearer presses send, on purpose).
 
 ## What works today and what is wired but untested on hardware
 

@@ -63,7 +63,7 @@ On a 576 by 288 monochrome lens every character is a decision, and measuring on 
 
 ## What's next
 
-Past-conversation memory on the Connect card ("you met Priya at the fall fair"), a "send" reply that sends from your own account, and a speech coach on the journal that tells you about your filler words.
+Past-conversation memory on the Connect card ("you met Priya at the fall fair"), a "send" reply that sends the follow-up from your own account (today you press send yourself, on purpose), and one-tap import of an attendee list.
 ```
 
 **Built with** (tags, up to 25)
