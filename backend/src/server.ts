@@ -18,8 +18,10 @@ app.listen(config.port, () => {
   };
   // Photon replies ("email", "who did I meet"): only the wearer's texts reach handleReply.
   if (photonConfigured()) void startReplyListener(async (text, ctx) => {
-    const answer = await handleReply(text, ctx.lastBriefId);
-    journal({ type: "reply", briefId: ctx.lastBriefId ?? undefined, data: { text, answer: Array.isArray(answer) ? answer : answer ? [answer] : [] } });
+    // After a restart the listener's last-recap pointer is gone; the newest saved brief is the one they mean.
+    const briefId = ctx.lastBriefId ?? store.latestBrief()?.id ?? null;
+    const answer = await handleReply(text, briefId);
+    journal({ type: "reply", briefId: briefId ?? undefined, data: { text, answer: Array.isArray(answer) ? answer : answer ? [answer] : [] } });
     return answer;
   });
   console.log(`[cue] listening on :${config.port} | model ${config.briefModel} | keys ${JSON.stringify(keys)} | event ${store.activeEventId}`);
