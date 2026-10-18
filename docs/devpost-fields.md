@@ -47,6 +47,8 @@ Install links are in the Try it out section; run share links:
 https://agent.creao.ai/share/4bfe8cec5e35f2b116e00947a4049909
 https://agent.creao.ai/share/b23765406116daad02fef43cb845acab
 https://agent.creao.ai/share/255bb913f81f39b0cff9a4103706a61f
+https://agent.creao.ai/share/c2b9ed57edc1cc407c0d387488f02a24
+https://agent.creao.ai/share/28e20c6bfe45d020b53b92bc4e5660d5
 Pull the CREAO keys and Cue is just three cards and nothing after.
 
 ## Challenges we ran into
