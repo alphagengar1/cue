@@ -3,6 +3,7 @@ import { app } from "./app.js"; // first: app.ts imports telemetry before Expres
 import { config } from "./config.js";
 import { creaoEnabled } from "./creao.js";
 import { photonConfigured, startReplyListener } from "./photon.js";
+import { journal } from "./journal.js";
 import { handleReply } from "./recap.js";
 import { store } from "./store.js";
 
@@ -13,6 +14,10 @@ app.listen(config.port, () => {
     photon: photonConfigured(),
   };
   // Photon replies ("email", "who did I meet"): only the wearer's texts reach handleReply.
-  if (photonConfigured()) void startReplyListener(async (text, ctx) => handleReply(text, ctx.lastBriefId));
+  if (photonConfigured()) void startReplyListener(async (text, ctx) => {
+    const answer = await handleReply(text, ctx.lastBriefId);
+    journal({ type: "reply", briefId: ctx.lastBriefId ?? undefined, data: { text, answer: Array.isArray(answer) ? answer : answer ? [answer] : [] } });
+    return answer;
+  });
   console.log(`[cue] listening on :${config.port} | model ${config.briefModel} | keys ${JSON.stringify(keys)} | event ${store.activeEventId}`);
 });

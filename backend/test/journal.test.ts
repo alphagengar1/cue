@@ -79,3 +79,23 @@ describe("journal routes (JOURNAL_TOKEN, not the device token)", () => {
     assert.equal(journalPeople()[0].name, "Priya Shah");
   });
 });
+
+describe("journal: speech and messages", () => {
+  test("every utterance is journaled verbatim with its intent; the markdown has a speech section", async () => {
+    const say = (text: string, briefId?: string) =>
+      fetch(`${base}/api/say`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ text, briefId }) }).then((r) => r.json());
+    const first = (await say("Priya Shah, Anduril, recruiter")) as { brief: { id: string } };
+    await say("never mind", first.brief.id);
+    const says = journalEntries().filter((e) => e.type === "say");
+    assert.equal(says.length, 2);
+    assert.equal(says[0].data.intent, "lookup");
+    assert.equal(says[1].data.intent, "quiet");
+    assert.equal(says[1].data.text, "never mind");
+    journal({ type: "reply", data: { text: "email", answer: ["Subject: x", "Hi Priya"] } });
+    const md = journalMarkdown();
+    assert.match(md, /## What the wearer said/);
+    assert.match(md, /\(heard as lookup/);
+    assert.match(md, /## iMessage/);
+    assert.match(md, /wearer texted: email -> Cue: Subject: x \/ Hi Priya/);
+  });
+});

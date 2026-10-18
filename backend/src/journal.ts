@@ -9,8 +9,8 @@ import { BACKEND_DIR } from "./config.js";
 import { store } from "./store.js";
 
 export type JournalType =
-  | "brief" | "research" | "cards_updated" | "debrief" | "transcript" | "recap"
-  | "follow_up" | "schedule" | "coaching" | "goal";
+  | "say" | "brief" | "research" | "cards_updated" | "debrief" | "transcript" | "recap"
+  | "follow_up" | "schedule" | "coaching" | "goal" | "reply";
 
 export interface JournalEntry {
   at: string;
@@ -154,6 +154,25 @@ export function journalMarkdown(now = new Date()): string {
     if (x.schedule) {
       out.push(`- proposed times: ${(x.schedule.proposedTimes ?? []).join(", ")}${x.schedule.calendarEventCreated ? " (hold on calendar)" : ""}${x.schedule.eventLink ? ` ${x.schedule.eventLink}` : ""}`);
       if (x.schedule.schedulingMessage) out.push(`- scheduling message: ${x.schedule.schedulingMessage}`);
+    }
+    out.push(``);
+  }
+  const speech = all.filter((e) => e.type === "say" || e.type === "debrief").slice(-100).reverse();
+  if (speech.length) {
+    out.push(`## What the wearer said (verbatim speech, newest first)`, ``);
+    for (const e of speech) {
+      const who = e.person ? ` [${e.person.name}, ${e.person.org}]` : "";
+      const how = e.type === "say" ? ` (heard as ${String(e.data.intent)} ${typeof e.data.confidence === "number" ? e.data.confidence.toFixed(2) : ""})` : " (debrief)";
+      out.push(`- ${e.at}${who}${how}: ${esc(String(e.data.text ?? ""))}`);
+    }
+    out.push(``);
+  }
+  const messages = all.filter((e) => e.type === "recap" || e.type === "reply").slice(-60).reverse();
+  if (messages.length) {
+    out.push(`## iMessage (newest first)`, ``);
+    for (const e of messages) {
+      if (e.type === "reply") out.push(`- ${e.at} wearer texted: ${esc(String(e.data.text ?? ""))} -> Cue: ${esc((e.data.answer as string[] | undefined ?? []).join(" / "))}`);
+      else out.push(`- ${e.at} Cue recap${e.person ? ` for ${e.person.name}` : ""}: ${esc((e.data.bubbles as string[] | undefined ?? []).join(" / ") || (e.data.sent ? "sent" : `not sent (${String(e.data.reason ?? "")})`))}`);
     }
     out.push(``);
   }

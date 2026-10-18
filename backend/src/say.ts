@@ -48,6 +48,8 @@ export async function handleSay(text: string, briefId?: string): Promise<SayOutc
   const t0 = Date.now();
   const intent = await classifyIntent(text, { hasBrief: !!current, lastQuery: current?.query });
   notes.push(`intent ${intent.intent} ${intent.confidence.toFixed(2)} (${intent.source}, ${Date.now() - t0}ms)`);
+  // Every utterance, verbatim, with how it was understood: the speech record the long-term agents read.
+  journal({ type: "say", briefId: current?.id, person: current?.query, data: { text, intent: intent.intent, confidence: intent.confidence, source: intent.source, hadBrief: !!current } });
   log.info("say", { "cue.intent": intent.intent, "cue.intent_confidence": intent.confidence, "cue.intent_source": intent.source });
   const done = (response: SayResponse, fallback = false): SayOutcome => ({
     response: { ...response, intentConfidence: intent.confidence, intentSource: intent.source }, fallback, notes,
@@ -57,6 +59,7 @@ export async function handleSay(text: string, briefId?: string): Promise<SayOutc
     if (!photonConfigured()) return { sent: false, reason: "Photon not set up" };
     const bubbles = await composeRecap(brief);
     const r = await sendRecap(brief, undefined, { bubbles, force: true });
+    journal({ type: "recap", briefId: brief.id, person: brief.query, data: r.sent ? { sent: true, chars: r.text.length, bubbles } : { sent: false, reason: r.reason, bubbles } });
     return r.sent ? { sent: true, chars: r.text.length } : { sent: false, reason: r.reason };
   };
   const debrief = async (): Promise<SayOutcome> => {
@@ -65,7 +68,6 @@ export async function handleSay(text: string, briefId?: string): Promise<SayOutc
     store.briefs.set(brief.id, brief);
     journal({ type: "debrief", briefId: brief.id, person: brief.query, data: { text: brief.debrief } });
     const recap = await recapFor(brief);
-    journal({ type: "recap", briefId: brief.id, person: brief.query, data: recap.sent ? { sent: true, chars: recap.chars } : { sent: false, reason: recap.reason } });
     // CREAO Follow-up Writer, live when its app key is set: the full email + message + next steps,
     // texted when the run completes (about a minute). The Haiku recap above is the instant part.
     let creaoRunId: string | undefined;

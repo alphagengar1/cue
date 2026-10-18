@@ -261,7 +261,10 @@ app.post(
     const brief: Brief = { ...cur, conversation, version: cur.version + 1, updatedAt: new Date().toISOString() };
     store.briefs.set(brief.id, brief);
     log.info("transcript chunk", { "cue.brief": brief.id, "cue.audio_bytes": req.body.length, "cue.added_chars": text.length });
-    if (text) journal({ type: "transcript", briefId: brief.id, person: brief.query, data: { text } });
+    if (text) {
+      const chunk = journalEntries().filter((e) => e.type === "transcript" && e.briefId === brief.id).length + 1;
+      journal({ type: "transcript", briefId: brief.id, person: brief.query, data: { text, chars: text.length, chunk } });
+    }
     res.json({ chars: conversation.length, added: text.length });
   }),
 );
