@@ -161,9 +161,8 @@ We show the agents running in the CREAO Sessions tab in the demo video.
 
 **Built, verified from the setup page or typed path and the backend, but not yet exercised on the physical G2:**
 
-- Unverified: the spoken intents other than lookup (correction, debrief, goal, recap, coach, never mind) said into the glasses. They were built Oct 17 late and tested through `POST /api/say` from the typed path, not yet by holding the temple.
-- Unverified: the goal-gate quiet line ("Priya: nothing for your goal") on the lens.
-- Unverified: Record conversation on the glasses (the consent screen, the recording state and the 20 second chunked streaming). The backend side of `POST /api/briefs/:id/transcript` is tested.
+- Verified on the physical G2 on Oct 18 (about 10:00): spoken lookup with a misheard name resolved, spoken debrief with the recap texted in seconds, "how did I do today?" starting the coach, a spoken goal change (even "cofinder"), and Record conversation (consent screen, two 20-second chunks transcribed).
+- Unverified: the goal-gate quiet line ("<name>: nothing for your goal") and the "never mind" and correction intents on the lens; exercised from the typed path and in tests.
 - Unverified: the backend-side Google Calendar OAuth path (`GOOGLE_*` vars, `npm run google:auth`) is wired and tested with stubs; the agent's own connector hold is the verified path.
 
 **Two small caveats:**

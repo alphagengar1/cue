@@ -74,7 +74,7 @@ The menu is five items: **Talk**, **Last brief**, **Text me a recap**, **Record 
 
 Misheard names snap to the event list: Deepgram gets the event's names and orgs as keyterms, and the backend accepts a listed attendee within 2 edits ("David Kramer" becomes David Cramer), so a near miss never needs a confirm screen. The "Which Priya?" confirm screen remains for a real ambiguity. If the decision gate says the facts match the person but offer nothing for your goal, you get one quiet line ("<name>: nothing for your goal") instead of cards; the cards stay under Last brief.
 
-Unverified on hardware as of Oct 18 early: see "What is verified and what is not" below.
+Verified on the G2 on Oct 18 (spoken lookup, debrief, coach, goal change, Record conversation); see "What is verified and what is not" below.
 
 ## CREAO agents
 
@@ -166,6 +166,6 @@ Verified live from the backend and on the AWS server (Oct 18, early), with the s
 Not yet verified:
 
 - The three merged agents (Research, Follow-up, Coach) as such: created Oct 18 from the paste-only specs; the backend accepts their merged outputs (tests) but no live run yet.
-- On the physical G2: the spoken intents (correction, debrief, goal, recap, coach, never mind), the goal-gate quiet line, Record conversation (consent screen, chunked streaming). Lookups and the debrief recap have been seen on hardware.
+- On the physical G2: the correction and "never mind" intents and the goal-gate quiet line (exercised from the typed path and in tests). Verified on the physical G2 on Oct 18 (about 10:00): spoken lookup with a misheard name resolved, spoken debrief with the recap texted in seconds, "how did I do today?" starting the coach, a spoken goal change (even "cofinder"), and Record conversation (consent screen, two 20-second chunks transcribed).
 - The backend-side Google Calendar OAuth path (`GOOGLE_*`) is wired and tested with stubs; the agent's own connector hold is the verified path.
 - Known caveats: `DECIDE_TIMEOUT_MS` defaults to 1.2 s against the 700 ms design target.
