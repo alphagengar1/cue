@@ -161,7 +161,11 @@ app.post(
       return t;
     }, { "cue.provider": "deepgram", "cue.audio_bytes": pcm.length });
     const sttMs = Date.now() - t0;
-    console.log(`[stt] ${pcm.length} bytes -> ${sttMs}ms`);
+    // Loudness of the clip (RMS of s16le), so a silent mic is visible in the log without any audio content.
+    let sq = 0; const n = Math.floor(pcm.length / 2);
+    for (let i = 0; i < n; i++) { const v = pcm.readInt16LE(i * 2) / 32768; sq += v * v; }
+    const rms = n ? Math.sqrt(sq / n) : 0;
+    console.log(`[stt] ${pcm.length} bytes (${(pcm.length / 32000).toFixed(1)} s, rms ${rms.toFixed(3)}) -> ${sttMs}ms, ${transcript.length} chars`);
     log.info("stt", { "cue.audio_bytes": pcm.length, "cue.ms.stt": sttMs });
     res.setHeader("Server-Timing", `stt;dur=${sttMs}`);
     sttTranscripts.set(transcript.trim(), Date.now());
