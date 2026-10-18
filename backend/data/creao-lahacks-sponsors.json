@@ -133,8 +133,16 @@
       "focusNow": [],
       "eventRole": "example org for demo lookups (not a sponsor)",
       "hiring": "",
-      "people": []
+      "people": [
+        "Steve Jobs"
+      ]
     }
   ],
-  "people": []
+  "people": [
+    {
+      "name": "Steve Jobs",
+      "orgId": "apple",
+      "role": "co-founder"
+    }
+  ]
 }

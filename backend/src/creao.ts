@@ -461,6 +461,17 @@ async function pollOnce(): Promise<void> {
   }
 }
 
+/** After a restart: the saved session's pending runs are polled again (their webhooks may have fired while nobody was listening). */
+export function resumeRuns(): number {
+  const pending = [...store.runs.values()].filter((r) => r.status === "pending");
+  if (pending.length) {
+    ensurePoller();
+    setTimeout(() => { void pollOnce(); }, 1500).unref();
+    console.log(`[creao] resuming ${pending.length} pending run(s): ${pending.map((r) => `${r.agent} ${r.runId.slice(0, 8)}`).join(", ")}`);
+  }
+  return pending.length;
+}
+
 /**
  * Fetch the run with our key; if terminal, extract + apply the result once.
  * Both the webhook and the poller call this. Safe to call repeatedly.

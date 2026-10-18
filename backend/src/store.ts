@@ -65,12 +65,22 @@ const DEFAULT_PROFILE: WearerProfile = {
   goal: "internship",
 };
 
+/** A Map that reports every write, so briefs and agent runs survive a restart (Store.saveSession). */
+class SavedMap<K, V> extends Map<K, V> {
+  constructor(private readonly onWrite: () => void) { super(); }
+  override set(k: K, v: V): this { super.set(k, v); this.onWrite(); return this; }
+  override delete(k: K): boolean { const r = super.delete(k); this.onWrite(); return r; }
+  override clear(): void { super.clear(); this.onWrite(); }
+}
+
 class Store {
   events = new Map<string, Event>();
   orgs = new Map<string, Organization>(); // key: `${eventId}:${orgId}`
   people = new Map<string, Person>();
-  briefs = new Map<string, Brief>();
-  runs = new Map<string, RunRecord>();
+  briefs = new SavedMap<string, Brief>(() => this.scheduleSessionSave());
+  runs = new SavedMap<string, RunRecord>(() => this.scheduleSessionSave());
+  private sessionTimer: NodeJS.Timeout | null = null;
+  private sessionLoading = false;
 
   /** The matched person behind a brief, if any. */
   personFor(brief: Pick<Brief, "match">): Person | undefined {
@@ -188,6 +198,43 @@ class Store {
     }
   }
 
+  /**
+   * Briefs and agent runs are written to data/session.local.json shortly after every change, so a restart
+   * (every deploy) keeps the conversation on the glasses and the pending follow-up. Debounced; one file.
+   */
+  scheduleSessionSave(): void {
+    if (this.sessionLoading || this.sessionTimer) return;
+    this.sessionTimer = setTimeout(() => { this.sessionTimer = null; this.saveSession(); }, 250);
+    this.sessionTimer.unref();
+  }
+  saveSession(): void {
+    try {
+      fs.mkdirSync(path.dirname(LOCAL_SESSION_FILE), { recursive: true });
+      const briefs = [...this.briefs.values()].sort((a, b) => a.updatedAt.localeCompare(b.updatedAt)).slice(-200);
+      const runs = [...this.runs.values()].slice(-300);
+      fs.writeFileSync(LOCAL_SESSION_FILE, JSON.stringify({ savedAt: new Date().toISOString(), briefs, runs }));
+    } catch (err) {
+      console.warn(`[store] could not save session: ${err instanceof Error ? err.message : String(err)}`);
+    }
+  }
+  loadSession(): { briefs: number; pendingRuns: number } {
+    try {
+      if (!fs.existsSync(LOCAL_SESSION_FILE)) return { briefs: 0, pendingRuns: 0 };
+      const j = JSON.parse(fs.readFileSync(LOCAL_SESSION_FILE, "utf8")) as { briefs?: Brief[]; runs?: RunRecord[] };
+      this.sessionLoading = true;
+      try {
+        for (const b of j.briefs ?? []) if (b?.id) this.briefs.set(b.id, b);
+        for (const r of j.runs ?? []) if (r?.runId) this.runs.set(r.runId, r);
+      } finally { this.sessionLoading = false; }
+      const pendingRuns = [...this.runs.values()].filter((r) => r.status === "pending").length;
+      console.log(`[store] session loaded: ${this.briefs.size} briefs, ${this.runs.size} runs (${pendingRuns} pending)`);
+      return { briefs: this.briefs.size, pendingRuns };
+    } catch (err) {
+      console.warn(`[store] could not load session: ${err instanceof Error ? err.message : String(err)}`);
+      return { briefs: 0, pendingRuns: 0 };
+    }
+  }
+
   latestBrief(): Brief | null {
     let best: Brief | null = null;
     for (const b of this.briefs.values()) if (!best || b.updatedAt >= best.updatedAt) best = b;
@@ -238,5 +285,6 @@ class Store {
 
 const LOCAL_STATE_FILE = path.resolve(BACKEND_DIR, process.env.LOCAL_STATE_FILE?.trim() || "data/profile.local.json");
 const LOCAL_EVENTS_DIR = path.resolve(BACKEND_DIR, process.env.LOCAL_EVENTS_DIR?.trim() || "data/events");
+const LOCAL_SESSION_FILE = path.resolve(BACKEND_DIR, process.env.LOCAL_SESSION_FILE?.trim() || "data/session.local.json");
 
 export const store = new Store();

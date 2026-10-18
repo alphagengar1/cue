@@ -18,6 +18,7 @@ process.env.JOURNAL_FILE = `/tmp/cue-test-journal-${process.pid}.jsonl`; // neve
 process.env.JOURNAL_TOKEN = "";
 process.env.LOCAL_EVENTS_DIR = `/tmp/cue-test-events-${process.pid}`; // never the real runtime events
 process.env.LOCAL_STATE_FILE = `/tmp/cue-test-local-${process.pid}.json`; // never the real profile file
+process.env.LOCAL_SESSION_FILE = `/tmp/cue-test-session-${process.pid}.json`; // never the real briefs/runs file
 process.env.SAMPLE_EVENT_FILE = "data/sample-event.json"; // the demo default is the CREAO file
 
 // Backstop: any network call that is not to this machine fails loudly instead of costing money.

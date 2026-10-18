@@ -9,4 +9,5 @@ dist/
 # wearer profile saved by the backend (personal)
 backend/data/profile.local.json
 backend/data/journal.local.jsonl
+backend/data/session.local.json
 backend/data/events/

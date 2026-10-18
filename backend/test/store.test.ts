@@ -85,3 +85,23 @@ describe("runtime events persist", () => {
     store.loadSample();
   });
 });
+
+describe("session persistence (briefs and runs survive a restart)", () => {
+  test("round-trip through the session file keeps the brief's follow-up status and the pending run", () => {
+    store.briefs.clear(); store.runs.clear();
+    const now = new Date().toISOString();
+    store.briefs.set("b_sess", {
+      id: "b_sess", version: 2, eventId: "ev", transcript: "Sess Test, Org", query: { name: "Sess Test", org: "Org" },
+      match: { personId: null, confidence: "low", candidates: [] }, cards: [], slowPath: { status: "none" },
+      debrief: "said hi", followUp: { status: "pending", runId: "run_sess" }, createdAt: now, updatedAt: now,
+    });
+    store.runs.set("run_sess", { runId: "run_sess", agent: "follow_up_writer", briefId: "b_sess", status: "pending", startedAt: now });
+    store.saveSession();
+    store.briefs.clear(); store.runs.clear();
+    const r = store.loadSession();
+    assert.equal(r.briefs, 1); assert.equal(r.pendingRuns, 1);
+    assert.equal(store.briefs.get("b_sess")?.followUp?.status, "pending");
+    assert.equal(store.runs.get("run_sess")?.agent, "follow_up_writer");
+    store.briefs.clear(); store.runs.clear();
+  });
+});

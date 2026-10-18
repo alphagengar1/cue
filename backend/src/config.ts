@@ -69,6 +69,7 @@ export const config = {
   llmTimeoutMs: num("LLM_TIMEOUT_MS", 4500), // Haiku p50 ~2.2 s, p95 ~2.8 s; 3 s cut real briefs to templates
   // Decision gate cap. Measured 290 ms for 2 facts; the first call of a process and 13-fact inputs ran over 700 ms.
   decideTimeoutMs: num("DECIDE_TIMEOUT_MS", 1200),
+  replyIntentTimeoutMs: num("REPLY_INTENT_TIMEOUT_MS", 4000), // iMessage intent: off the live path, seconds are fine
   maxAudioBytes: num("MAX_AUDIO_BYTES", 1_000_000), // ~31 s of s16le 16 kHz mono
   lookupsPerMinute: num("LOOKUPS_PER_MINUTE", 30),
 };

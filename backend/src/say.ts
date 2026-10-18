@@ -10,7 +10,7 @@ import { debriefsToday, startCoach } from "./coach.js";
 import { journal } from "./journal.js";
 import { creaoEnabled, startRun } from "./creao.js";
 import { CueError } from "./errors.js";
-import { classifyIntent } from "./intent.js";
+import { classifyIntent, goalFromText, type Intent, type IntentResult } from "./intent.js";
 import { LlmUnavailable, parseWithModel } from "./llm.js";
 import { parseTranscript } from "./parse.js";
 import { photonConfigured, sendRecap } from "./photon.js";
@@ -42,11 +42,17 @@ export async function rewriteQuery(prev: Query | undefined, text: string): Promi
 
 const queryText = (q: Query): string => [q.name, q.org, q.role].filter(Boolean).join(", ");
 
-export async function handleSay(text: string, briefId?: string): Promise<SayOutcome> {
+/**
+ * `forced` skips classification: the iMessage router (recap.ts) has already decided what the text
+ * meant with its own decision model and context, so the same utterance is not classified twice.
+ */
+export async function handleSay(text: string, briefId?: string, forced?: Intent): Promise<SayOutcome> {
   const notes: string[] = [];
   const current = (briefId ? store.briefs.get(briefId) : undefined) ?? store.latestBrief() ?? undefined;
   const t0 = Date.now();
-  const intent = await classifyIntent(text, { hasBrief: !!current, lastQuery: current?.query });
+  const intent: IntentResult = forced
+    ? { intent: forced, confidence: 1, source: "rules", goal: forced === "goal" ? goalFromText(text) : undefined }
+    : await classifyIntent(text, { hasBrief: !!current, lastQuery: current?.query });
   notes.push(`intent ${intent.intent} ${intent.confidence.toFixed(2)} (${intent.source}, ${Date.now() - t0}ms)`);
   // Every utterance, verbatim, with how it was understood: the speech record the long-term agents read.
   journal({ type: "say", briefId: current?.id, person: current?.query, data: { text, intent: intent.intent, confidence: intent.confidence, source: intent.source, hadBrief: !!current } });

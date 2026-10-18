@@ -10,7 +10,7 @@ import type {
 } from "../../shared/types.js";
 import { buildBrief, confirmPerson, regenerateAngle, type BriefOutcome } from "./brief.js";
 import { BACKEND_DIR, config } from "./config.js";
-import { creaoRouter, startRun } from "./creao.js";
+import { creaoRouter, resumeRuns, startRun } from "./creao.js";
 import { CueError, sendError } from "./errors.js";
 import { LlmUnavailable } from "./llm.js";
 import { parseTranscript } from "./parse.js";
@@ -26,6 +26,8 @@ import { transcribe } from "./stt.js";
 store.loadSample();
 store.loadLocalEvents(); // events built at runtime (setup page / iMessage), with their researched people
 store.loadLocal(); // the wearer's saved profile and goal win over the sample file's
+store.loadSession(); // briefs and agent runs from before the last restart: a deploy must not lose a pending follow-up
+resumeRuns();
 
 const app = express();
 app.disable("x-powered-by");

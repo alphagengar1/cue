@@ -79,7 +79,7 @@ const INTENT_CHOICES: { value: Intent; description: string }[] = [
   { value: "quiet", description: "Cancel, never mind, stop, go quiet, nothing." },
   { value: "unknown", description: "None of the above, or too garbled to tell." },
 ];
-const GOAL_CHOICES: { value: Goal; description: string }[] = [
+export const GOAL_CHOICES: { value: Goal; description: string }[] = [
   { value: "internship", description: "An internship, job, new-grad role, or being hired." },
   { value: "cofounder", description: "A cofounder or someone to start a company with." },
   { value: "mentorship", description: "A mentor, advice, or guidance." },
@@ -87,49 +87,62 @@ const GOAL_CHOICES: { value: Goal; description: string }[] = [
   { value: "teammates_sponsors", description: "Teammates for a project or sponsors." },
 ];
 
-interface Answer { type: string; name: string; choice?: string; probabilities?: { value: string; probability: number }[]; confidence?: number }
+export interface Answer { type: string; name: string; choice?: string; probabilities?: { value: string; probability: number }[]; confidence?: number }
+export type Choice<T extends string> = { value: T; description: string };
+export interface DecisionsOpts { apiKey?: string; fetch?: typeof globalThis.fetch; timeoutMs?: number }
 
-/** One Decisions call. Returns null (-> rules) without a key, on timeout, non-200, or bad JSON. */
-export async function decisionsIntent(
-  text: string, ctx: IntentContext,
-  opts: { apiKey?: string; fetch?: typeof globalThis.fetch; timeoutMs?: number } = {},
-): Promise<IntentResult | null> {
+/**
+ * One Decisions API call, shared by the voice and iMessage classifiers. Returns the answers by
+ * name, or null (-> rules) without a key, on timeout, non-200, or bad JSON. Never throws.
+ */
+export async function askDecisions(
+  input: string,
+  questions: { type: "choice"; name: string; instructions: string; choices: Choice<string>[] }[],
+  opts: DecisionsOpts = {},
+): Promise<Map<string, Answer> | null> {
   const apiKey = (opts.apiKey ?? process.env.OPENAI_API_KEY ?? "").trim();
   if (!apiKey) return null;
   const doFetch = opts.fetch ?? globalThis.fetch;
-  const last = ctx.lastQuery ? `A brief is open for ${ctx.lastQuery.name} at ${ctx.lastQuery.org}.` : "No brief is open yet.";
-  const body = {
-    model: DECISIONS_MODEL,
-    input: `A student wearing smart glasses at a networking event held the temple and said: "${text.slice(0, 400)}"\nContext: ${last}`,
-    questions: [
-      { type: "choice", name: "intent", instructions: "What does the wearer want the glasses to do?", choices: INTENT_CHOICES },
-      { type: "choice", name: "goal", instructions: "If they are stating what they are looking for, which goal is it?", choices: GOAL_CHOICES },
-    ],
-  };
   const ac = new AbortController();
   const timer = setTimeout(() => ac.abort(), opts.timeoutMs ?? config.decideTimeoutMs);
   try {
     const res = await doFetch(DECISIONS_URL, {
       method: "POST", headers: { "Content-Type": "application/json", Authorization: `Bearer ${apiKey}` },
-      body: JSON.stringify(body), signal: ac.signal,
+      body: JSON.stringify({ model: DECISIONS_MODEL, input, questions }), signal: ac.signal,
     });
     if (res.status !== 200) return null;
     const json = (await res.json()) as { answers?: Answer[] };
-    const byName = new Map((json.answers ?? []).map((a) => [a.name, a]));
-    const intentA = byName.get("intent");
-    const goalA = byName.get("goal");
-    if (!intentA || intentA.type !== "choice" || !INTENTS.includes(intentA.choice as Intent)) return null;
-    const probabilities: Partial<Record<Intent, number>> = {};
-    for (const p of intentA.probabilities ?? []) probabilities[p.value as Intent] = p.probability;
-    const intent = intentA.choice as Intent;
-    const confidence = probabilities[intent] ?? intentA.confidence ?? 0;
-    const goal = goalA?.type === "choice" && GOAL_CHOICES.some((g) => g.value === goalA.choice) ? (goalA.choice as Goal) : undefined;
-    return { intent, confidence, goal, source: "decisions", probabilities };
+    return new Map((json.answers ?? []).map((a) => [a.name, a]));
   } catch {
     return null;
   } finally {
     clearTimeout(timer);
   }
+}
+
+/** The chosen value of a choice answer when it is one of `allowed`, with its calibrated probability. */
+export function pickChoice<T extends string>(a: Answer | undefined, allowed: readonly T[]): { value: T; confidence: number; probabilities: Partial<Record<T, number>> } | null {
+  if (!a || a.type !== "choice" || !allowed.includes(a.choice as T)) return null;
+  const probabilities: Partial<Record<T, number>> = {};
+  for (const p of a.probabilities ?? []) probabilities[p.value as T] = p.probability;
+  const value = a.choice as T;
+  return { value, confidence: probabilities[value] ?? a.confidence ?? 0, probabilities };
+}
+
+/** One Decisions call. Returns null (-> rules) without a key, on timeout, non-200, or bad JSON. */
+export async function decisionsIntent(text: string, ctx: IntentContext, opts: DecisionsOpts = {}): Promise<IntentResult | null> {
+  const last = ctx.lastQuery ? `A brief is open for ${ctx.lastQuery.name} at ${ctx.lastQuery.org}.` : "No brief is open yet.";
+  const byName = await askDecisions(
+    `A student wearing smart glasses at a networking event held the temple and said: "${text.slice(0, 400)}"\nContext: ${last}`,
+    [
+      { type: "choice", name: "intent", instructions: "What does the wearer want the glasses to do?", choices: INTENT_CHOICES },
+      { type: "choice", name: "goal", instructions: "If they are stating what they are looking for, which goal is it?", choices: GOAL_CHOICES },
+    ], opts);
+  if (!byName) return null;
+  const intentA = pickChoice(byName.get("intent"), INTENTS);
+  if (!intentA) return null;
+  const goal = pickChoice(byName.get("goal"), GOAL_CHOICES.map((g) => g.value))?.value;
+  return { intent: intentA.value, confidence: intentA.confidence, goal, source: "decisions", probabilities: intentA.probabilities };
 }
 
 /**
