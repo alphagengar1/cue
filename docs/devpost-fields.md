@@ -43,7 +43,10 @@ Agents (IDs and links):
 Research `5283bd7f-cc11-4b29-902b-2debe558b46f`,
 Follow-up `7a639acb-b15a-4d88-b66d-c76831b92ddf`,
 Coach `b095ddf1-cccc-42ae-a381-ccc7906b14a4`.
-Install links are in the Try it out section; run share links: [RUN SHARE LINKS].
+Install links are in the Try it out section; run share links:
+https://agent.creao.ai/share/4bfe8cec5e35f2b116e00947a4049909
+https://agent.creao.ai/share/b23765406116daad02fef43cb845acab
+https://agent.creao.ai/share/255bb913f81f39b0cff9a4103706a61f
 Pull the CREAO keys and Cue is just three cards and nothing after.
 
 ## Challenges we ran into
@@ -81,6 +84,8 @@ https://github.com/alphagengar1/cue
 https://agent.creao.ai/install/5283bd7f-cc11-4b29-902b-2debe558b46f?version=4c8c119a-7514-4dca-9e6b-64798d859bbd
 https://agent.creao.ai/install/7a639acb-b15a-4d88-b66d-c76831b92ddf?version=e2188ecf-8212-4b00-a590-4396a046cc07
 https://agent.creao.ai/install/b095ddf1-cccc-42ae-a381-ccc7906b14a4?version=58dfa39f-5361-4cb3-9e04-e92d421dda4f
+https://agent.creao.ai/install/ce55b695-6140-400b-a1bf-1af725ad64f0?version=55406d9b-219f-4801-92a1-0342fd15b18f
+https://agent.creao.ai/install/008b7b12-aca9-4969-82fa-a1a937322089?version=22794808-7186-4be2-9016-ecfc5f144058
 ```
 
 **Image gallery**: lens shots of the three cards and the consent screen, the phone thread (recap, "email", "book", coach), the CREAO Sessions tab, the Coach dashboard, the mirror page. Hide the Photon number.
