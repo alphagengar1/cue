@@ -189,7 +189,14 @@ export async function createRun(agentId: string, input: unknown, webhookUrl?: st
 
 /** GET /v2/runs/{id}. rawOutput=true prefers the full assistant transcript in result. */
 export async function getRun(runId: string, rawOutput = false): Promise<CreaoRun> {
-  const app = appRuns.get(runId);
+  let app = appRuns.get(runId);
+  if (!app) {
+    // After a restart the in-memory map is empty; the saved run record still says which agent it belongs to.
+    const rec = store.runs.get(runId);
+    const appId = rec ? agentIdFor(rec.agent) : undefined;
+    const key = rec ? appKeyFor(rec.agent) : undefined;
+    if (appId && key) { app = { appId, key }; appRuns.set(runId, app); }
+  }
   if (app) return fromAppRun(await appApi<AppRun>("GET", app.key, `/api/v1/apps/${encodeURIComponent(app.appId)}/runs/${encodeURIComponent(runId)}`), app.appId);
   return api<CreaoRun>("GET", `/v2/runs/${encodeURIComponent(runId)}${rawOutput ? "?raw_output=true" : ""}`);
 }
