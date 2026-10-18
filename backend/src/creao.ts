@@ -758,6 +758,7 @@ export function applyEventLoader(rec: Pick<RunRecord, "eventId">, out: unknown):
     peopleApplied++;
   }
   ev.loadStatus = orgsApplied ? "ready" : (ev.loadStatus === "loading" ? "failed" : ev.loadStatus);
+  store.saveEventFile(ev.id);
   return `${orgsApplied} orgs (${factsKept} sourced facts), ${peopleApplied} people -> event ${eventId} ${ev.loadStatus}`;
 }
 
@@ -792,6 +793,7 @@ async function applyPersonResearcher(rec: RunRecord, out: unknown): Promise<stri
     lastResearchedAt: new Date().toISOString(),
   };
   store.putPerson(updated);
+  store.saveEventFile(updated.eventId); // researched facts survive a restart
   const summary = `${facts.length} new facts kept, agent match ${agentMatch}`;
   journal({ type: "research", briefId: rec.briefId, person: { name: updated.name, org: org?.name ?? updated.orgId, role: updated.role },
     data: { agent: "person_researcher", runId: rec.runId, kept: facts.length, match: agentMatch, facts: updated.facts.map((f) => ({ text: f.text, sourceUrl: f.sourceUrl })) } });

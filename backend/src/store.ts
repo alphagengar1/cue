@@ -122,17 +122,56 @@ class Store {
   saveLocal(): void {
     try {
       fs.mkdirSync(path.dirname(LOCAL_STATE_FILE), { recursive: true });
-      fs.writeFileSync(LOCAL_STATE_FILE, JSON.stringify({ profile: this.profile, goal: this.goal }, null, 2));
+      fs.writeFileSync(LOCAL_STATE_FILE, JSON.stringify({ profile: this.profile, goal: this.goal, activeEventId: this.activeEventId }, null, 2));
     } catch (err) {
       console.warn(`[store] could not save local state: ${err instanceof Error ? err.message : String(err)}`);
     }
   }
+  /**
+   * Events built at runtime (setup page or "I'm going to X tomorrow" over iMessage) and the facts
+   * researched for their people persist as data/events/<id>.local.json, in the same shape as a
+   * bundled event file, so a restart before the demo loses nothing.
+   */
+  saveEventFile(eventId: string | null = this.activeEventId): string | null {
+    const ev = eventId ? this.events.get(eventId) : undefined;
+    if (!ev) return null;
+    const file = path.join(LOCAL_EVENTS_DIR, `${ev.id}.local.json`);
+    const organizations = this.eventOrgs(ev.id).map(({ eventId: _e, ...o }) => o);
+    const people = this.eventPeople(ev.id).filter((p) => p.fromEventList || p.confirmed || p.facts.length).map((p) => ({
+      name: p.name, orgId: p.orgId, role: p.role, headline: p.headline, facts: p.facts, match: p.match,
+      ...(p.followUp ? { followUp: p.followUp } : {}),
+    }));
+    try {
+      fs.mkdirSync(LOCAL_EVENTS_DIR, { recursive: true });
+      fs.writeFileSync(file, JSON.stringify({ event: ev, organizations, people }, null, 2));
+      return file;
+    } catch (err) {
+      console.warn(`[store] could not save event ${ev.id}: ${err instanceof Error ? err.message : String(err)}`);
+      return null;
+    }
+  }
+  /** Load every saved runtime event (boot). Returns the ids loaded; the active event is restored by loadLocal(). */
+  loadLocalEvents(): string[] {
+    let names: string[] = [];
+    try { names = fs.readdirSync(LOCAL_EVENTS_DIR).filter((f) => f.endsWith(".local.json")); } catch { return []; }
+    const ids: string[] = [];
+    const keepActive = this.activeEventId;
+    for (const f of names) {
+      try { ids.push(this.loadSample(path.join(LOCAL_EVENTS_DIR, f), { withProfile: false }).id); }
+      catch (err) { console.warn(`[store] could not load ${f}: ${err instanceof Error ? err.message : String(err)}`); }
+    }
+    this.activeEventId = keepActive;
+    if (ids.length) console.log(`[store] runtime events loaded: ${ids.join(", ")}`);
+    return ids;
+  }
+
   loadLocal(): boolean {
     try {
       if (!fs.existsSync(LOCAL_STATE_FILE)) return false;
-      const j = JSON.parse(fs.readFileSync(LOCAL_STATE_FILE, "utf8")) as { profile?: Partial<WearerProfile>; goal?: Goal };
+      const j = JSON.parse(fs.readFileSync(LOCAL_STATE_FILE, "utf8")) as { profile?: Partial<WearerProfile>; goal?: Goal; activeEventId?: string };
       if (j.profile?.name) this.profile = { ...DEFAULT_PROFILE, ...j.profile, id: "me" };
       if (j.goal) this.goal = j.goal;
+      if (j.activeEventId && this.events.has(j.activeEventId)) this.activeEventId = j.activeEventId;
       console.log(`[store] local state loaded (${this.profile.name}, goal ${this.goal})`);
       return true;
     } catch (err) {
@@ -190,5 +229,6 @@ class Store {
 }
 
 const LOCAL_STATE_FILE = path.resolve(BACKEND_DIR, process.env.LOCAL_STATE_FILE?.trim() || "data/profile.local.json");
+const LOCAL_EVENTS_DIR = path.resolve(BACKEND_DIR, process.env.LOCAL_EVENTS_DIR?.trim() || "data/events");
 
 export const store = new Store();

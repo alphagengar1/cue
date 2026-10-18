@@ -16,6 +16,7 @@ process.env.ALLOW_LINKEDIN = "0"; // tests cover the strict mode; one test flips
 process.env.RESEARCH_LOADED_PEOPLE = "0"; // tests keep the "loaded research blocks a paid run" rule
 process.env.JOURNAL_FILE = `/tmp/cue-test-journal-${process.pid}.jsonl`; // never the real journal
 process.env.JOURNAL_TOKEN = "";
+process.env.LOCAL_EVENTS_DIR = `/tmp/cue-test-events-${process.pid}`; // never the real runtime events
 process.env.LOCAL_STATE_FILE = `/tmp/cue-test-local-${process.pid}.json`; // never the real profile file
 process.env.SAMPLE_EVENT_FILE = "data/sample-event.json"; // the demo default is the CREAO file
 

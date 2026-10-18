@@ -24,6 +24,7 @@ import { newId, slug, store } from "./store.js";
 import { transcribe } from "./stt.js";
 
 store.loadSample();
+store.loadLocalEvents(); // events built at runtime (setup page / iMessage), with their researched people
 store.loadLocal(); // the wearer's saved profile and goal win over the sample file's
 
 const app = express();

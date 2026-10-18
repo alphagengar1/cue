@@ -40,6 +40,8 @@ export async function createEvent(b: CreateEventInput, opts: { via?: "setup" | "
     store.upsertPerson(id, slug(p.org), p.name, { role: p.role, match: "high", matchReason: "on the event list", fromEventList: true });
   }
   if (b.organizations?.length) event.loadStatus = "ready";
+  store.saveEventFile(id);
+  store.saveLocal(); // remembers which event is active
   journal({ type: "event", data: { id, name: b.name, date: b.date, via: opts.via ?? "setup", orgs: b.orgs ?? [], people: (b.people ?? []).length } });
 
   const runId = await startRun("event_loader", {

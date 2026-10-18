@@ -68,3 +68,19 @@ describe("store helpers", () => {
     assert.equal(a.id, b[0].id);
   });
 });
+
+describe("runtime events persist", () => {
+  test("saveEventFile + loadLocalEvents restore an event, its orgs and researched people", async () => {
+    const { createEvent } = await import("../src/events.js");
+    const ev = await createEvent({ name: "Persist Test Expo", date: "2026-10-18", orgs: ["Sentry"], people: [{ name: "David Cramer", org: "Sentry", role: "co-founder" }] }, { via: "imessage" });
+    const file = store.saveEventFile(ev.id);
+    assert.ok(file && file.endsWith(`${ev.id}.local.json`));
+    store.events.delete(ev.id);
+    for (const [k, p] of store.people) if (p.eventId === ev.id) store.people.delete(k);
+    const ids = store.loadLocalEvents();
+    assert.ok(ids.includes(ev.id));
+    assert.equal(store.events.get(ev.id)?.name, "Persist Test Expo");
+    assert.ok(store.eventPeople(ev.id).some((p) => p.name === "David Cramer"));
+    store.loadSample();
+  });
+});
