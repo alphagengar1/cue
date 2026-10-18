@@ -75,6 +75,25 @@ export function followUpBubbles(followUp: FollowUpVoiceInput, first: string): st
   ]);
 }
 
+/**
+ * One compact wave for the merged Follow-up agent (email + times in one run): lead-in, the email
+ * whole, next steps on one line, the times and the hold on one line. At most 3 bubbles, so a
+ * conversation costs the wearer 4 texts in total (one Haiku recap + these), not 17.
+ */
+export function followUpWave(followUp: FollowUpVoiceInput, schedule: ScheduleVoiceInput | undefined, first: string): string[] {
+  const who = first ? first.toLowerCase() : "them";
+  const steps = (followUp.nextSteps ?? []).map((s) => s.trim()).filter(Boolean).slice(0, 2);
+  const times = (schedule?.proposedTimes ?? []).map((t) => t.trim()).filter(Boolean).slice(0, 3);
+  const timesLine = times.length
+    ? `times for ${who}: ${times.map(friendlyTime).join(", ")}${schedule?.eventLink ? " · hold's on your calendar" : ""} · say book for the message`
+    : (followUp.message?.trim() ? "say text for the short version" : "");
+  return cap([
+    { whole: followUp.email.body },
+    ...(steps.length ? [{ line: `next: ${steps.join("; ")}` }] : []),
+    ...(timesLine ? [{ whole: timesLine }] : []), // one bubble even when it runs past 100 chars
+  ]).slice(0, 3);
+}
+
 const DAY = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 const MONTH = ["jan", "feb", "mar", "apr", "may", "jun", "jul", "aug", "sep", "oct", "nov", "dec"];
 const clock = (h: number, m: number): string => {

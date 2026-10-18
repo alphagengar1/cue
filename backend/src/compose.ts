@@ -80,13 +80,12 @@ export async function composeRecap(brief: Brief, debrief?: string): Promise<stri
   try {
     const out = await parseWithModel(SYSTEM, {
       task: "recap",
-      format: "Return bubbles: 3 to 5 strings, each ONE line under 100 characters. " +
-        "First: who you just met (first and last name, role, org). " +
-        "Then one bubble per thing worth remembering, most useful first: what they said they wanted (debrief first), then one hook from the facts. " +
-        "Last: a short offer of an email draft ending with: just say email. No sources, no card titles.",
+      format: "Return bubbles: exactly ONE string, under 200 characters, texting voice: who you just met (first and last name, role, org), " +
+        "then the one or two things that matter most (what they said they wanted, from the debrief first). " +
+        "No offer, no sources, no card titles; the follow-up email and times arrive by themselves a few minutes later.",
       ...context(brief, debrief),
     }, RecapOut, { maxTokens: 600, timeoutMs: 8000 });
-    const bubbles = splitBubbles(out.bubbles.map(clean));
+    const bubbles = splitBubbles(out.bubbles.map(clean), 220, 1); // one text, by request
     if (bubbles.length >= 1) return bubbles;
   } catch (err) {
     console.warn(`[compose] recap fell back: ${err instanceof LlmUnavailable ? err.message : String(err)}`);

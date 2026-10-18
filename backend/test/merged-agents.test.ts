@@ -46,3 +46,19 @@ describe("merged agent outputs", () => {
     assert.equal(found.cards.length, 1);
   });
 });
+
+describe("one wave per conversation (3 bubbles)", () => {
+  test("followUpWave is at most 3 bubbles: email, next steps, times + book", async () => {
+    const { followUpWave } = await import("../src/voice.js");
+    const wave = followUpWave(
+      { email: { subject: "Seer", body: "Hi David,\n\nThanks for the chat.\n\nSam" }, message: "hi", nextSteps: ["email david tonight", "apply to sentry"] },
+      { proposedTimes: ["2026-10-22 14:00-14:30", "2026-10-23 15:00-15:30", "2026-10-26 14:00-14:30"], schedulingMessage: "x", eventLink: "https://calendar.google.com/x" },
+      "David",
+    );
+    assert.ok(wave.length <= 3, `${wave.length} bubbles`);
+    assert.equal(wave[0], "Hi David,\n\nThanks for the chat.\n\nSam");
+    assert.match(wave[1], /^next: email david tonight; apply to sentry/);
+    assert.match(wave[2], /times for david: .*say book for the message/);
+    assert.match(wave[2], /hold's on your calendar/);
+  });
+});

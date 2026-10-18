@@ -15,7 +15,7 @@ import { cleanFacts, enforceCards, factAboutPerson, hostOf, sanitize, sortFacts 
 import { journal } from "./journal.js";
 import { sendText } from "./photon.js";
 import { availabilityWithCalendar, confirmSchedule } from "./calendar.js";
-import { coachBubbles, firstName, followUpBubbles, scheduleBubbles } from "./voice.js";
+import { coachBubbles, firstName, followUpBubbles, followUpWave, scheduleBubbles } from "./voice.js";
 import { newId, norm, slug, store, type RunRecord } from "./store.js";
 
 export type AgentKind = RunRecord["agent"];
@@ -595,21 +595,30 @@ async function applyFollowUpWriter(rec: RunRecord, out: unknown): Promise<string
   if (person) {
     store.putPerson({ ...person, followUp: { ...(person.followUp ?? {}), agent: "creao-follow-up-writer", agentId: agentIdFor("follow_up_writer"), email: { subject, body }, message, nextSteps, draftLink: d.draftLink ?? null } });
   }
+  // The agent's own recap and research notes go to the journal only; Haiku's instant recap already
+  // reached the phone, and the wearer asked for fewer texts, not more.
   const recap = (d.recap ?? []).map((b) => sanitize(b).trim().slice(0, 160)).filter(Boolean).slice(0, 5);
   if (recap.length) {
-    const rr = await sendText(recap);
     const b0 = rec.briefId ? store.briefs.get(rec.briefId) : undefined;
-    journal({ type: "recap", briefId: rec.briefId, person: b0?.query, data: { sent: rr.sent, bubbles: recap, by: "follow-up agent", ...(rr.sent ? { chars: rr.text.length } : { reason: rr.reason }) } });
-    await new Promise((res) => setTimeout(res, 1500));
+    journal({ type: "recap", briefId: rec.briefId, person: b0?.query, data: { sent: false, bubbles: recap, by: "follow-up agent (journal only)" } });
   }
-  const r = await sendText(followUpBubbles({ email: { subject, body }, message, nextSteps }, firstName(person?.name))
-    .concat(d.draftLink && /^https?:\/\//.test(d.draftLink) ? [`saved as a gmail draft too: ${d.draftLink}`] : []));
+  const draftLine = d.draftLink && /^https?:\/\//.test(d.draftLink) ? [`saved as a gmail draft too: ${d.draftLink}`] : [];
+  let scheduleNote = "";
+  let r: Awaited<ReturnType<typeof sendText>>;
+  if (d.schedule) {
+    // Merged agent: email + times in ONE wave of at most 4 bubbles (voice.ts followUpWave).
+    const s = await applySchedule(rec, d.schedule, { quiet: true });
+    scheduleNote = `; ${s.note}`;
+    r = await sendText(followUpWave({ email: { subject, body }, message, nextSteps }, s.schedule, firstName(person?.name)).concat(draftLine));
+  } else {
+    r = await sendText(followUpBubbles({ email: { subject, body }, message, nextSteps }, firstName(person?.name)).concat(draftLine));
+  }
   let note = `follow-up stored${person ? ` on ${person.name}` : ""}; text ${r.sent ? "sent" : `not sent (${r.reason})`}`;
   { const b0 = rec.briefId ? store.briefs.get(rec.briefId) : undefined;
     journal({ type: "follow_up", briefId: rec.briefId, person: b0?.query ?? (person ? { name: person.name, org: person.orgId } : undefined),
       data: { subject, body, message, nextSteps, draftLink: d.draftLink ?? null, runId: rec.runId, texted: r.sent, researchNotes: (d.researchNotes ?? []).slice(0, 8) } }); }
-  // Orchestration: Follow-up Writer -> Meeting Scheduler (agents/meeting-scheduler.md).
-  if (d.schedule) return `${note}; ${await applySchedule(rec, d.schedule)}`;
+  // Orchestration: split agents only (Follow-up Writer -> Meeting Scheduler); the merged agent returned the schedule above.
+  if (d.schedule) return note + scheduleNote;
   const brief = rec.briefId ? store.briefs.get(rec.briefId) : undefined;
   if (brief && creaoEnabled("meeting_scheduler")) {
     const p = store.profile;
@@ -633,9 +642,9 @@ async function applyFollowUpWriter(rec: RunRecord, out: unknown): Promise<string
 async function applyMeetingScheduler(rec: RunRecord, out: unknown): Promise<string> {
   const parsed = ScheduleOut.safeParse(out);
   if (!parsed.success) return "invalid shape";
-  return applySchedule(rec, parsed.data);
+  return (await applySchedule(rec, parsed.data)).note;
 }
-async function applySchedule(rec: RunRecord, d: z.infer<typeof ScheduleOut>): Promise<string> {
+async function applySchedule(rec: RunRecord, d: z.infer<typeof ScheduleOut>, opts: { quiet?: boolean } = {}): Promise<{ note: string; schedule: NonNullable<NonNullable<Person["followUp"]>["schedule"]> }> {
   const { schedule, note: calNote } = await confirmSchedule({
     proposedTimes: d.proposedTimes.map((s) => sanitize(s).trim().slice(0, 40)).filter(Boolean).slice(0, 3),
     inviteTitle: sanitize(d.inviteTitle).trim().slice(0, 80),
@@ -648,10 +657,10 @@ async function applySchedule(rec: RunRecord, d: z.infer<typeof ScheduleOut>): Pr
   const person = rec.personId ? store.people.get(rec.personId) : undefined;
   if (person) store.putPerson({ ...person, followUp: { ...(person.followUp ?? {}), schedule } });
   const first = person?.name.split(/\s+/)[0] ?? "them";
-  const r = await sendText(scheduleBubbles(schedule, first));
+  const r = opts.quiet ? { sent: false as const, reason: "sent with the follow-up wave" } : await sendText(scheduleBubbles(schedule, first));
   { const b0 = rec.briefId ? store.briefs.get(rec.briefId) : undefined;
     journal({ type: "schedule", briefId: rec.briefId, person: b0?.query ?? (person ? { name: person.name, org: person.orgId } : undefined), data: { ...schedule, runId: rec.runId, texted: r.sent } }); }
-  return `schedule stored${person ? ` on ${person.name}` : ""}, hold ${schedule.calendarEventCreated ? `created (${schedule.holdSource ?? "agent"})` : "not created"}, ${calNote}; text ${r.sent ? "sent" : `not sent (${r.reason})`}`;
+  return { schedule, note: `schedule stored${person ? ` on ${person.name}` : ""}, hold ${schedule.calendarEventCreated ? `created (${schedule.holdSource ?? "agent"})` : "not created"}, ${calNote}; text ${r.sent ? "sent" : `not sent (${r.reason})`}` };
 }
 
 // Networking Coach: the long-run agent (agents/networking-coach.md). Texted as a few bubbles.
